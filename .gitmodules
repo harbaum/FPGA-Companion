@@ -1,0 +1,6 @@
+[submodule "src/u8g2"]
+	path = src/u8g2
+	url = https://github.com/olikraus/u8g2
+[submodule "src/FreeRTOS-Kernel"]
+	path = src/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel
