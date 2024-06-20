@@ -4,3 +4,6 @@
 [submodule "src/FreeRTOS-Kernel"]
 	path = src/FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel
+[submodule "src/tusb_xinput"]
+	path = src/tusb_xinput
+	url = https://github.com/Ryzee119/tusb_xinput.git
