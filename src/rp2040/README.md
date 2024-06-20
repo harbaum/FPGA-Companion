@@ -7,6 +7,10 @@ for the Raspberry Pi Pico (W).
 
 ### Download an install the Pi Pico SDK
 
+Download the [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
+and set the ```PICO_SDK_PATH``` environment variable to point to the
+SDKs root directory.
+
 ### Update the Pico-PIO-USB component
 
 In pico-sdk/lib/tinyusb:
@@ -23,15 +27,32 @@ Instead do:
   git clone https://github.com/sekigon-gonnoc/Pico-PIO-USB.git
 ```
 
-### Download the FreeRTOS kernel
+### Run cmake and make
+
+To start the build process create a build directory and start the
+compilation:
 
 ```
-git clone https://github.com/FreeRTOS/FreeRTOS-Kernel
+cd src/rp2040
+mkdir build
+cmake ..
+make
 ```
 
-### Download the FatFS
+The resulting file named ```fpga_companion.uf2``` is loaded onto the
+Pico as usual. Once successfully booted the Pico's LED will blink.
 
-```
-git clone https://github.com/abbrev/fatfs.git
-rm fatfs/source/ffconf.h
-```
+Additional debug output is sent via UART at 115200 bit/s on GP0
+
+# Pin usage
+
+| Pin | Signal | Description |
+|---|---|---|
+| GP0  | UART_TX  | Serial debug output |
+| GP2  | USB D+ | USB PIO host D+ |
+| GP3  | USB D- | USB PIO host D-   |
+| GP16 | MISO | SPI data from FPGA |
+| GP17 | CSn | SPI chip select to FPGA |
+| GP18 | SCK | SPI clock to FPGA |
+| GP19 | MOSI | SPI data to FPGA |
+| GP22 | IRQn | SPI interrupt from FPGA |
