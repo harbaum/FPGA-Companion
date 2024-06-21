@@ -32,4 +32,7 @@ void joystick_parse(const hid_report_t *report, struct hid_joystick_state_S *sta
 
 void hid_handle_event(void);
 
+uint8_t hid_allocate_joystick(void);
+void hid_release_joystick(uint8_t idx);
+
 #endif // HID_H

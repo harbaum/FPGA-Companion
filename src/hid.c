@@ -11,6 +11,23 @@
 
 #include <string.h>  // for memcpy
 
+// keep a map of joysticks to be able to report
+// them individually
+static uint8_t joystick_map = 0;
+
+uint8_t hid_allocate_joystick(void) {
+  uint8_t idx;
+  for(idx=0;joystick_map & (1<<idx);idx++);
+  joystick_map |= (1<<idx);
+  usb_debugf("Allocating joystick %d (map = %02x)", idx, joystick_map);
+  return idx;
+}
+
+void hid_release_joystick(uint8_t idx) {
+  joystick_map &= ~(1<<idx);
+  usb_debugf("Releasing joystick %d (map = %02x)", idx, joystick_map);
+}
+  
 static void kbd_tx(uint8_t byte) {
   mcu_hw_spi_begin();
   mcu_hw_spi_tx_u08(SPI_TARGET_HID);
@@ -314,5 +331,5 @@ void hid_handle_event(void) {
   uint8_t db9 = mcu_hw_spi_tx_u08(0x00);
   mcu_hw_spi_end();
 
-  usb_debugf("DB9: %02x", db9);
+  debugf("DB9: %02x", db9);
 }

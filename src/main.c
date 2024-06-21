@@ -33,7 +33,7 @@ static void com_task(__attribute__((unused)) void *p ) {
     // by default, DB9 interrupts are disabled. Reading
     // the DB9 state enables them. This is what hid_handle_event
     // does.
-    // hid_handle_event();
+    hid_handle_event();
     
     // finally release FPGA from reset
     sys_set_val('R', 0);
@@ -46,7 +46,7 @@ static void com_task(__attribute__((unused)) void *p ) {
   }
 
   for(;;) {
-    ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+    ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
     sys_handle_interrupts(sys_irq_ctrl(0xff));
       
     mcu_hw_irq_ack();  // re-enable interrupt

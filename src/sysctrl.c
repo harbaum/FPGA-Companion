@@ -103,7 +103,7 @@ static void sys_handle_event(void) {
 }
 
 void sys_handle_interrupts(unsigned char pending) {
-  // sys_debugf("IRQ = %02x", pending);
+  // debugf("IRQ = %02x", pending);
 
   if(pending & 0x01) // irq 0 = SYSCTRL
     sys_handle_event();

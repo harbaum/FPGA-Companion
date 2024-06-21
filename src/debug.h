@@ -9,7 +9,8 @@
 #define ini_debugf(a, ...)  debugf("\033[0;31mINI: " a "\033[0m", ##__VA_ARGS__)  // red
 #define sys_debugf(a, ...)  debugf("\033[0;32mSYS: " a "\033[0m", ##__VA_ARGS__)  // green
 #define sdc_debugf(a, ...)  debugf("\033[0;33mSDC: " a "\033[0m", ##__VA_ARGS__)  // yellow
-#define usb_debugf(a, ...)  debugf("\033[0;34mUSB: " a "\033[0m", ##__VA_ARGS__)  // blue
+// #define usb_debugf(a, ...)  debugf("\033[0;34mUSB: " a "\033[0m", ##__VA_ARGS__)  // blue -> too dark to read
+#define usb_debugf(a, ...)  debugf("\033[0;36mUSB: " a "\033[0m", ##__VA_ARGS__)  // cyan
 #define hidp_debugf(a, ...) debugf("\033[0;35mHDP: " a "\033[0m", ##__VA_ARGS__)  // magenta
 #define osd_debugf(a, ...)  debugf("\033[0;36mOSD: " a "\033[0m", ##__VA_ARGS__)  // cyan
 #define menu_debugf(a, ...) debugf("\033[1;33mMNU: " a "\033[0m", ##__VA_ARGS__)  // bold yellow

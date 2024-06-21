@@ -11,20 +11,18 @@ Download the [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
 and set the ```PICO_SDK_PATH``` environment variable to point to the
 SDKs root directory.
 
-### Update the Pico-PIO-USB component
+### Update the TinyUSB component
 
-In pico-sdk/lib/tinyusb:
+The TinyUSB inside the Pico SDK needs to be at least version 0.17.0.
 
-This is supposed to be working, but the Pico-PIO-USB is too old
-```
-  python3 tools/get_dependencies.py rp2040
-```
+To update it go to pico-sdk/lib and install PIO-USB do:
 
-Instead do:
 ```
-  cd hw/mcu/raspberry_pi
-  rm -rf Pico-PIO-USB
-  git clone https://github.com/sekigon-gonnoc/Pico-PIO-USB.git
+cd pico-sdk/lib
+mv tinyusb tinyusb.old
+git clone https://github.com/hathach/tinyusb.git
+cd tinyusb
+python3 tools/get_dependencies.py rp2040
 ```
 
 ### Run cmake and make

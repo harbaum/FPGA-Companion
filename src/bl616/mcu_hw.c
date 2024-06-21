@@ -60,8 +60,6 @@ void set_led(int pin, int on) {
 }
 
 static struct usb_config {
-  unsigned js_map;   // map of joysticks
-  
   struct xbox_info_S {
     int index;
     int state;
@@ -147,7 +145,7 @@ static void usbh_update(struct usb_config *usb) {
 
       if(usb->hid_info[i].report.type == REPORT_TYPE_JOYSTICK) {
 	usb_debugf("Joystick %d gone", usb->hid_info[i].hid_state.joystick.js_index);
-	usb->js_map &= ~(1<<usb->hid_info[i].hid_state.joystick.js_index);
+	hid_release_joystick(usb->hid_info[i].hid_state.joystick.js_index);
       }
     }
   }
@@ -177,7 +175,7 @@ static void usbh_update(struct usb_config *usb) {
       usb->xbox_info[i].state = STATE_NONE;
       
       usb_debugf("Joystick %d gone", usb->xbox_info[i].js_index);
-      usb->js_map &= ~(1<<usb->xbox_info[i].js_index);
+      hid_release_joystick(usb->xbox_info[i].js_index);
     }
   }
 
@@ -314,13 +312,8 @@ static void usbh_hid_thread(void *argument) {
 	usb->hid_info[i].state = STATE_RUNNING; 
 
 	if( usb->hid_info[i].report.type == REPORT_TYPE_JOYSTICK ) {	
-	  // search for free joystick slot
-	  usb->hid_info[i].hid_state.joystick.js_index = 0;
-	  while(usb->js_map & (1<<usb->hid_info[i].hid_state.joystick.js_index))
-	    usb->hid_info[i].hid_state.joystick.js_index++;
-	  
+	  usb->hid_info[i].hid_state.joystick.js_index = hid_allocate_joystick();
 	  usb_debugf("  -> joystick %d", usb->hid_info[i].hid_state.joystick.js_index);
-	  usb->js_map |= 1<<usb->hid_info[i].hid_state.joystick.js_index;
 	}
 	  
 #if 0
@@ -363,12 +356,8 @@ static void usbh_hid_thread(void *argument) {
 	usb->xbox_info[i].state = STATE_RUNNING; 
 
 	// search for free joystick slot
-	usb->xbox_info[i].js_index = 0;
-	while(usb->js_map & (1<<usb->xbox_info[i].js_index))
-	  usb->xbox_info[i].js_index++;
-
+	usb->xbox_info[i].js_index = hid_allocate_joystick();
 	usb_debugf("  -> joystick %d", usb->xbox_info[i].js_index);
-	usb->js_map |= 1<<usb->xbox_info[i].js_index;
 	
 	// setup urb
 	usbh_int_urb_fill(&usb->xbox_info[i].class->intin_urb,
@@ -400,8 +389,6 @@ void usb_host(void) {
   usb_debugf("init usb hid host");
 
   usbh_initialize(0, USB_BASE);
-  
-  usb_config.js_map = 0;   // no joysticks yet
   
   // initialize all HID info entries
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {

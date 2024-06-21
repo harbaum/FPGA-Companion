@@ -17,6 +17,7 @@
 
 #include "../debug.h"
 #include "../config.h"
+#include "../spi.h"
 
 #include "../mcu_hw.h"
 
@@ -27,6 +28,15 @@
 #include "../hid.h"
 #include "../hidparser.h"
 
+#include "tusb_option.h"
+#ifndef TUSB_VERSION_NUMBER
+#error "Cannot determine TinyUSB version!"
+#endif
+
+#if TUSB_VERSION_NUMBER < 1700
+#error "Please update your TinyUSB installation!"
+#endif
+
 static struct {
   uint8_t dev_addr;
   uint8_t instance;
@@ -34,11 +44,21 @@ static struct {
   hid_report_t rep;
 } hid_report[MAX_HID_DEVICES];
 
+static struct {
+  uint8_t dev_addr;
+  uint8_t instance;
+  uint8_t js_index;
+  uint8_t state;
+} xbox_state[MAX_XBOX_DEVICES];
+  
 static void pio_usb_task(__attribute__((unused)) void *parms) {
-  // mark all hid entries as unused
+  // mark all hid and xbox entries as unused
   for(int i=0;i<MAX_HID_DEVICES;i++)
     hid_report[i].dev_addr = 0xff;
 
+  for(int i=0;i<MAX_XBOX_DEVICES;i++)
+    xbox_state[i].dev_addr = 0xff;
+    
   while(1) {
     tuh_task();
     vTaskDelay(pdMS_TO_TICKS(1));
@@ -64,6 +84,8 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
     parse_report_descriptor(desc_report, desc_len, &hid_report[idx].rep, NULL);
     hid_report[idx].dev_addr = dev_addr;
     hid_report[idx].instance = instance;
+    if(hid_report[idx].rep.type == REPORT_TYPE_JOYSTICK)
+      hid_report[idx].state.joystick.js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free HID entries");
   
@@ -75,6 +97,16 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
 // Invoked when device with hid interface is un-mounted
 void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
   usb_debugf("[%u] HID Interface%u is unmounted", dev_addr, instance);
+
+  // find matching hid report
+  for(int idx=0;idx<MAX_HID_DEVICES;idx++) {
+    if(hid_report[idx].dev_addr == dev_addr && hid_report[idx].instance == instance) {
+      usb_debugf("releasing %d/%d", idx, hid_report[idx].state.joystick.js_index);
+      hid_report[idx].dev_addr = 0xff;
+      if(hid_report[idx].rep.type == REPORT_TYPE_JOYSTICK)
+	hid_release_joystick(hid_report[idx].state.joystick.js_index);
+    }
+  }
 }
 
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len) {
@@ -88,9 +120,6 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
   // continue to request to receive report
   if ( !tuh_hid_receive_report(dev_addr, instance) )
     usb_debugf("Error: cannot request report");
-}
-
-void mcu_hw_launch(void) {  
 }
 
 /* ============================================================================================= */
@@ -164,6 +193,7 @@ unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
 }
 
 /* ============================================================================================= */
+/* ============                        XBOX controllers                          =============== */
 /* ============================================================================================= */
 
 void mcu_hw_init(void) {
@@ -171,7 +201,7 @@ void mcu_hw_init(void) {
   set_sys_clock_khz(120000, true);
   
   stdio_init_all();    // ... so stdio can adjust its bit rate
-  
+
   printf("\r\n\r\n"
 	 "=============================================================\r\n"
 	 "========      MiSTeryNano FPGA companion for Pico    ========\r\n"
@@ -188,6 +218,91 @@ void mcu_hw_init(void) {
   
   TaskHandle_t pio_usb_handle;
   xTaskCreate(pio_usb_task, "usb_task", 2048, NULL, configMAX_PRIORITIES, &pio_usb_handle);
+}
+
+#include "xinput_host.h"
+
+usbh_class_driver_t const* usbh_app_driver_get_cb(uint8_t* driver_count){
+  *driver_count = 1;
+  return &usbh_xinput_driver;
+}
+
+void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_interface_t const* xid_itf, __attribute__((unused)) uint16_t len) {
+  const xinput_gamepad_t *p = &xid_itf->pad;
+  
+  if (xid_itf->last_xfer_result == XFER_RESULT_SUCCESS) {
+    if (xid_itf->connected && xid_itf->new_pad_data) {
+
+      // find matching hid report
+      for(int idx=0;idx<MAX_XBOX_DEVICES;idx++) {
+	if(xbox_state[idx].dev_addr == dev_addr && xbox_state[idx].instance == instance) {
+      
+	  // build new state
+	  unsigned char state =
+	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_UP   )?0x08:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
+	    ((p->wButtons & 0xf000) >> 8);
+	  
+	  // submit if state has changed
+	  if(state != xbox_state[idx].state) {    
+	    usb_debugf("XBOX Joy%d: %02x", xbox_state[idx].js_index, state);
+	    
+	    mcu_hw_spi_begin();
+	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
+	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
+	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
+	    mcu_hw_spi_tx_u08(state);
+	    mcu_hw_spi_end();
+	    
+	    xbox_state[idx].state = state;
+	  }
+	}
+      }
+    }
+  }
+  tuh_xinput_receive_report(dev_addr, instance);
+}
+
+void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_interface_t *xinput_itf) {
+  usb_debugf("xbox mounted %d/%d", dev_addr, instance);
+
+  // search for a free xbox entry
+  int idx;
+  for(idx=0;idx<MAX_XBOX_DEVICES && (xbox_state[idx].dev_addr != 0xff);idx++);
+  if(idx != MAX_XBOX_DEVICES) {
+    usb_debugf("Using XBOX entry %d", idx);
+    xbox_state[idx].dev_addr = dev_addr;
+    xbox_state[idx].instance = instance;
+    xbox_state[idx].state = 0xff;    
+    xbox_state[idx].js_index = hid_allocate_joystick();
+  } else
+    usb_debugf("Error, no more free XBOX entries");
+
+  // If this is a Xbox 360 Wireless controller we need to wait for a connection packet
+  // on the in pipe before setting LEDs etc. So just start getting data until a controller is connected.
+  if (xinput_itf->type == XBOX360_WIRELESS && xinput_itf->connected == false) {
+    tuh_xinput_receive_report(dev_addr, instance);
+    return;
+  }
+  tuh_xinput_set_led(dev_addr, instance, 0, true);
+  tuh_xinput_set_led(dev_addr, instance, 1, true);
+  tuh_xinput_set_rumble(dev_addr, instance, 0, 0, true);
+  tuh_xinput_receive_report(dev_addr, instance);
+}
+
+void tuh_xinput_umount_cb(uint8_t dev_addr, uint8_t instance) {
+  usb_debugf("xbox unmounted %d/%d", dev_addr, instance);
+
+  // find matching hid report
+  for(int idx=0;idx<MAX_XBOX_DEVICES;idx++) {
+    if(xbox_state[idx].dev_addr == dev_addr && xbox_state[idx].instance == instance) {
+      usb_debugf("releasing %d/%d", idx, xbox_state[idx].js_index);
+      xbox_state[idx].dev_addr = 0xff;
+      hid_release_joystick(xbox_state[idx].js_index);
+    }
+  }
 }
 
 void mcu_hw_reset(void) {
