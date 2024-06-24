@@ -1,4 +1,4 @@
-# MiSTeryNano FPGA companion Pico Pico variant
+# MiSTeryNano FPGA companion Pi Pico / RP2040 variant
 
 The is the variant of the MiSTeryNano FPGA companion firmware
 for the Raspberry Pi Pico (W).
