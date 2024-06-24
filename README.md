@@ -21,4 +21,44 @@ Currently the FPGA Companion can be used with the following MCUs:
  - [M0S/BL616](https://wiki.sipeed.com/hardware/en/maixzero/m0s/m0s.html), see the [build instuctions](src/bl616), and
  - [Raspberry Pi Pico/RP2040](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html), see the [build instructions](src/rp2040)
  - [ESP32 S2/S3](https://www.espressif.com/en/products/socs/esp32-s2), currently under development
- 
+
+## Features and disadvantages of the different MCUs
+
+The inital version of MiSTeryNano relied on the BL616 as a support MCU.
+Some shortcomings of that platform caused the porting to other MCUs
+which then may have other disadvantages.
+
+### BL616
+
+  - Pros
+    - Very powerful Risc-V CPU
+    - USB 2.0 highspeed host support
+    - WiFi 6 support
+    - Bluetooth 5.2 support
+  - Cons
+    - Limited SDK support
+      - USB needs manual update of the CherryUSB stack
+      - No classic Bluetooth support
+      - Limited WiFi support
+
+## RP2040
+
+  - Pros
+    - Powerful and well-supported SDK
+    - Widely available and cheap
+    - Fullspeed USB host support
+  - Cons
+    - No built-in bluetooth and WiFi support
+      - Only available via seperate modules (e.g. on Pico(W))
+
+## ESP32-S2/S3
+
+  - Pros
+    - Powerful and well-supported SDK
+    - Widely available and cheap
+    - Built-on Bluetooth and WiFi
+  - Cons
+    - Very limited USB host support
+      - Only one device (no hub)
+      - USb stack complex to use
+
