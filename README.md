@@ -16,5 +16,9 @@ used by the [NanoMig](https://github.com/harbaum/nanomig), the
 
 ## Supported MCUs
 
-Currently the FPGA Companion can be used on a [M0S/BL616](https://wiki.sipeed.com/hardware/en/maixzero/m0s/m0s.html) and
-the [Raspberry Pi Pico/RP2040](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html).
+Currently the FPGA Companion can be used with the following MCUs:
+
+ - [M0S/BL616](https://wiki.sipeed.com/hardware/en/maixzero/m0s/m0s.html), [build src/bl616](src/bl616), and
+ - [Raspberry Pi Pico/RP2040](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html), [build src/rp2040](src/rp2040)
+ - [ESP32 S2/S3](https://www.espressif.com/en/products/socs/esp32-s2), currently under development
+ 
