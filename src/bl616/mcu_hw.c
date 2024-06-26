@@ -659,10 +659,7 @@ void mcu_hw_init(void) {
   mn_board_init();
   gpio = bflb_device_get_by_name("gpio");
 
-  printf("\r\n\r\n"
-         "=============================================================\r\n"
-         "========      MiSTeryNano FPGA companion for BL616   ========\r\n"
-         "=============================================================\r\n");
+  printf("\r\n\r\n" LOGO "           FPGA Companion for BL616\r\n\r\n");
 
   // init on-board LEDs
   bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
@@ -688,7 +685,6 @@ void mcu_hw_reset(void) {
 }
 
 void mcu_hw_main_loop(void) {
-  
   /* Start the tasks and timer running. */  
   vTaskStartScheduler();
   
@@ -698,6 +694,6 @@ void mcu_hw_main_loop(void) {
      timer tasks to be created.  See the memory management section on the
      FreeRTOS web site for more details on the FreeRTOS heap
      http://www.freertos.org/a00111.html. */
-
+  
   for( ;; );
 }

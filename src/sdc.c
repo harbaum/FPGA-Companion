@@ -13,6 +13,15 @@
 #include "sdc.h"
 #include "sysctrl.h"
 
+#ifdef ESP_PLATFORM
+#ifndef CONFIG_FATFS_USE_FASTSEEK
+#error "Please enable FATFS_USE_FASTSEEK!"
+#error "Use 'idf.py menuconfig' and then navigate to"
+#error "Component Config -> FAT Filesystem Support"
+#error "and set 'Enable fast seek algorithm ...'"
+#endif
+#endif
+
 // enable to use old way to determine cluster position
 // #define USE_FSEEK
 
@@ -103,24 +112,62 @@ int sdc_write_sector(unsigned long sector, const unsigned char *buffer) {
 
 // -------------------- fatfs read/write interface to sd card connected to fpga -------------------
 
-static int sdc_read(BYTE *buff, LBA_t sector, UINT count) {
+#ifdef DEV_SD
+#define SDC_RESULT int
+#else
+#define SDC_RESULT DRESULT
+#endif
+
+static SDC_RESULT sdc_read(BYTE *buff, LBA_t sector, UINT count) {
   sdc_debugf("sdc_read(%p,%lu,%u)", buff, sector, count);  
   sdc_read_sector(sector, buff);
   return 0;
 }
 
-static int sdc_write(const BYTE *buff, LBA_t sector, UINT count) {
+static SDC_RESULT sdc_write(const BYTE *buff, LBA_t sector, UINT count) {
   sdc_debugf("sdc_write(%p,%lu,%u)", buff, sector, count);  
   sdc_write_sector(sector, buff);
   return 0;
 }
 
-static int sdc_ioctl(BYTE cmd, void *buff) {
+static SDC_RESULT sdc_ioctl(BYTE cmd, void *buff) {
   sdc_debugf("sdc_ioctl(%d,%p)", cmd, buff);
-  return 0;
+
+  switch(cmd) {
+  case GET_SECTOR_SIZE:
+    *((WORD*) buff) = 512;
+    return RES_OK;
+    break;
+  }
+  
+  return RES_ERROR;
 }
- 
-#ifndef DEV_SD
+
+#ifdef ESP_PLATFORM
+
+#if !FF_USE_STRFUNC
+#error "FatFS string functions are not enabled!"
+#error "Please set FF_USE_STRFUNC to 1 in esp-idf/components/fatfs/src/ffconf.h"
+#endif
+
+#if !FF_FS_EXFAT
+#error "FatFS exFAT support is not enabled!"
+#error "Please set FF_FS_EXFAT to 1 in esp-idf/components/fatfs/src/ffconf.h"
+#endif
+
+#if CONFIG_WL_SECTOR_SIZE != 512
+#error "Please set wear levelling sector size to 512!"
+#endif
+
+#include <diskio_impl.h>
+DRESULT sdc_disk_ioctl(__attribute__((unused)) BYTE pdrv, BYTE cmd, void *buff) { return sdc_ioctl(cmd, buff); }
+DRESULT sdc_disk_read(__attribute__((unused)) BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) { return sdc_read(buff, sector, count); }
+DRESULT sdc_disk_write(__attribute__((unused)) BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) { return sdc_write(buff, sector, count); }
+DSTATUS sdc_disk_status(BYTE pdrv) { return 0; }
+DSTATUS sdc_disk_initialize(BYTE pdrv) { sdc_debugf("sdc_initialize(%d)", pdrv); return 0; }
+
+#else
+#ifndef DEV_SD  // bouffalo sdk sets DEV_SD
 // FatFS variant in bouffalo SDK defines DEV_SD
 DRESULT disk_ioctl(__attribute__((unused)) BYTE pdrv, BYTE cmd, void *buff) { return sdc_ioctl(cmd, buff); }
 DRESULT disk_read(__attribute__((unused)) BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) { return sdc_read(buff, sector, count); }
@@ -131,6 +178,7 @@ DSTATUS disk_initialize(__attribute__((unused)) BYTE pdrv) { return 0; }
 static int sdc_status() { return 0; }
 static int sdc_initialize() { return 0; }
 static DSTATUS Translate_Result_Code(int result) { return result; }
+#endif
 #endif
 
 static int fs_init() {
@@ -150,19 +198,32 @@ static int fs_init() {
   
   disk_driver_callback_init(DEV_SD, &MSC_DiskioDriver);
 #endif
+
+#ifdef ESP_PLATFORM
+  const ff_diskio_impl_t sdc_impl = {
+    .init = sdc_disk_initialize,
+    .status = sdc_disk_status,
+    .read = sdc_disk_read,
+    .write = sdc_disk_write,
+    .ioctl = sdc_disk_ioctl,
+  };
   
+  ff_diskio_register(0, &sdc_impl);
+#endif
+    
   // wait for SD card to become available
-  // TODO: Add timeout and display error in OSD
+  // TODO: display error in OSD
   unsigned char status;
-  int timeout = 2000;
+  int timeout = 200;
   do {
     sdc_spi_begin();  
     mcu_hw_spi_tx_u08(SPI_SDC_STATUS);
     status = mcu_hw_spi_tx_u08(0);
     mcu_hw_spi_end();
+
     if((status & 0xf0) != 0x80) {
       timeout--;
-      vTaskDelay(pdMS_TO_TICKS(1));
+      vTaskDelay(pdMS_TO_TICKS(10));
     }
   } while(timeout && ((status & 0xf0) != 0x80));
   // getting here with a timeout either means that there
@@ -456,8 +517,13 @@ sdc_dir_t *sdc_readdir(int drive, char *name, const char *ext) {
     }
     return 0;
   }
-  
+
+#ifdef ESP_PLATFORM
+  FF_DIR dir;
+#else
   DIR dir;
+#endif
+  
   FILINFO fno;
 
   // assemble name before we free it
@@ -550,7 +616,7 @@ void sdc_mount_defaults(void) {
   // try to mount (default) images
   for(int drive=0;drive<MAX_DRIVES;drive++) {
     char *name = sdc_get_image_name(drive);
-    sdc_debugf("Processing drive %d: %s", drive, name);
+    sdc_debugf("Processing drive %d: %s", drive, name?name:"<no image>");
     
     if(name) {
       // create a local copy as sdc_image_open frees its own copy

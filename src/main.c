@@ -5,12 +5,14 @@
 
 #include "../mcu_hw.h"
 
+#include "../config.h"
 #include "../sysctrl.h"
 #include "../sdc.h"
 #include "../osd.h"
 #include "../menu.h"
 #include "../core.h"
 #include "../inifile.h"
+#include "../debug.h"
 
 /*-----------------------------------------------------------*/
 /*---            main FPGA communication task            ----*/
@@ -19,6 +21,8 @@
 TaskHandle_t com_task_handle;
 
 static void com_task(__attribute__((unused)) void *p ) {
+  debugf("Starting main communication task");
+  
   // startup FPGA, this will also put the core into reset
   if(sys_wait4fpga()) {
     // FPGA is ready and can be talked to
@@ -40,11 +44,14 @@ static void com_task(__attribute__((unused)) void *p ) {
 
     // initialize on-screen-display and menu system
     menu_init();
+
     // open disk images, either defaults set in sdc_init or
     // user configure ones from the ini file
     sdc_mount_defaults();
   }
 
+  debugf("Entering main loop");
+  
   for(;;) {
     ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
     sys_handle_interrupts(sys_irq_ctrl(0xff));
@@ -52,16 +59,23 @@ static void com_task(__attribute__((unused)) void *p ) {
     mcu_hw_irq_ack();  // re-enable interrupt
   }
 }
-  
-int main( void ) {
-  mcu_hw_init();
 
+#ifdef ESP_PLATFORM
+void app_main( void )
+#else
+int main( void )
+#endif
+{
+  mcu_hw_init();
+  
   // run FPGA com thread
-  xTaskCreate( com_task, "FPGA Com", 2048, NULL, CONFIG_MAX_PRIORITY-1, &com_task_handle );
+  xTaskCreate( com_task, "FPGA Com", 4096, NULL, CONFIG_MAX_PRIORITY-1, &com_task_handle );
 
   mcu_hw_main_loop();
 
+#ifndef ESP_PLATFORM
   return 0;
+#endif
 }
 /*-----------------------------------------------------------*/
 

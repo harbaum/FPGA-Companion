@@ -5,7 +5,6 @@
 
 #define debugf(x, ...)  printf(x "\r\n", ##__VA_ARGS__)
 
-
 #define ini_debugf(a, ...)  debugf("\033[0;31mINI: " a "\033[0m", ##__VA_ARGS__)  // red
 #define sys_debugf(a, ...)  debugf("\033[0;32mSYS: " a "\033[0m", ##__VA_ARGS__)  // green
 #define sdc_debugf(a, ...)  debugf("\033[0;33mSDC: " a "\033[0m", ##__VA_ARGS__)  // yellow
@@ -16,7 +15,7 @@
 #define menu_debugf(a, ...) debugf("\033[1;33mMNU: " a "\033[0m", ##__VA_ARGS__)  // bold yellow
 
 #include <ctype.h>
-static inline void hexdump(void *data, int size) {
+static inline void hexdump(const void *data, int size) {
   int i, b2c;
   int n=0;
   char *ptr = (char*)data;

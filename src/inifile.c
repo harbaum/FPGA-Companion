@@ -34,13 +34,12 @@ int inifile_read(void) {
   ini_debugf("Reading settings from '%s'", settings_file[core_id]);
 
   sdc_lock();  // get exclusive access to the file system
-  
-  FIL fil;  
+
+  FIL fil;
   if(f_open(&fil, settings_file[core_id], FA_OPEN_EXISTING | FA_READ) == FR_OK) {
     char buffer[FF_LFN_BUF+10];
-    
-    ini_debugf("Settings file opened");
 
+    ini_debugf("Settings file opened");
     // read file line by line
     while(f_gets(buffer, sizeof(buffer), &fil) != NULL) {
       // ignore everything after semicolon
@@ -147,7 +146,7 @@ void inifile_write(void) {
     
     f_close(&file);  
   } else
-    menu_debugf("Error opening file");
+    ini_debugf("Error opening file");
   
   sdc_unlock();
 }

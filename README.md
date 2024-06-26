@@ -20,7 +20,7 @@ Currently the FPGA Companion can be used with the following MCUs:
 
  - [M0S/BL616](https://wiki.sipeed.com/hardware/en/maixzero/m0s/m0s.html), see the [build instuctions](src/bl616), and
  - [Raspberry Pi Pico/RP2040](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html), see the [build instructions](src/rp2040)
- - [ESP32 S2/S3](https://www.espressif.com/en/products/socs/esp32-s2), currently under development
+ - [ESP32 S2/S3](https://www.espressif.com/en/products/socs/esp32-s2), see the [build instructions](src/esp32)
 
 ## Features and disadvantages of the different MCUs
 
@@ -56,9 +56,8 @@ which then may have other disadvantages.
   - Pros
     - Powerful and well-supported SDK
     - Widely available and cheap
-    - Built-on Bluetooth and WiFi
+    - Built-in Bluetooth and WiFi
   - Cons
     - Very limited USB host support
       - Only one device (no hub)
-      - USb stack complex to use
-
+      - USB stack complex to use

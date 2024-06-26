@@ -8,9 +8,15 @@
 #include <stdbool.h>
 #include <ff.h>
 
+#ifdef ESP_PLATFORM
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
+#include <freertos/task.h>
+#else
 #include <FreeRTOS.h>
 #include <timers.h>
 #include <task.h>
+#endif
 
 #include "sdc.h"
 #include "osd.h"
@@ -666,7 +672,7 @@ void menu_init(void) {
   menu.vars = core_get_variables();
 
   osd_init();
-    
+
   // read config etc from sd card
   if(inifile_read() != 0) {
     // reading ini file failed
@@ -674,7 +680,7 @@ void menu_init(void) {
     // set core specific defaults
     core_set_default_images();
   }
-  
+
   menu_goto_form(0, 1); // first form selected at start
   
   // send initial values for all variables
@@ -708,3 +714,7 @@ void menu_init(void) {
   xTaskCreate(menu_task, (char *)"menu_task", 2048, NULL, configMAX_PRIORITIES-3, NULL);
 }
  
+void menu_notify(unsigned long msg) {  
+  xQueueSendToBackFromISR(menu_queue, &msg,  ( TickType_t ) 0);
+}
+

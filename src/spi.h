@@ -1,7 +1,7 @@
 #ifndef SPI_H
 #define SPI_H
 
-#ifndef SDL
+#ifndef ESP_PLATFORM
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif

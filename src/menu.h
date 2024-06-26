@@ -41,8 +41,6 @@ void menu_init(void);
 menu_variable_t *menu_get_vars(void);
 void menu_set_value(unsigned char id, unsigned char value);
 void menu_do(int);
-
-extern QueueHandle_t menu_queue;
-inline void menu_notify(unsigned long msg) { xQueueSendToBackFromISR(menu_queue, &msg,  ( TickType_t ) 0); }
+void menu_notify(unsigned long msg);
 
 #endif // MENU_H

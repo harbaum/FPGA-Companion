@@ -42,7 +42,7 @@ static struct {
   uint8_t instance;
   hid_state_t state;
   hid_report_t rep;
-} hid_report[MAX_HID_DEVICES];
+} hid_device[MAX_HID_DEVICES];
 
 static struct {
   uint8_t dev_addr;
@@ -54,7 +54,7 @@ static struct {
 static void pio_usb_task(__attribute__((unused)) void *parms) {
   // mark all hid and xbox entries as unused
   for(int i=0;i<MAX_HID_DEVICES;i++)
-    hid_report[i].dev_addr = 0xff;
+    hid_device[i].dev_addr = 0xff;
 
   for(int i=0;i<MAX_XBOX_DEVICES;i++)
     xbox_state[i].dev_addr = 0xff;
@@ -77,15 +77,17 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
 
   // search for a free hid entry
   int idx;
-  for(idx=0;idx<MAX_HID_DEVICES && (hid_report[idx].dev_addr != 0xff);idx++);
+  for(idx=0;idx<MAX_HID_DEVICES && (hid_device[idx].dev_addr != 0xff);idx++);
   if(idx != MAX_HID_DEVICES) {
     usb_debugf("Using HID entry %d", idx);
     
-    parse_report_descriptor(desc_report, desc_len, &hid_report[idx].rep, NULL);
-    hid_report[idx].dev_addr = dev_addr;
-    hid_report[idx].instance = instance;
-    if(hid_report[idx].rep.type == REPORT_TYPE_JOYSTICK)
-      hid_report[idx].state.joystick.js_index = hid_allocate_joystick();
+    if(parse_report_descriptor(desc_report, desc_len, &hid_device[idx].rep, NULL)) {
+      hid_device[idx].dev_addr = dev_addr;
+      hid_device[idx].instance = instance;
+      if(hid_device[idx].rep.type == REPORT_TYPE_JOYSTICK)
+	hid_device[idx].state.joystick.js_index = hid_allocate_joystick();
+    } else
+      usb_debugf("ignoring device");
   } else
     usb_debugf("Error, no more free HID entries");
   
@@ -100,11 +102,11 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
 
   // find matching hid report
   for(int idx=0;idx<MAX_HID_DEVICES;idx++) {
-    if(hid_report[idx].dev_addr == dev_addr && hid_report[idx].instance == instance) {
-      usb_debugf("releasing %d/%d", idx, hid_report[idx].state.joystick.js_index);
-      hid_report[idx].dev_addr = 0xff;
-      if(hid_report[idx].rep.type == REPORT_TYPE_JOYSTICK)
-	hid_release_joystick(hid_report[idx].state.joystick.js_index);
+    if(hid_device[idx].dev_addr == dev_addr && hid_device[idx].instance == instance) {
+      usb_debugf("releasing %d", idx);
+      hid_device[idx].dev_addr = 0xff;
+      if(hid_device[idx].rep.type == REPORT_TYPE_JOYSTICK)
+	hid_release_joystick(hid_device[idx].state.joystick.js_index);
     }
   }
 }
@@ -114,8 +116,8 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 
   // find matching hid report
   for(int idx=0;idx<MAX_HID_DEVICES;idx++)
-    if(hid_report[idx].dev_addr == dev_addr && hid_report[idx].instance == instance)     
-      hid_parse(&hid_report[idx].rep, &hid_report[idx].state, report, len);
+    if(hid_device[idx].dev_addr == dev_addr && hid_device[idx].instance == instance)     
+      hid_parse(&hid_device[idx].rep, &hid_device[idx].state, report, len);
   
   // continue to request to receive report
   if ( !tuh_hid_receive_report(dev_addr, instance) )
@@ -202,10 +204,7 @@ void mcu_hw_init(void) {
   
   stdio_init_all();    // ... so stdio can adjust its bit rate
 
-  printf("\r\n\r\n"
-	 "=============================================================\r\n"
-	 "========      MiSTeryNano FPGA companion for Pico    ========\r\n"
-	 "=============================================================\r\n");
+  printf("\r\n\r\n" LOGO "           FPGA Companion for RP2040\r\n\r\n");
   printf("USB D+/D- on GP%d and GP%d\r\n", PIO_USB_DP_PIN_DEFAULT, PIO_USB_DP_PIN_DEFAULT+1);
   
   gpio_init(PICO_DEFAULT_LED_PIN);
@@ -305,11 +304,13 @@ void tuh_xinput_umount_cb(uint8_t dev_addr, uint8_t instance) {
   }
 }
 
+#include "hardware/watchdog.h"
+
 void mcu_hw_reset(void) {
   debugf("HW reset");
-  sleep_ms(10);   // give uart some time to transmit
-  *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
+  watchdog_reboot(0, 0, 10);
 
+  // *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
   // alternally
   //  watchdog_enable(1, 1);
   //  while(1);

@@ -54,3 +54,7 @@ Additional debug output is sent via UART at 115200 bit/s on GP0
 | GP18 | SCK | SPI clock to FPGA |
 | GP19 | MOSI | SPI data to FPGA |
 | GP22 | IRQn | SPI interrupt from FPGA |
+
+# Example wiring
+
+![Tang Nano 20k with Raspberry Pi Pico](pico_tn20k.png)

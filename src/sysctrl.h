@@ -8,6 +8,7 @@
 #define SYS_CTRL_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "config.h"
 #include "spi.h"
 
