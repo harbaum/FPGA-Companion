@@ -1,13 +1,15 @@
 # MiSTeryNano FPGA Companion
 
 The MiSTeryNano FPGA Companion implements support functions for FPGA
-based retro computing. While the FPGA typically implements the
-hardware of the retro machine itself the FPGA Companion uses a
-microcontroller to support modern peripherals like USB keyboard, mice
-and SD cards. It also implements an on-screen-display menu to allow
-the user to configure the retro machine.
+based retro computing projects like [MiSTeryNano
+project](https://github.com/harbaum/MiSTeryNano). While the FPGA
+typically implements the hardware of the retro machine itself the
+Companion uses a microcontroller to add support for modern peripherals
+like USB keyboard, mice and SD cards. It also implements an
+on-screen-display menu to allow the user to configure the retro
+machine.
 
-Thhe FPGA Companions replaces the MiSTeryNano firmware that was
+The FPGA Companion replaces the MiSTeryNano firmware that was
 formerly part of the [MiSTeryNano
 project](https://github.com/harbaum/MiSTeryNano). It is also
 used by the [NanoMig](https://github.com/harbaum/nanomig), the
@@ -15,6 +17,13 @@ used by the [NanoMig](https://github.com/harbaum/nanomig), the
 [VIC20Nano](https://github.com/vossstef/VIC20Nano).
 
 ## Supported MCUs
+
+While the MiSTeryNano was initially designed with a BL616 MCU as the
+support MCU the FPGA Companion introduces more flexibility and allows
+to choose from different MCUs to act as the support MCU.  From the
+FPGAs perspective these behave identical although not all MCUs may
+support all functions to the same extent and e.g. the ESP32 is rather
+limited when it comes to USB support.
 
 Currently the FPGA Companion can be used with the following MCUs:
 
@@ -24,9 +33,10 @@ Currently the FPGA Companion can be used with the following MCUs:
 
 ## Features and disadvantages of the different MCUs
 
-The inital version of MiSTeryNano relied on the BL616 as a support MCU.
-Some shortcomings of that platform caused the porting to other MCUs
-which then may have other disadvantages.
+The inital version of MiSTeryNano relied on the BL616 as a support
+MCU.  Some shortcomings of that platform caused the code to be ported
+to other MCUs which then may have their own advantages and
+disadvantages.
 
 ### BL616
 
@@ -41,7 +51,7 @@ which then may have other disadvantages.
       - No classic Bluetooth support
       - Limited WiFi support
 
-## RP2040
+### RP2040
 
   - Pros
     - Powerful and well-supported SDK
@@ -51,7 +61,7 @@ which then may have other disadvantages.
     - No built-in bluetooth and WiFi support
       - Only available via seperate modules (e.g. on Pico(W))
 
-## ESP32-S2/S3
+### ESP32-S2/S3
 
   - Pros
     - Powerful and well-supported SDK
