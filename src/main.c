@@ -66,6 +66,7 @@ static void com_task(__attribute__((unused)) void *p ) {
     }
       
     // initialize on-screen-display and menu system
+    osd_init();    
     menu_init();
 
     // open disk images, either defaults set in sdc_init or

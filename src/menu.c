@@ -38,6 +38,15 @@
 
 static menu_legacy_t menu;
 
+// some constants for arrangement
+// The OSD (currently) is 64 pixel high. To allow for a proper
+// box around a text line, it needs to be 12 pixels high. A total
+// of five lines is 5*12 = 60 + title seperation line
+#define MENU_LINE_Y      13   // y pos of seperator line
+#define MENU_ENTRY_H     12   // height of regular menu entries
+#define MENU_ENTRY_BASE   9   // font baseline offset
+
+
 #define MENU_FORM_FSEL           -1
 
 #define MENU_ENTRY_INDEX_ID       0
@@ -325,11 +334,11 @@ static void menu_legacy_draw_title(const char *s) {
 
   // draw title in bold and seperator line
   u8g2_SetFont(&u8g2, u8g2_font_helvB08_tr);
-  u8g2_DrawStrT(&u8g2, x, 9, menu_get_str(s, 0));
-  u8g2_DrawHLine(&u8g2, 0, 13, u8g2_GetDisplayWidth(&u8g2));
+  u8g2_DrawStrT(&u8g2, x, MENU_ENTRY_BASE, menu_get_str(s, 0));
+  u8g2_DrawHLine(&u8g2, 0, MENU_LINE_Y, u8g2_GetDisplayWidth(&u8g2));
 
   if(x > 0 && menu.entry == 0)
-    u8g2_DrawButtonFrame(&u8g2, 0, 9, U8G2_BTN_INV, u8g2_GetDisplayWidth(&u8g2), 1, 1);
+    u8g2_DrawButtonFrame(&u8g2, 0, MENU_ENTRY_BASE, U8G2_BTN_INV, u8g2_GetDisplayWidth(&u8g2), 1, 1);
   
   // draw the rest with normal font
   u8g2_SetFont(&u8g2, font_helvR08_te);
@@ -338,7 +347,7 @@ static void menu_legacy_draw_title(const char *s) {
 static void menu_legacy_draw_entry(int y, const char *s) {
   const char *buf = menu_get_str(s, MENU_ENTRY_INDEX_LABEL);
 
-  int ypos = 13 + 12 * y;
+  int ypos = MENU_LINE_Y + MENU_ENTRY_H * y;
   int width = u8g2_GetDisplayWidth(&u8g2);
 
   // all menu entries are a plain text
@@ -365,7 +374,7 @@ static void menu_legacy_draw_entry(int y, const char *s) {
     u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);    
   if(s[0] == 'F') {
     // icon depends if floppy is inserted
-    u8g2_DrawXBM(&u8g2, hl_w-9, ypos-8, 8, 8,
+    u8g2_DrawXBM(&u8g2, hl_w-MENU_ENTRY_BASE, ypos-8, 8, 8,
 	sdc_get_image_name(menu_get_subint(s, 2, 0))?icn_floppy_bits:icn_empty_bits);
   }
   
@@ -373,26 +382,59 @@ static void menu_legacy_draw_entry(int y, const char *s) {
     u8g2_DrawButtonFrame(&u8g2, hl_x, ypos, U8G2_BTN_INV, hl_w, 1, 1);
 }
 
-static const int icon_skip = 10;
+#define FS_ICON_WIDTH 10
 
-static void menu_fs_scroll_entry(sdc_dir_entry_t *entry) {
+static void menu_legacy_fs_scroll_entry(sdc_dir_entry_t *entry) {
   int row = menu.entry - menu.offset - 1;
-  int y =  13 + 12 * (row+1);
+  int y =  MENU_LINE_Y + MENU_ENTRY_H * (row+1);
   int width = u8g2_GetDisplayWidth(&u8g2);
   int swid = u8g2_GetStrWidth(&u8g2, entry->name) + 1;
 
   // fill the area where the scrolling entry would show
-  u8g2_SetClipWindow(&u8g2, icon_skip, y-9, width, y+12-9);  
-  u8g2_DrawBox(&u8g2, icon_skip, y-9, width-icon_skip, 12);
+  u8g2_SetClipWindow(&u8g2, FS_ICON_WIDTH, y-MENU_ENTRY_BASE, width, y+MENU_ENTRY_H-MENU_ENTRY_BASE);  
+  u8g2_DrawBox(&u8g2, FS_ICON_WIDTH, y-MENU_ENTRY_BASE, width-FS_ICON_WIDTH, MENU_ENTRY_H);
   u8g2_SetDrawColor(&u8g2, 0);
   
   int scroll = menu.fs_scroll_cur++ - 25;   // 25 means 1 sec delay
-  if(menu.fs_scroll_cur > swid-width+icon_skip+50) menu.fs_scroll_cur = 0;
+  if(menu.fs_scroll_cur > swid-width+FS_ICON_WIDTH+50) menu.fs_scroll_cur = 0;
   if(scroll < 0) scroll = 0;
-  if(scroll > swid-width+icon_skip) scroll = swid-width+icon_skip;
+  if(scroll > swid-width+FS_ICON_WIDTH) scroll = swid-width+FS_ICON_WIDTH;
   
-  u8g2_DrawStr(&u8g2, icon_skip-scroll, y, entry->name);      
+  u8g2_DrawStr(&u8g2, FS_ICON_WIDTH-scroll, y, entry->name);      
 
+  // restore previous draw mode
+  u8g2_SetDrawColor(&u8g2, 1);
+  u8g2_SetMaxClipWindow(&u8g2);
+  u8g2_SendBuffer(&u8g2);
+}
+
+static int fs_scroll_cur = -1;
+
+static void menu_fs_scroll_entry(void) {
+  // no scrolling
+  if(fs_scroll_cur < 0) return;
+  
+  // don't scroll anything else
+  if(menu_state->type != CONFIG_MENU_ENTRY_FILESELECTOR) return;
+  
+  int row = menu_state->selected - 1;
+  int y =  MENU_LINE_Y + MENU_ENTRY_H * (row-menu_state->scroll+1);
+  int width = u8g2_GetDisplayWidth(&u8g2);
+
+  int swid = u8g2_GetStrWidth(&u8g2, menu_state->dir->files[row].name) + 1;
+
+  // fill the area where the scrolling entry would show
+  u8g2_SetClipWindow(&u8g2, FS_ICON_WIDTH, y-MENU_ENTRY_BASE, width, y+MENU_ENTRY_H-MENU_ENTRY_BASE);  
+  u8g2_DrawBox(&u8g2, FS_ICON_WIDTH, y-MENU_ENTRY_BASE, width-FS_ICON_WIDTH, MENU_ENTRY_H);
+  u8g2_SetDrawColor(&u8g2, 0);
+
+  int scroll = fs_scroll_cur++ - 25;   // 25 means 1 sec delay
+  if(fs_scroll_cur > swid-width+FS_ICON_WIDTH+50) fs_scroll_cur = 0;
+  if(scroll < 0) scroll = 0;
+  if(scroll > swid-width+FS_ICON_WIDTH) scroll = swid-width+FS_ICON_WIDTH;
+  
+  u8g2_DrawStr(&u8g2, FS_ICON_WIDTH-scroll, y, menu_state->dir->files[row].name);
+  
   // restore previous draw mode
   u8g2_SetDrawColor(&u8g2, 1);
   u8g2_SetMaxClipWindow(&u8g2);
@@ -407,7 +449,7 @@ static void menu_fs_draw_entry(int row, sdc_dir_entry_t *entry) {
   static const unsigned char empty_icon[] =  { 0xc3,0xe7,0x7e,0x3c,0x3c,0x7e,0xe7,0xc3 };
   
   char str[strlen(entry->name)+1];
-  int y =  13 + 12 * (row+1);
+  int y =  MENU_LINE_Y + MENU_ENTRY_H * (row+1);
 
   // ignore leading / used by special entries
   if(entry->name[0] == '/') strcpy(str, entry->name+1);
@@ -417,19 +459,28 @@ static void menu_fs_draw_entry(int row, sdc_dir_entry_t *entry) {
   
   // properly ellipsize string
   int dotlen = u8g2_GetStrWidth(&u8g2, "...");
-  if(u8g2_GetStrWidth(&u8g2, str) > width-icon_skip) {
+  if(u8g2_GetStrWidth(&u8g2, str) > width-FS_ICON_WIDTH) {
     // the entry is too long to fit the menu.    
-    if(menu.entry == row+menu.offset+1) {
-      menu.fs_scroll_cur = 0;
-      menu.fs_scroll_entry = entry;
-      // enable timer, to allow animations
-      menu_timer_enable(true);
+    if(!cfg) {
+      if(menu.entry == row+menu.offset+1) {
+	// scroll in legacy menu    
+	menu.fs_scroll_cur = 0;
+	menu.fs_scroll_entry = entry;
+      }
+    } else {
+      // check if this is the selected file and then enable scrolling
+      if(row == menu_state->selected - menu_state->scroll - 1)
+	fs_scroll_cur = 0;
     }
     
-    while(u8g2_GetStrWidth(&u8g2, str) > width-icon_skip-dotlen) str[strlen(str)-1] = 0;
+    // enable timer, to allow animations
+    menu_timer_enable(true);
+    
+    while(u8g2_GetStrWidth(&u8g2, str) > width-FS_ICON_WIDTH-dotlen) str[strlen(str)-1] = 0;
     if(strlen(str) < sizeof(str)-4) strcat(str, "...");
   }
-  u8g2_DrawStr(&u8g2, icon_skip, y, str);      
+  
+  u8g2_DrawStr(&u8g2, FS_ICON_WIDTH, y, str);      
   
   // draw folder icon in front of directories
   if(entry->is_dir)
@@ -761,7 +812,6 @@ static void menu_pop(void) {
   }
     
   // count number of entries
-  debugf("CHECK");
   int i=1; while(menu_state[i-1].menu != cfg->menu) i++;
   menu_debugf("pop stack depth %d", i);
 
@@ -849,11 +899,11 @@ static void menu_draw_title(const char *s, bool arrow, bool selected) {
 
   // draw title in bold and seperator line
   u8g2_SetFont(&u8g2, u8g2_font_helvB08_tr);
-  u8g2_DrawStr(&u8g2, x, 9, menu_get_str(s, 0));
-  u8g2_DrawHLine(&u8g2, 0, 13, u8g2_GetDisplayWidth(&u8g2));
+  u8g2_DrawStr(&u8g2, x, MENU_ENTRY_BASE, menu_get_str(s, 0));
+  u8g2_DrawHLine(&u8g2, 0, MENU_LINE_Y, u8g2_GetDisplayWidth(&u8g2));
 
   if(selected)
-    u8g2_DrawButtonFrame(&u8g2, 0, 9, U8G2_BTN_INV,
+    u8g2_DrawButtonFrame(&u8g2, 0, MENU_ENTRY_BASE, U8G2_BTN_INV,
 	 u8g2_GetDisplayWidth(&u8g2), 1, 1);
   
   // draw the rest with normal font
@@ -896,7 +946,7 @@ static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) 
 
   // all menu entries use some kind of label
   char *s = menuentry_get_label(entry);
-  int ypos = 25 + 12 * row;
+  int ypos = MENU_LINE_Y+MENU_ENTRY_H + MENU_ENTRY_H * row;
   int width = u8g2_GetDisplayWidth(&u8g2);
   
   // all menu entries are a plain text
@@ -922,7 +972,7 @@ static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) 
     u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);    
   if(entry->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
     // icon depends if floppy is inserted
-    u8g2_DrawXBM(&u8g2, hl_w-9, ypos-8, 8, 8, 1?icn_floppy_bits:icn_empty_bits);
+    u8g2_DrawXBM(&u8g2, hl_w-MENU_ENTRY_BASE, ypos-8, 8, 8, 1?icn_floppy_bits:icn_empty_bits);
   }
   
   if(selected)
@@ -972,8 +1022,8 @@ static int menu_wrap_text(int y_in, const char *msg) {
 void menu_draw_dialog(const char *title,  const char *msg) {
   u8g2_ClearBuffer(&u8g2);
 
-  // 13 is the height of the title incl line
-  int y = (64 - 13 - menu_wrap_text(0, msg))/2;
+  // MENU_LINE_Y is the height of the title incl line
+  int y = (64 - MENU_LINE_Y - menu_wrap_text(0, msg))/2;
   
   u8g2_SetFont(&u8g2, u8g2_font_helvB08_tr);
   
@@ -981,8 +1031,8 @@ void menu_draw_dialog(const char *title,  const char *msg) {
   int swid = u8g2_GetStrWidth(&u8g2, title);
  
   // draw title in bold and seperator line
-  u8g2_DrawStr(&u8g2, (width-swid)/2, y+9, title);
-  u8g2_DrawHLine(&u8g2, (width-swid)/2, y+12, swid);
+  u8g2_DrawStr(&u8g2, (width-swid)/2, y+MENU_ENTRY_BASE, title);
+  u8g2_DrawHLine(&u8g2, (width-swid)/2, y+MENU_ENTRY_H, swid);
 
   u8g2_SetFont(&u8g2, font_helvR08_te);
 
@@ -1013,6 +1063,8 @@ void menu_draw(void) {
     menu_debugf("drawing '%s'", menu_state->fsel->label);
     
     menu_draw_title(menu_state->fsel->label, true, menu_state->selected == 0);
+    menu_timer_enable(false);
+    fs_scroll_cur = -1;
 
     // draw up to four entries
     for(int i=0;i<4 && i<menu_state->dir->len-menu_state->scroll;i++) {            
@@ -1178,7 +1230,10 @@ void menu_do(int event) {
     if(!cfg) {
       // legacy menu fileselector animation
       if((menu.form == MENU_FORM_FSEL) && (menu.fs_scroll_entry))
-	menu_fs_scroll_entry(menu.fs_scroll_entry);
+	menu_legacy_fs_scroll_entry(menu.fs_scroll_entry);
+    } else {
+      if(menu_state->type == CONFIG_MENU_ENTRY_FILESELECTOR)
+	menu_fs_scroll_entry();
     }
       
     return;
@@ -1253,8 +1308,6 @@ void menu_init(void) {
     menu.forms = core_get_forms();
     menu.vars = core_get_variables();
 
-    osd_init();
-
     // read config etc from sd card
     if(inifile_read(NULL) != 0) {
       // reading ini file failed
@@ -1281,8 +1334,6 @@ void menu_init(void) {
     
     menu_do(0);
   } else {
-    osd_init();
- 
     // a config was loaded, use that
     menu_debugf("Using configured menu");
 
