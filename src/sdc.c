@@ -498,22 +498,31 @@ sdc_dir_t *sdc_readdir(int drive, char *name, const char *ext) {
     char *dot = strrchr(name, '.');
     if(!dot) return 0;
 
-    // iterate over all extensions
-    const char *ext = exts;
-    while(1) {
-      const char *p = ext;
-      while(*p && *p != '+' && *p != ';') p++;  // search of end of ext
-      unsigned int len = p-ext;
+    if(cfg) {
+      char **ext = (char**)exts;
+      
+      for(int i=0;ext[i];i++)
+	if(!strcasecmp(dot+1, ext[i]))
+	  return 1;
 
-      // check if length would match
-      if(strlen(dot+1) == len)
-	if(!strncasecmp(dot+1, ext, len))
-	  return 1;  // it's a match
-      
-      // end of extension string reached: nothing found
-      if(!*p) return 0;
-      
-      ext = p+1;
+    } else {    
+      // iterate over all extensions
+      const char *ext = exts;
+      while(1) {
+	const char *p = ext;
+	while(*p && *p != '+' && *p != ';') p++;  // search of end of ext
+	unsigned int len = p-ext;
+	
+	// check if length would match
+	if(strlen(dot+1) == len)
+	  if(!strncasecmp(dot+1, ext, len))
+	    return 1;  // it's a match
+	
+	// end of extension string reached: nothing found
+	if(!*p) return 0;
+	
+	ext = p+1;
+      }
     }
     return 0;
   }

@@ -76,7 +76,7 @@ const char *core_c64_forms[] = {
   settings_form_c64
 };
 
-menu_variable_t core_c64_variables[] = {
+menu_legacy_variable_t core_c64_variables[] = {
   { 'U', { 0 }},    // default digifix = disabled
   { 'X', { 0 }},    // default turbo mode = off
   { 'Y', { 0 }},    // default turbo speed = 2x

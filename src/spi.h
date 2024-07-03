@@ -4,6 +4,8 @@
 #ifndef ESP_PLATFORM
 #include <FreeRTOS.h>
 #include <semphr.h>
+#include <timers.h>
+#include <task.h>
 #endif
 
 #define SPI_TARGET_SYS    0   // system control target

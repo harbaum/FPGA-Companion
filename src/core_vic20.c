@@ -72,7 +72,7 @@ const char *core_vic20_forms[] = {
   settings_form_vic20
 };
 
-menu_variable_t core_vic20_variables[] = {
+menu_legacy_variable_t core_vic20_variables[] = {
   { 'U', { 0 }},    // default 3k, $0400
   { 'X', { 0 }},    // default 8k, $2000
   { 'Y', { 0 }},    // default 8k, $4000

@@ -72,7 +72,7 @@ const char **core_get_forms(void) {
   return NULL;
 }
 
-menu_variable_t *core_get_variables(void) {
+menu_legacy_variable_t *core_get_variables(void) {
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_variables;
   if(core_id == CORE_ID_C64)

@@ -22,11 +22,11 @@ typedef struct {
     int value;
     void *ptr;
   };
-} menu_variable_t;
+} menu_legacy_variable_t;
 
 typedef struct {
   const char **forms;
-  menu_variable_t *vars;
+  menu_legacy_variable_t *vars;
   int form;
   int entry;
   int entries;
@@ -35,10 +35,16 @@ typedef struct {
   // infos needed to scroll a highlighted fileselector entry
   int fs_scroll_cur;
   sdc_dir_entry_t *fs_scroll_entry;
-} menu_t;
+} menu_legacy_t;
+
+typedef struct {
+  char id;
+  int value;
+} menu_variable_t;
 
 void menu_init(void);
-menu_variable_t *menu_get_vars(void);
+menu_legacy_variable_t *menu_get_vars(void);
+menu_variable_t **menu_get_variables(void);
 void menu_set_value(unsigned char id, unsigned char value);
 void menu_do(int);
 void menu_notify(unsigned long msg);

@@ -5,7 +5,7 @@
 #ifndef INIFILE_H
 #define INIFILE_H
 
-int inifile_read(void);
-void inifile_write(void);
+int inifile_read(char *);
+void inifile_write(char *);
 
 #endif // INIFILE_H

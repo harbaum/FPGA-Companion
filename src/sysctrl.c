@@ -6,8 +6,12 @@
 
 #include <stdio.h>
 
+#include "spi.h"
 #include "sysctrl.h"
 #include "sdc.h"
+#include "osd.h"
+#include "inifile.h"
+#include "core.h"
 
 #include "debug.h"
 #include "config.h"
@@ -18,6 +22,17 @@ unsigned char core_id = 0;
 static const char *core_names[] = {
   "<unset>", "Atari ST", "C64", "VIC", "Amiga"
 };
+
+const char *sys_get_config_name(void) {
+  const char *config_xml[] = {
+    CARD_MOUNTPOINT "/config.xml",
+    CARD_MOUNTPOINT "/atarist.xml",
+    CARD_MOUNTPOINT "/c64.xml",
+    CARD_MOUNTPOINT "/vic20.xml",
+    CARD_MOUNTPOINT "/amiga.xml"
+  };
+  return config_xml[core_id];
+}
 
 static void sys_begin(unsigned char cmd) {
   mcu_hw_spi_begin();  
@@ -76,7 +91,7 @@ unsigned char sys_get_buttons(void) {
 }
 
 void sys_set_val(char id, uint8_t value) {
-  // sys_debugf("SYS set value %c = %d", id, value);
+  sys_debugf("SYS set value %c = %d", id, value);
   
   sys_begin(SPI_SYS_SETVAL);   // send value command
   mcu_hw_spi_tx_u08(id);              // value id
@@ -134,7 +149,13 @@ bool sys_wait4fpga(void) {
 
   if(timeout) {
     sys_debugf("FPGA ready after %dms!", (500-timeout)*10);
-    sys_set_val('R', 3);    // immediately set reset as the config may change
+
+    // core_id is set now, so handle the legacy cores. The
+    // new config driven cores will (hopefully) handle this
+    // in the init action
+    if(core_id != CORE_ID_UNKNOWN)
+      sys_set_val('R', 3);  // immediately set reset as the config may change
+    
     sys_set_rgb(0x000040);  // blue
     return true;
   }
@@ -144,4 +165,56 @@ bool sys_wait4fpga(void) {
   // FPGA receives requests but cannot answer them
   sys_set_rgb(0x400000);  // red
   return false;
+}
+
+void sys_run_action(config_action_t *action) {
+  if(!action) return;
+  
+  sys_debugf("Running action '%s'", action->name);
+
+  // execute all commands
+  for(int i=0;action->commands[i].code != CONFIG_ACTION_COMMAND_IDLE;i++) {
+    switch(action->commands[i].code) {
+    case CONFIG_ACTION_COMMAND_SET:
+      sys_debugf("SET('%c',%d)", action->commands[i].set.id,
+		 action->commands[i].set.value);
+      sys_set_val(action->commands[i].set.id, action->commands[i].set.value);
+      break;
+      
+    case CONFIG_ACTION_COMMAND_DELAY:
+      sys_debugf("DELAY(%d)", action->commands[i].delay.ms);
+      vTaskDelay(pdMS_TO_TICKS(action->commands[i].delay.ms));
+      break;
+      
+    case CONFIG_ACTION_COMMAND_LOAD:
+      sys_debugf("LOAD %s", action->commands[i].filename);
+
+      // try to read ini file
+      if(inifile_read(action->commands[i].filename) != 0)
+	// ini file loading failed: set core specific defaults
+	core_set_default_images();
+      break;
+      
+    case CONFIG_ACTION_COMMAND_SAVE:
+      sys_debugf("SAVE %s", action->commands[i].filename);
+      inifile_write(action->commands[i].filename);
+      break;
+      
+    case CONFIG_ACTION_COMMAND_HIDE:
+      sys_debugf("HIDE OSD");
+      osd_enable(OSD_INVISIBLE);  // hide OSD
+      break;
+      
+    case CONFIG_ACTION_COMMAND_LINK:
+      sys_debugf("LINK");
+      sys_run_action(action->commands[i].action);
+      break;
+    }
+  }
+}
+
+void sys_run_action_by_name(char *name) {
+  // check for init action
+  config_action_t *action = config_get_action(name);
+  if(action) sys_run_action(action);
 }

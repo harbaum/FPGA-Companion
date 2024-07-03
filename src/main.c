@@ -13,6 +13,7 @@
 #include "../core.h"
 #include "../inifile.h"
 #include "../debug.h"
+#include "../xml.h"
 
 /*-----------------------------------------------------------*/
 /*---            main FPGA communication task            ----*/
@@ -26,9 +27,29 @@ static void com_task(__attribute__((unused)) void *p ) {
   // startup FPGA, this will also put the core into reset
   if(sys_wait4fpga()) {
     // FPGA is ready and can be talked to
-    
+
     // initialitze SD card
     sdc_init();
+    
+    // try to load a config .xml from sd card. If the core has identified itself,
+    // then e.g. atarist.xml will be read. otherwise config.xml
+    FIL fil;
+    if(f_open(&fil, sys_get_config_name(), FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+      config_init();
+
+      UINT br; char c;
+      debugf("XML config open");
+
+      // read byte by byte. Slow but that doesn't hurt ...
+      FRESULT r = f_read(&fil, &c, 1, &br);
+      while(r == FR_OK && br) {
+	xml_parse(c);      
+	r = f_read(&fil, &c, 1, &br);
+      }    
+      f_close(&fil);
+
+      config_dump();
+    } 
 
     // process any pending interrupt. Filter out irq 1 which is the
     // FPGA cold boot event which we ignore since we just booted outselves
@@ -38,10 +59,12 @@ static void com_task(__attribute__((unused)) void *p ) {
     // the DB9 state enables them. This is what hid_handle_event
     // does.
     hid_handle_event();
-    
-    // finally release FPGA from reset
-    sys_set_val('R', 0);
 
+    if(!cfg) {
+      // finally release FPGA from reset
+      sys_set_val('R', 0);
+    }
+      
     // initialize on-screen-display and menu system
     menu_init();
 

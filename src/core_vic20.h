@@ -12,6 +12,6 @@ extern const char *core_vic20_default_images[];
 extern const unsigned char core_vic20_keymap[];
 extern const unsigned char core_vic20_modifier[];
 extern const char *core_vic20_forms[];
-extern menu_variable_t core_vic20_variables[];
+extern menu_legacy_variable_t core_vic20_variables[];
 
 #endif // CORE_VIC20_H

@@ -1,5 +1,9 @@
 /*
   menu.c - MiSTeryNano menu based in u8g2
+
+  This version includes the old static MiSTeryNano type of menu
+  as we as the new config driven one.
+
 */
   
 #include <stdio.h>
@@ -12,10 +16,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <freertos/task.h>
+#include <freertos/queue.h>
 #else
 #include <FreeRTOS.h>
 #include <timers.h>
 #include <task.h>
+#include <queue.h>
 #endif
 
 #include "sdc.h"
@@ -30,7 +36,7 @@
 // spaces removed
 #include "font_helvR08_te.c"
 
-static menu_t menu;
+static menu_legacy_t menu;
 
 #define MENU_FORM_FSEL           -1
 
@@ -40,6 +46,108 @@ static menu_t menu;
 #define MENU_ENTRY_INDEX_OPTIONS  2
 #define MENU_ENTRY_INDEX_VARIABLE 3
 
+/* new menu state */
+typedef struct {
+  int type;
+  int selected; 
+  int scroll;
+  union {
+    config_menu_t *menu;  
+    config_fsel_t *fsel;
+  };
+  
+  // file selector related
+  sdc_dir_t *dir;
+} menu_state_t;
+
+static menu_state_t *menu_state = NULL;
+
+/* =========== handling of variables ============= */
+static menu_variable_t **variables = NULL;
+
+menu_variable_t **menu_get_variables(void) {
+  return variables;
+}
+
+static int menu_variable_get(char id) {
+  for(int i=0;variables[i];i++)
+    if(variables[i]->id == id)
+      return variables[i]->value;
+
+  return 0;  
+}
+
+static void menu_variable_set(char id, int value) {
+  for(int i=0;variables[i];i++) {
+    if(variables[i]->id == id) {
+      if(variables[i]->value != value) {
+	variables[i]->value = value;
+	// also set this in the core
+	sys_set_val(id, value);
+      }
+    }
+  }
+}
+
+static void menu_setup_variable(char id, int value) {
+  // menu_debugf("setup variable '%c' = %d", id, value);
+
+  // simply return if variable already exists
+  int i;
+  for(i=0;variables[i];i++)
+    if(variables[i]->id == id)
+      return;
+
+  // allocate new entry
+  menu_variable_t *variable = malloc(sizeof(menu_variable_t));
+  variable->id = id;
+  variable->value = value;
+
+  // menu_debugf("new variable index %d", i);
+  variables = reallocarray(variables, i+2, sizeof(menu_variable_t*));
+  variables[i] = variable;
+  variables[i+1] = NULL;
+}
+
+static void menu_setup_menu_variables(config_menu_t *menu) {
+  config_menu_entry_t *me = menu->entries;
+  for(int cnt=0;me[cnt].type != CONFIG_MENU_ENTRY_UNKNOWN;cnt++) {
+    if(me[cnt].type == CONFIG_MENU_ENTRY_MENU)
+      menu_setup_menu_variables(me[cnt].menu);
+    
+    if(me[cnt].type == CONFIG_MENU_ENTRY_LIST) {
+      // setup variable ...
+      menu_setup_variable(me[cnt].list->id, me[cnt].list->def);
+      // ... and set in core
+      sys_set_val(me[cnt].list->id, me[cnt].list->def);
+    }
+  }
+}
+
+static void menu_setup_variables(void) {
+  // variables occur in two places:
+  // in the set command used in actions
+  // in menu items (currently only in lists as buttons use actions)
+
+  // actually variables should always show up in the init action,
+  // otherwise they'd be uninitialited (actually set to zero ...)
+  
+  // add null pointer as end marker
+  variables = malloc(sizeof(menu_variable_t *));
+  variables[0] = NULL;
+  
+  // search for variables in all actions
+  for(int a=0;cfg->actions[a];a++)
+    // search for set commands
+    for(int c=0;cfg->actions[a]->commands[c].code != CONFIG_ACTION_COMMAND_IDLE;c++)
+      if(cfg->actions[a]->commands[c].code == CONFIG_ACTION_COMMAND_SET)
+	menu_setup_variable(cfg->actions[a]->commands[c].set.id, 0);
+
+  // search through menu tree for lists
+  menu_setup_menu_variables(cfg->menu);  
+}
+
+
 static void menu_goto_form(int form, int entry) {
   menu.form = form;
   menu.entry = entry;
@@ -47,14 +155,17 @@ static void menu_goto_form(int form, int entry) {
   menu.offset = 0;
 }
 
-menu_variable_t *menu_get_vars(void) {
+menu_legacy_variable_t *menu_get_vars(void) {
   return menu.vars;
 }
 
 void menu_set_value(unsigned char id, unsigned char value) {
-  for(int i=0;menu.vars[i].id;i++)
-    if(menu.vars[i].id == id)
-      menu.vars[i].value = value;
+  if(cfg)
+    menu_variable_set(id, value);
+  else
+    for(int i=0;menu.vars[i].id;i++)
+      if(menu.vars[i].id == id)
+	menu.vars[i].value = value;
 }
 
 // find first occurence of any char in chrs within str
@@ -118,7 +229,7 @@ static int menu_get_subint(const char *s, int n, int m) {
   return atoi(str);
 }
 
-static int menu_variable_get(const char *s) {
+static int menu_legacy_variable_get(const char *s) {
   char id = menu_get_chr(s, MENU_ENTRY_INDEX_VARIABLE);
   if(!id) return -1;
 
@@ -129,7 +240,7 @@ static int menu_variable_get(const char *s) {
   return -1;
 }
 
-static void menu_variable_set(const char *s, int val) {
+static void menu_legacy_variable_set(const char *s, int val) {
   char id = menu_get_chr(s, MENU_ENTRY_INDEX_VARIABLE);
   if(!id) return;
   
@@ -203,7 +314,7 @@ void u8g2_DrawStrT(u8g2_t *u8g2, u8g2_uint_t x, u8g2_uint_t y, const char *s) {
 
 // Draw menu title. Submenu titles are selectable and can be used to return to the
 // parent menu.
-static void menu_draw_title(const char *s) {
+static void menu_legacy_draw_title(const char *s) {
   int x = 1;
 
   // draw left arrow for submenus
@@ -224,7 +335,7 @@ static void menu_draw_title(const char *s) {
   u8g2_SetFont(&u8g2, font_helvR08_te);
 }
 
-static void menu_draw_entry(int y, const char *s) {
+static void menu_legacy_draw_entry(int y, const char *s) {
   const char *buf = menu_get_str(s, MENU_ENTRY_INDEX_LABEL);
 
   int ypos = 13 + 12 * y;
@@ -240,7 +351,7 @@ static void menu_draw_entry(int y, const char *s) {
   // handle second string for 'L'ist entries
   if(s[0] == 'L') {
     // get variable
-    int value = menu_variable_get(s);
+    int value = menu_legacy_variable_get(s);
 
     u8g2_DrawStrT(&u8g2, width/2, ypos, 
 		  menu_get_substr(s, MENU_ENTRY_INDEX_OPTIONS, value));
@@ -327,8 +438,11 @@ static void menu_fs_draw_entry(int row, sdc_dir_entry_t *entry) {
 		 strcmp(entry->name, "..")?folder_icon:
 		 up_icon);
 
-  if(menu.entry == row+menu.offset+1)
-    u8g2_DrawButtonFrame(&u8g2, 0, y, U8G2_BTN_INV, width, 1, 1);     
+  // frame for legacy entry
+  if(!cfg && menu.entry == row+menu.offset+1)
+    u8g2_DrawButtonFrame(&u8g2, 0, y, U8G2_BTN_INV, width, 1, 1);
+  else if(cfg && menu_state->selected == row+menu_state->scroll+1)
+    u8g2_DrawButtonFrame(&u8g2, 0, y, U8G2_BTN_INV, width, 1, 1);
 }
 
 // file selector events
@@ -383,7 +497,7 @@ static void menu_fileselector(int event) {
     }
   } else if(event == FSEL_DRAW) {
     // draw
-    menu_draw_title(menu_get_str(s, MENU_ENTRY_INDEX_LABEL));
+    menu_legacy_draw_title(menu_get_str(s, MENU_ENTRY_INDEX_LABEL));
     
     // draw up to four files
     menu.fs_scroll_entry = NULL;  // assume no scrolling needed
@@ -466,7 +580,7 @@ static void menu_draw_form(const char *s) {
     }
 
     // -------- draw title -----------
-    menu_draw_title(s);
+    menu_legacy_draw_title(s);
     s = strchr(s, ';')+1;
 
     // ------- draw menu entries ------
@@ -478,7 +592,7 @@ static void menu_draw_form(const char *s) {
     // walk over menu string
     int y = 1;
     while(*s) {
-      menu_draw_entry(y++, s);    
+      menu_legacy_draw_entry(y++, s);    
       s = strchr(s, ';')+1;      // skip to next entry
     }
   } else if(menu.form == MENU_FORM_FSEL)
@@ -487,7 +601,7 @@ static void menu_draw_form(const char *s) {
   u8g2_SendBuffer(&u8g2);
 }
 
-static void menu_select(void) {
+static void menu_legacy_select(void) {
   if(menu.form == MENU_FORM_FSEL) {
     menu_fileselector(FSEL_SELECT);
     return;
@@ -519,10 +633,10 @@ static void menu_select(void) {
 
   case 'L': {
     // user has choosen a selection list
-    int value = menu_variable_get(s) + 1;
+    int value = menu_legacy_variable_get(s) + 1;
     int max_value = menu_get_options(s, MENU_ENTRY_INDEX_OPTIONS)-1;
     if(value > max_value) value = 0;    
-    menu_variable_set(s, value);
+    menu_legacy_variable_set(s, value);
   } break;
 
   case 'B': {
@@ -530,7 +644,7 @@ static void menu_select(void) {
     signed char id = menu_get_chr(s, 2);
     
     if(id == 'S')
-      inifile_write();
+      inifile_write(NULL);
 
     // normal reset
     if(id == 'R') {    
@@ -559,7 +673,7 @@ static void menu_select(void) {
   }
 }
 
-static int menu_entry_is_usable(void) {
+static int menu_legacy_entry_is_usable(void) {
   // check if the current entry in the menu is actually selectable
   // (currently only the title of the start form is not)
 
@@ -569,7 +683,7 @@ static int menu_entry_is_usable(void) {
   return (menu.entry == 0)?0:1;
 }
 
-static void menu_entry_go(int step) {
+static void menu_legacy_entry_go(int step) {
   do {
     menu.entry += step;
 
@@ -606,32 +720,496 @@ static void menu_entry_go(int step) {
     if(menu.form == MENU_FORM_FSEL)
       menu_fileselector((step>0)?FSEL_DOWN:FSEL_UP);
     
+  } while(!menu_legacy_entry_is_usable());
+}
+
+static void menu_push(void) {
+  // count existing state entries as the last one would
+  // have the menu pointer being the root menu
+  // pointer
+  int i=0;
+  if(menu_state) {
+    while(menu_state[i].menu != cfg->menu) i++;
+    i++;
+  }
+
+  menu_debugf("stack depth %d", i);
+  
+  menu_state = reallocarray(menu_state, i+1, sizeof(menu_state_t));
+  // move all existing entries up one
+  if(i) {
+    for(int j=i-1;j>=0;j--) {
+      debugf("move state %d to %d", j, j+1);
+      menu_state[j+1] = menu_state[j];
+    }
+  }
+}
+
+// a menu has been closed (which sure wasn't the root menu as that
+// cannot be close). So remove the lowest state stack entry and move
+// all other entries in step down
+static void menu_pop(void) {
+  // this should never happen ...
+  if(!menu_state) return;
+
+  // neither should this as we never really close the
+  // root menu
+  if(menu_state->menu == cfg->menu) {
+    free(menu_state);
+    menu_state = NULL;
+    return;
+  }
+    
+  // count number of entries
+  debugf("CHECK");
+  int i=1; while(menu_state[i-1].menu != cfg->menu) i++;
+  menu_debugf("pop stack depth %d", i);
+
+  if(i>10) exit(0);
+  
+  // move all existing entries down one
+  for(int j=0;j<i-1;j++) {
+    debugf("move state %d to %d", j+1, j);
+    menu_state[j] = menu_state[j+1];
+  }  
+
+  menu_state = reallocarray(menu_state, i-1, sizeof(menu_state_t));
+}
+
+static int menu_count_entries(void) {
+  int entries = 0;
+
+  if(menu_state->type == CONFIG_MENU_ENTRY_MENU)
+    while(menu_state->menu->entries[entries].type != CONFIG_MENU_ENTRY_UNKNOWN)
+      entries++;
+  else if(menu_state->type == CONFIG_MENU_ENTRY_FILESELECTOR)
+    entries = menu_state->dir->len;
+    
+  return entries+1;  // title is also an entry
+}
+
+static bool menu_is_root(void) {
+  return menu_state->menu == cfg->menu;
+}
+
+static int menu_entry_is_usable(void) {
+  // not root menu? Then all entries are usable
+  if(!menu_is_root()) return 1;
+
+  // in root menu only the title is unusable
+  return menu_state->selected != 0;
+}
+
+static void menu_entry_go(int step) {
+  int entries = menu_count_entries();
+  
+  do {
+    menu_state->selected += step;
+    
+    // single step wraps top/bottom, paging does not
+    if(abs(step) == 1) {    
+      if(menu_state->selected < 0) menu_state->selected = entries + menu_state->selected;
+      if(menu_state->selected >= entries) menu_state->selected = menu_state->selected - entries;
+    } else {
+      // limit to top/bottom. Afterwards step 1 in opposite
+      // direction to skip unusable entries
+      if(menu_state->selected < 1) { menu_state->selected = 1; step = 1; }	
+      if(menu_state->selected >= entries) { menu_state->selected = entries - 1; step = -1; }
+    }
+
+    // scrolling needed?
+    if(step > 0) {
+      if(entries <= 5)                            menu_state->scroll = 0;
+      else {
+	if(menu_state->selected <= 3)             menu_state->scroll = 0;
+	else if(menu_state->selected < entries-2) menu_state->scroll = menu_state->selected - 3;
+	else                                      menu_state->scroll = entries-5;
+      }
+    }
+
+    if(step < 0) {
+      if(entries <= 5)                            menu_state->scroll = 0;
+      else {
+	if(menu_state->selected <= 2)             menu_state->scroll = 0;
+	else if(menu_state->selected < entries-3) menu_state->scroll = menu_state->selected - 2;
+	else                                      menu_state->scroll = entries-5;
+      }
+    }    
   } while(!menu_entry_is_usable());
+}
+
+static void menu_draw_title(const char *s, bool arrow, bool selected) {
+  int x = 1;
+
+  // draw left arrow for submenus
+  if(arrow) {
+    u8g2_DrawXBM(&u8g2, 0, 1, 8, 8, icn_left_bits);    
+    x = 8;
+  }
+
+  // draw title in bold and seperator line
+  u8g2_SetFont(&u8g2, u8g2_font_helvB08_tr);
+  u8g2_DrawStr(&u8g2, x, 9, menu_get_str(s, 0));
+  u8g2_DrawHLine(&u8g2, 0, 13, u8g2_GetDisplayWidth(&u8g2));
+
+  if(selected)
+    u8g2_DrawButtonFrame(&u8g2, 0, 9, U8G2_BTN_INV,
+	 u8g2_GetDisplayWidth(&u8g2), 1, 1);
+  
+  // draw the rest with normal font
+  u8g2_SetFont(&u8g2, font_helvR08_te);
+}
+
+static char *menuentry_get_label(config_menu_entry_t *entry) {
+  if(entry->type == CONFIG_MENU_ENTRY_MENU)
+    return entry->menu->label;
+  if(entry->type == CONFIG_MENU_ENTRY_FILESELECTOR)
+    return entry->fsel->label;
+  if(entry->type == CONFIG_MENU_ENTRY_LIST)
+    return entry->list->label;
+  if(entry->type == CONFIG_MENU_ENTRY_BUTTON)
+    return entry->button->label;
+  
+  return NULL;
+}
+
+static int menu_get_list_length(config_menu_entry_t *entry) {
+  int len = 0;  
+  for(;entry->list->listentries[len];len++);
+  return len-1;
+}
+  
+static char *menu_get_listentry(config_menu_entry_t *entry, int value) {
+  if(!entry || entry->type != CONFIG_MENU_ENTRY_LIST) return NULL;
+
+  for(int i=0;entry->list->listentries[i];i++)
+    if(entry->list->listentries[i]->value == value)
+      return entry->list->listentries[i]->label;
+
+  return NULL;
+}
+
+static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) {
+  menu_debugf("row %d: %s '%s'", row,
+	      config_menuentry_get_type_str(entry),
+	      menuentry_get_label(entry));
+
+  // all menu entries use some kind of label
+  char *s = menuentry_get_label(entry);
+  int ypos = 25 + 12 * row;
+  int width = u8g2_GetDisplayWidth(&u8g2);
+  
+  // all menu entries are a plain text
+  u8g2_DrawStr(&u8g2, 1, ypos, s);
+    
+  // prepare highlight
+  int hl_x = 0;
+  int hl_w = width;
+
+  // handle second string for list entries
+  if(entry->type == CONFIG_MENU_ENTRY_LIST) {
+    // get matching variable
+    int value = menu_variable_get(entry->list->id);
+    char *str = menu_get_listentry(entry, value);
+    if(str) u8g2_DrawStr(&u8g2, width/2, ypos, str);
+		  
+    hl_x = width/2;
+    hl_w = width/2;
+  }
+  
+  // some entries have a small icon to the right    
+  if(entry->type == CONFIG_MENU_ENTRY_MENU)
+    u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);    
+  if(entry->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
+    // icon depends if floppy is inserted
+    u8g2_DrawXBM(&u8g2, hl_w-9, ypos-8, 8, 8, 1?icn_floppy_bits:icn_empty_bits);
+  }
+  
+  if(selected)
+    u8g2_DrawButtonFrame(&u8g2, hl_x, ypos, U8G2_BTN_INV, hl_w, 1, 1);
+}
+
+static int menu_wrap_text(int y_in, const char *msg) {  
+  // fetch words until the width is exceeded
+  const char *p = msg;
+  char *b = NULL;
+  int y = y_in;
+  
+  u8g2_SetFont(&u8g2, font_helvR08_te);
+  while(*msg && *p) {
+    // search for end of word
+    while(*p && *p != ' ') p++;
+    
+    // allocate substring
+    b = realloc(b, p-msg+1);
+    strncpy(b, msg, p-msg);
+    b[p-msg]='\0';
+    
+    // check if this is now too long for screen
+    if((u8g2_GetStrWidth(&u8g2, b) >  u8g2_GetDisplayWidth(&u8g2))) {
+      // cut last word to fit to screen
+      while(*p == ' ') p--;
+      while(*p != ' ') p--;
+      b[p-msg]='\0';
+
+      if(y_in) u8g2_DrawStr(&u8g2, (u8g2_GetDisplayWidth(&u8g2)-u8g2_GetStrWidth(&u8g2, b))/2, y, b);
+      y+=11;
+      
+      msg = ++p;
+    }
+    while(*p == ' ') p++;
+  }
+  
+  if(y_in) u8g2_DrawStr(&u8g2, (u8g2_GetDisplayWidth(&u8g2)-u8g2_GetStrWidth(&u8g2, b))/2, y, b);
+  y+=11;
+
+  free(b);
+
+  return y;
+}
+
+// draw a dialog box
+void menu_draw_dialog(const char *title,  const char *msg) {
+  u8g2_ClearBuffer(&u8g2);
+
+  // 13 is the height of the title incl line
+  int y = (64 - 13 - menu_wrap_text(0, msg))/2;
+  
+  u8g2_SetFont(&u8g2, u8g2_font_helvB08_tr);
+  
+  int width = u8g2_GetDisplayWidth(&u8g2);
+  int swid = u8g2_GetStrWidth(&u8g2, title);
+ 
+  // draw title in bold and seperator line
+  u8g2_DrawStr(&u8g2, (width-swid)/2, y+9, title);
+  u8g2_DrawHLine(&u8g2, (width-swid)/2, y+12, swid);
+
+  u8g2_SetFont(&u8g2, font_helvR08_te);
+
+  menu_wrap_text(y+23, msg);
+  
+  u8g2_SendBuffer(&u8g2);
+}
+
+void menu_draw(void) {
+  // draw a test dialog box
+  //  menu_draw_dialog("Title", "This is a rather long text which needs to wrap!");  return;
+  
+  u8g2_ClearBuffer(&u8g2);
+ 
+  if(menu_state->type == CONFIG_MENU_ENTRY_MENU) {
+    // =============== draw a regular menu =================
+    menu_debugf("drawing '%s'", menu_state->menu->label);  
+    
+    // draw the title
+    menu_draw_title(menu_state->menu->label, !menu_is_root(), menu_state->selected == 0);
+
+    // draw up to four entries
+    config_menu_entry_t *entry = menu_state->menu->entries;
+    for(int i=0;i<4 && entry[i].type != CONFIG_MENU_ENTRY_UNKNOWN;i++)
+      menu_draw_entry(entry+i+menu_state->scroll, i, menu_state->selected == menu_state->scroll+i+1);    
+  } else {
+    // =============== draw a fileselector =================    
+    menu_debugf("drawing '%s'", menu_state->fsel->label);
+    
+    menu_draw_title(menu_state->fsel->label, true, menu_state->selected == 0);
+
+    // draw up to four entries
+    for(int i=0;i<4 && i<menu_state->dir->len-menu_state->scroll;i++) {            
+      debugf("file %s", menu_state->dir->files[i+menu_state->scroll].name);
+
+      menu_fs_draw_entry(i, &menu_state->dir->files[i+menu_state->scroll]);
+    }
+  }
+    
+  u8g2_SendBuffer(&u8g2);
+}
+
+void menu_goto(config_menu_t *menu) {
+  menu_push();
+  
+  // prepare menu state ...
+  menu_state->menu = menu;
+  menu_state->selected = 1;
+  menu_state->scroll = 0;
+  menu_state->type = CONFIG_MENU_ENTRY_MENU;
+}
+
+static void menu_file_selector_open(config_menu_entry_t *entry) {
+  menu_push();
+  menu_state->fsel = entry->fsel;
+  menu_state->selected = 1;
+  menu_state->scroll = 0;
+  menu_state->type = CONFIG_MENU_ENTRY_FILESELECTOR;
+  
+  // scan file system
+  menu_state->dir = sdc_readdir(entry->fsel->index, NULL, (void*)entry->fsel->ext);
+
+  // try to jump to current file. Get the current image name and path
+  char *name = sdc_get_image_name(entry->fsel->index);
+  debugf("trying to jump to %s", name);
+  if(name) {
+    // try to find name in file list
+    for(int i=0;i<menu_state->dir->len;i++) {
+      if(strcmp(menu_state->dir->files[i].name, name) == 0) {
+	debugf("found preset entry %d", i);
+	
+	// file found, adjust entry and offset
+	menu_state->selected = i+1;
+	
+	if(menu_state->dir->len > 4 && menu_state->selected > 3) {
+	  debugf("more than 4 files an selected is > 3");
+	  if(menu_state->selected < menu_state->dir->len-1) menu_state->scroll = menu_state->selected - 3;
+	  else                                              menu_state->scroll = menu_state->dir->len-4;
+	}
+      }
+    }
+  }
+  
+}
+
+static void menu_fileselector_select(sdc_dir_entry_t *entry) {
+  int drive = menu_state->fsel->index;
+  debugf("drive %d, file selected '%s'", drive, entry->name);
+    
+  if(entry->is_dir) {
+    if(entry->name[0] == '/') {
+      // User selected the "No Disk" entry
+      // return to parent form
+      menu_pop();
+      // Eject
+      sdc_image_open(drive, NULL);
+    } else {	
+      // check if we are going up one dir and try to select the
+      // directory we are coming from
+      char *prev = NULL; 
+      if(strcmp(entry->name, "..") == 0) {
+	prev = strrchr(sdc_get_cwd(drive), '/');
+	if(prev) prev++;
+      }
+
+      menu_state->selected = 1;   // start by highlighting '..'
+      menu_state->scroll = 0;
+      menu_state->dir = sdc_readdir(drive, entry->name, (void*)menu_state->fsel->ext);	
+      
+      // prev is still valid, since sdc_readdir doesn't free the old string when going
+      // up one directory. Instead it just terminates it in the middle	
+      if(prev) {
+	menu_debugf("up to %s", prev);
+	
+	// try to find previous dir entry in current dir	  
+	for(int i=0;i<menu_state->dir->len;i++) {
+	  if(menu_state->dir->files[i].is_dir && strcmp(menu_state->dir->files[i].name, prev) == 0) {
+	    // file found, adjust entry and offset
+	    menu_state->selected = i+1;
+
+	    if(menu_state->dir->len > 4 && menu_state->selected > 3) {
+	      if(menu_state->selected < menu_state->dir->len - 1) menu_state->scroll = menu_state->selected - 3;
+	      else                                                menu_state->scroll = menu_state->selected - 5;
+	    }
+	  }
+	}
+      }
+    }
+  } else {
+    // request insertion of this image
+    sdc_image_open(drive, entry->name);
+    
+    // return to parent form
+    menu_pop();
+  }
+}
+
+static void menu_select(void) {
+  // if the title was selected, then goto parent form
+  if(menu_state->selected == 0) {
+    menu_pop();
+    return;
+  }
+
+  // in fileselector
+  if(menu_state->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
+    menu_fileselector_select(&menu_state->dir->files[menu_state->selected-1]);
+    return;
+  }
+  
+  config_menu_entry_t *entry = menu_state->menu->entries + menu_state->selected - 1;
+  menu_debugf("Selected: %s '%s'", config_menuentry_get_type_str(entry), menuentry_get_label(entry));
+
+  switch(entry->type) {
+  case CONFIG_MENU_ENTRY_FILESELECTOR:
+    // user has choosen a file selector
+    menu_file_selector_open(entry);
+    break;
+    
+  case CONFIG_MENU_ENTRY_MENU:
+    menu_goto(entry->menu);
+    break;
+
+  case CONFIG_MENU_ENTRY_LIST: {
+    // user has choosen a selection list
+    int value = menu_variable_get(entry->list->id) + 1;
+    int max_value = menu_get_list_length(entry);
+    if(value > max_value) value = 0;    
+    menu_variable_set(entry->list->id, value);
+
+    // check if there's an action connected to changing this
+    // list. This e.g. happens when changing system settings is
+    // meant to trigger a (cold) boot
+    if(entry->list->action)
+      sys_run_action(entry->list->action);
+
+  } break;
+
+  case CONFIG_MENU_ENTRY_BUTTON:
+    if(entry->button->action)
+      sys_run_action(entry->button->action);
+    break;
+	
+  default:
+    menu_debugf("unknown %s", config_menuentry_get_type_str(entry));    
+  }
 }
 
 void menu_do(int event) {
   // -1 is a timer event used to scroll the current file name if it's to long
   // for the OSD
   if(event < 0) {
-    if((menu.form == MENU_FORM_FSEL) && (menu.fs_scroll_entry))
-      menu_fs_scroll_entry(menu.fs_scroll_entry);
-    
+    if(!cfg) {
+      // legacy menu fileselector animation
+      if((menu.form == MENU_FORM_FSEL) && (menu.fs_scroll_entry))
+	menu_fs_scroll_entry(menu.fs_scroll_entry);
+    }
+      
     return;
   }
+  
+  menu_debugf("do %d", event);
   
   if(event)  {
     if(event == MENU_EVENT_SHOW)   osd_enable(OSD_VISIBLE);
     if(event == MENU_EVENT_HIDE)   osd_enable(OSD_INVISIBLE);
-    
-    if(event == MENU_EVENT_UP)     menu_entry_go(-1);
-    if(event == MENU_EVENT_DOWN)   menu_entry_go( 1);
 
-    if(event == MENU_EVENT_PGUP)   menu_entry_go(-4);
-    if(event == MENU_EVENT_PGDOWN) menu_entry_go( 4);
+    if(!cfg) {    
+      if(event == MENU_EVENT_UP)     menu_legacy_entry_go(-1);
+      if(event == MENU_EVENT_DOWN)   menu_legacy_entry_go( 1);
 
-    if(event == MENU_EVENT_SELECT) menu_select();
-  }  
-  menu_draw_form(menu.forms[menu.form]);
+      if(event == MENU_EVENT_PGUP)   menu_legacy_entry_go(-4);
+      if(event == MENU_EVENT_PGDOWN) menu_legacy_entry_go( 4);
+
+      if(event == MENU_EVENT_SELECT) menu_legacy_select();
+    } else {
+      if(event == MENU_EVENT_UP)     menu_entry_go(-1);
+      if(event == MENU_EVENT_DOWN)   menu_entry_go( 1);
+
+      if(event == MENU_EVENT_PGUP)   menu_entry_go(-4);
+      if(event == MENU_EVENT_PGDOWN) menu_entry_go( 4);
+
+      if(event == MENU_EVENT_SELECT) menu_select();
+    }
+  }
+  if(!cfg) menu_draw_form(menu.forms[menu.form]);
+  else     menu_draw();
 }
 
 TimerHandle_t menu_timer_handle;
@@ -664,57 +1242,78 @@ static void menu_task(__attribute__((unused)) void *parms) {
 }
 
 void menu_init(void) {
-  menu_debugf("initializing");
+  menu_debugf("Initializing");
+
+  // check if a config was loaded. If no, use the legacy menu
+  if(!cfg) {  
+    menu_debugf("Using legacy menu");
   
-  memset(&menu, 0, sizeof(menu));
+    memset(&menu, 0, sizeof(menu));
 
-  menu.forms = core_get_forms();
-  menu.vars = core_get_variables();
+    menu.forms = core_get_forms();
+    menu.vars = core_get_variables();
 
-  osd_init();
+    osd_init();
 
-  // read config etc from sd card
-  if(inifile_read() != 0) {
-    // reading ini file failed
+    // read config etc from sd card
+    if(inifile_read(NULL) != 0) {
+      // reading ini file failed
+      
+      // set core specific defaults
+      core_set_default_images();
+    }
     
-    // set core specific defaults
-    core_set_default_images();
-  }
+    menu_goto_form(0, 1); // first form selected at start
+    
+    // send initial values for all variables
+    for(int i=0;menu.vars[i].id;i++)
+      sys_set_val(menu.vars[i].id, menu.vars[i].value);
+    
+    // release the core's reset, so it can start
+    // and cold reset the core, just in case ...
+    sys_set_val('R', 3);
+    sys_set_val('R', 0);
+  
+    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c64 core, c1541 reset at power-up
+      sys_set_val('Z', 1);
+      sys_set_val('Z', 0);
+    }
+    
+    menu_do(0);
+  } else {
+    osd_init();
+ 
+    // a config was loaded, use that
+    menu_debugf("Using configured menu");
 
-  menu_goto_form(0, 1); // first form selected at start
-  
-  // send initial values for all variables
-  for(int i=0;menu.vars[i].id;i++)
-    sys_set_val(menu.vars[i].id, menu.vars[i].value);
-  
-  // release the core's reset, so it can start
-  // and cold reset the core, just in case ...
-  sys_set_val('R', 3);
-  sys_set_val('R', 0);
-  
-  if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c64 core, c1541 reset at power-up
-    sys_set_val('Z', 1);
-    sys_set_val('Z', 0);
-  }
+    menu_debugf("Setting up variables");
+    menu_setup_variables();
+    
+    menu_debugf("Processing init action");
+    sys_run_action_by_name("init");
 
+    menu_goto(cfg->menu);    
+
+    // ready to run core
+    sys_run_action_by_name("ready");
+  }
+    
   // switch MCU controlled leds off
   sys_set_leds(0x00);
-
-  menu_do(0);
-
+    
   // create a 25 Hz timer that frequently wakes the OSD thread
   // allowing for animations
   menu_timer_handle = xTimerCreate("Menu timer", pdMS_TO_TICKS(40), pdTRUE,
 				   NULL, menu_timer);
-
+  
   // message queue from USB to OSD
   menu_queue = xQueueCreate(10, sizeof( long ) );
-
+  
   // start a thread for the on screen display    
   xTaskCreate(menu_task, (char *)"menu_task", 4096, NULL, configMAX_PRIORITIES-3, NULL);
 }
- 
-void menu_notify(unsigned long msg) {  
+  
+void menu_notify(unsigned long msg) {
   xQueueSendToBackFromISR(menu_queue, &msg,  ( TickType_t ) 0);
 }
 

@@ -25,18 +25,26 @@ static int iswhite(char c) {
   return c == ' ' || c == '\r' || c == '\n' || c == '\t';
 }
   
-int inifile_read(void) {
-  if(!core_id) {
+int inifile_read(char *name) {
+  if(!core_id && !name) {
     ini_debugf("Unable to load core specific setting as no core has been identified");
     return -1;
   }
-    
+
+  char *filename = (char*)settings_file[core_id];
+  if(name) {
+    filename = malloc(strlen(CARD_MOUNTPOINT) + strlen(name) + 2);  // MP+'/'+name+'\0'
+    strcpy(filename, CARD_MOUNTPOINT);
+    strcat(filename, "/");
+    strcat(filename, name);
+  }
+  
   ini_debugf("Reading settings from '%s'", settings_file[core_id]);
 
   sdc_lock();  // get exclusive access to the file system
 
   FIL fil;
-  if(f_open(&fil, settings_file[core_id], FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+  if(f_open(&fil, filename, FA_OPEN_EXISTING | FA_READ) == FR_OK) {
     char buffer[FF_LFN_BUF+10];
 
     ini_debugf("Settings file opened");
@@ -101,31 +109,51 @@ int inifile_read(void) {
     }
     f_close(&fil);
   } else {
-    ini_debugf("Error opening file %s", settings_file[core_id]);
+    if(name) free(filename);
+    ini_debugf("Error opening file %s", filename);
     sdc_unlock();
     return -1;
   }
+  if(name) free(filename);
   sdc_unlock();
   return 0;
 }
 
-void inifile_write(void) {
-  ini_debugf("Write settings to %s", settings_file[core_id]);
+void inifile_write(char *name) {
+  char *filename = (char*)settings_file[core_id];
+  if(name) {
+    filename = malloc(strlen(CARD_MOUNTPOINT) + strlen(name) + 2);  // MP+'/'+name+'\0'
+    strcpy(filename, CARD_MOUNTPOINT);
+    strcat(filename, "/");
+    strcat(filename, name);
+  }
+
+  ini_debugf("Write settings to %s", filename);
   
   sdc_lock();  // get exclusive access to the file system
   
   // saving does not work, yet, as there is no SD card write support by now
   FIL file;
-  if(f_open(&file, settings_file[core_id], FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {
-    f_puts("; MiSTeryNano settings\n", &file);
+  if(f_open(&file, filename, FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {    
+    f_puts("; FPGA Companion settings\n", &file);
 
     // write variable values
     f_puts("\n; variables\n", &file);
-    menu_variable_t *vars = menu_get_vars();
-    for(int i=0;vars[i].id;i++) {
-      char str[10];
-      sprintf(str, "var %c=%d\n", vars[i].id, vars[i].value);
-      f_puts(str, &file);
+
+    if(!cfg) {    
+      menu_legacy_variable_t *vars = menu_get_vars();
+      for(int i=0;vars[i].id;i++) {
+	char str[10];
+	sprintf(str, "var %c=%d\n", vars[i].id, vars[i].value);
+	f_puts(str, &file);
+      }
+    } else {
+      menu_variable_t **vars = menu_get_variables();
+      for(int i=0;vars[i];i++) {
+	char str[10];
+	sprintf(str, "var %c=%d\n", vars[i]->id, vars[i]->value);
+	f_puts(str, &file);
+      }
     }
 
     // write image file names
@@ -148,5 +176,6 @@ void inifile_write(void) {
   } else
     ini_debugf("Error opening file");
   
+  if(name) free(filename);
   sdc_unlock();
 }

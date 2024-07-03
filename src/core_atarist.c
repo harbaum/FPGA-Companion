@@ -61,7 +61,7 @@ const char *core_atarist_forms[] = {
 };
 
 // variable ids must match the ones in the menu string
-menu_variable_t core_atarist_variables[] = {
+menu_legacy_variable_t core_atarist_variables[] = {
   { 'C', { 0 }},    // default chipset = ST
   { 'M', { 0 }},    // default memory = 4MB
   { 'V', { 0 }},    // default video = color
