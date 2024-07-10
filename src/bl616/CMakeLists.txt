@@ -23,6 +23,8 @@ target_sources(app PRIVATE
    	../sdc.c
    	../osd_u8g2.c
    	../sysctrl.c
+   	../config.c
+   	../xml.c
 )
 
 file(GLOB COMPONENT_SRCS ../u8g2/csrc/*.c  ../u8g2/sys/bitmap/common/*.c)
