@@ -14,6 +14,7 @@ const char * core_c64_default_images[] = {
   CARD_MOUNTPOINT "/c64prg.prg",
   CARD_MOUNTPOINT "/c64kernal.bin",
   CARD_MOUNTPOINT "/c64tap.tap",
+  CARD_MOUNTPOINT "/c64flt.flt",
   NULL
 };
 
@@ -45,7 +46,7 @@ static const char system_form_c64[] =
   "L,SID Right:,Same|DE00|D420|D500|DF00,K;"
   "L,SID Filter:,Default|Custom 1|Custom 2|Custom 3|Adjustable,H;"
   "L,SID Fc Ofs:,0|1|2|3|4|5,>;"
-  "L,RS232 mode:,VIC-1011|UP9600,<;"
+  "L,RS232 mode:,VIC-1011|UP9600|SwiftLnk DE|SwiftLnk DF|SwiftLnk D7,<;"
   "L,GeoRAM:,Off|On,#;"
   "L,Tape Sound:,Off|On,I;"
   "B,C1541 Reset,Z;"
@@ -59,6 +60,7 @@ static const char storage_form_c64[] =
   "F,PRG BASIC:,2|prg;"                 // fileselector for PRG
   "F,C64 Kernal:,3|bin;"                // fileselector for Kernal ROM
   "F,TAP Tape:,4|tap;"                  // fileselector for TAP
+  "F,FLT Filter:,5|flt;"                // fileselector for FLT SID Filter
   "L,Disk prot.:,None|8:,P;";           // Enable/Disable Floppy write protection
 
 static const char settings_form_c64[] =

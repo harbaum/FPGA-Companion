@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- VIC20 configuration -->
+<config name="VIC20Nano" version="0">
+  <actions>
+    <!-- the init action is being executed immediately -->
+    <!-- when this file has been loaded -->
+    <action name="init">
+      <!-- (try to) load config from sd card -->
+      <load file="vic20.ini"/>
+      <set id="R" value="1"/>  <!-- keep machine in reset -->
+    </action>
+    
+    <!-- the ready action is being executed once all -->
+    <!-- initialization has been done -->
+    <action name="ready">
+      <set id="R" value="0"/>  <!-- release reset -->
+    </action>
+      
+    <action name="save">
+      <!-- save config to sd card -->
+      <save file="vic20.ini"/>
+    </action>
+      
+    <action name="reset">
+      <!-- trigger a system reset -->
+      <set id="R" value="1"/>
+      <delay ms="10"/>
+      <set id="R" value="0"/>      
+    </action>
+    
+    <action name="reset_hide">
+      <!-- trigger a system reset and hide OSD -->
+      <link action="reset"/>
+      <hide/>      
+    </action>      
+
+    <action name="cold_reset">
+      <!-- trigger a cold system reset -->
+      <set id="R" value="3"/>
+      <delay ms="10"/>
+      <set id="R" value="0"/>      
+    </action>
+    
+    <action name="cold_reset_hide">
+      <!-- trigger a cold reset and hide OSD -->
+      <link action="cold_reset"/>
+      <hide/>      
+    </action>
+
+    <action name="c1541_reset">
+      <!-- trigger a cold system reset -->
+      <set id="Z" value="1"/>
+      <delay ms="10"/>
+      <set id="Z" value="0"/>      
+    </action>
+
+    <action name="c1541_reset_hide">
+      <!-- trigger a c1541 reset and hide OSD -->
+      <link action="c1541_reset"/>
+      <hide/>      
+    </action>
+  </actions>
+  
+  <menu label="VIC20Nano">
+    <fileselector label="Floppy 8:" ext="d64;g64" index="0"/>
+    <menu label="System">
+      <list label="Joyport:" id="Q" default="7">
+ <listentry label="Retro D9" value="0"/>
+ <listentry label="USB #1" value="1"/>
+ <listentry label="USB #2" value="2"/>
+ <listentry label="NumPad" value="3"/>
+ <listentry label="DualShock" value="4"/>
+ <listentry label="Mouse" value="5"/>
+ <listentry label="Paddle" value="6"/>
+ <listentry label="Off" value="7"/>
+      </list>
+      <list label="C1541 ROM:" id="D" default="1">
+ <listentry label="Dolphin DOS" value="0"/>
+ <listentry label="CBM DOS" value="1"/>
+ <listentry label="Speed DOS P" value="2"/>
+ <listentry label="Jiffy DOS" value="3"/>
+      </list>
+      <list label="RAM $04 3K:" id="U" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="RAM $20 8K:" id="X" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="RAM $40 8K:" id="Y" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="RAM $60 8K:" id="N" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="RAM $A0 8K:" id="G" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="Video Std:" id="E" default="0">
+ <listentry label="PAL" value="0"/>
+ <listentry label="NTSC" value="1"/>
+      </list>
+      <list label="Vid. cent:" id="J" default="1">
+ <listentry label="Both" value="0"/>
+ <listentry label="Horz" value="1"/>
+ <listentry label="Vert" value="2"/>
+      </list>
+      <list label="CRT write:" id="V" default="1">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="Tape Sound:" id="I" default="1">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+ <button label="C1541 Reset" action="c1541_reset_hide"/>
+ <button label="Cold Boot" action="cold_reset_hide"/>
+    </menu>
+    <menu label="Storage">
+      <fileselector label="FLOPPY 8:" ext="d64;g64" index="0" default="disk8.d64"/>
+      <fileselector label="CRT ROM:" ext="crt" index="1" default="vic20crt.crt"/>
+      <fileselector label="PRG BASIC:" ext="prg" index="2" default="vic20prg.prg"/>
+      <fileselector label="VIC20 KERNAL:" ext="bin" index="3" default="vic20kernal.bin"/>
+      <fileselector label="TAP TAPE:" ext="tap" index="4" default="vic20tap.tap"/>
+      <list label="Disk prot.:" id="P" default="0">
+	<listentry label="None" value="0"/>
+	<listentry label="8:" value="1"/>
+      </list>
+    </menu>
+    <menu label="Settings">
+      <list label="Screen:" id="W" default="0">
+	<listentry label="Normal" value="0"/>
+	<listentry label="Wide" value="1"/>
+      </list>
+      <list label="Scanlines:" id="S" default="0">
+	<listentry label="None" value="0"/>
+	<listentry label="25%" value="1"/>
+	<listentry label="50%" value="2"/>
+	<listentry label="75%" value="3"/>
+      </list>
+      <list label="Volume:" id="A" default="2">
+	<listentry label="Mute" value="0"/>
+	<listentry label="33%" value="1"/>
+	<listentry label="66%" value="2"/>
+	<listentry label="100%" value="3"/>
+      </list>
+      <button label="Save settings" action="save"/>
+    </menu>
+    <button label="Reset" action="reset_hide"/>
+  </menu>    
+</config>
