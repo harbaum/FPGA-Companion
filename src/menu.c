@@ -969,10 +969,11 @@ static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) 
   
   // some entries have a small icon to the right    
   if(entry->type == CONFIG_MENU_ENTRY_MENU)
-    u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);    
+    u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);
   if(entry->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
-    // icon depends if floppy is inserted
-    u8g2_DrawXBM(&u8g2, hl_w-MENU_ENTRY_BASE, ypos-8, 8, 8, 1?icn_floppy_bits:icn_empty_bits);
+    // icon depends if floppy is inserted xyz
+    u8g2_DrawXBM(&u8g2, hl_w-MENU_ENTRY_BASE, ypos-8, 8, 8,
+	 sdc_get_image_name(entry->fsel->index)?icn_floppy_bits:icn_empty_bits);
   }
   
   if(selected)
