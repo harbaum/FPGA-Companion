@@ -38,6 +38,17 @@ remove/bridge diodes.
 
 ## Building
 
+Get the esp-idf as explained [here](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/linux-macos-setup.html) and install the toolchain:
+
+```
+git clone -b v5.2.2 --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+./install.sh esp32s2,esp32s3
+. ./export.sh
+````
+
+You'll then need to make a few adjustments:
+
 First specify which CPU you are using. Either
 
 ```
@@ -58,18 +69,19 @@ manually set
 ```
 
 Then enter the menu by
+
 ```
 idf.py menuconfig
 ```
 
-Navigate into ```Component Config``` and then
-into ```FAT Filesystem Support```. There activate the
-```Enable fast seek algorithm ...``` option,
-set the ```Sector Size``` to 512 and set
-```Long filename support``` to ```Long filename buffer in heap```.
+and change a few settings:
 
-Navigate to ```Component Config``` and then to ```Wear Leveling``` and
-set ```Wear Levelling library sector size``` to 512.
+- Navigate into ```Component Config``` and then into ```FAT Filesystem Support```.
+  - Activate the ```Enable fast seek algorithm ...``` option
+  - Set the ```Sector Size``` to 512
+  - Set ```Long filename support``` to ```Long filename buffer in heap```
+- Navigate to ```Component Config``` and then to ```Wear Leveling```
+  - Set ```Wear Levelling library sector size``` to 512
 
 Finally start the build with 
 

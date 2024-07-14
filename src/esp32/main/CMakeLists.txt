@@ -14,6 +14,8 @@ idf_component_register(SRCS
 	"../../core_c64.c"
 	"../../core_vic20.c"
 	"../../core_amiga.c"
+	"../../config.c"
+	"../../xml.c"
 	"../mcu_hw.c"
 	${U8G2_SRC}	
 	../../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
