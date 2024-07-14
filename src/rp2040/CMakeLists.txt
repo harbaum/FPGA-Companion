@@ -37,6 +37,8 @@ add_executable(${PROJECT}
 	../fatfs/source/ffunicode.c
 	../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
 	../tusb_xinput/xinput_host.c
+	../config.c
+	../xml.c
 )
 
 family_add_pico_pio_usb(${PROJECT})
