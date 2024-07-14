@@ -1,11 +1,12 @@
 # MiSTeryNano FPGA companion ESP32 variant
 
-The is the variant of the MiSTeryNano FPGA companion firmware
-for the ESP32-S2 and ESP32-S3.
+This is the variant of the
+[MiSTeryNano](https://github.com/harbaum/MiSTeryNano) FPGA companion
+firmware for the ESP32-S2 and ESP32-S3. 
 
 ## USB Support
 
-You need a ESP32 variant with native USB support, preferrably through
+You need an ESP32 variant with native USB support, preferrably through
 a second USB connector. Such a board has two USB-C connectors, one
 usually being labeled COM and servicing a USB UART (COM port) as
 typical for ESP32 boards and the second one giving access to the
@@ -15,26 +16,32 @@ connect a device like a keyboard or a mouse.
 Currently the ESP32-S2 and ESP32-S3 are supported. Still, USB support
 on these devices is rather limited and only one directly connected USB
 device is supported. Hubs are not supported and thus the use of a
-keyboard/mouse combo device makes the most sense for a retro home
-computer setup.
+(wireless) keyboard/mouse combo device like the [Rii
+R8](http://www.riitek.eu/DE/Produkte/RT-MWK08RF_DE.html) makes the
+most sense for a retro home computer setup. This does not leave a port
+for a USB joystick which will instead have to be e.g. a retro joystick
+connected directly to the FPGA.
 
 ### Hardware modifications
 
 Most ESP32 boards that come with two USB ports are designed to
 be powered from one of three power sources: The COM USB, the
-native USB or an external 5V power source.
+native USB or an external 5V power source, but no to provide power
+_to_ any of these.
 
 For this project it's preferred if the whole setup can be pwoered from
-the COM USB port providing power to devices connected to the native
-USB. Furthermore the FPGA may also be powered from this source.  Some
-boards have solder jumpers e.g. labeled ```USB OTG``` and ```IN-OUT```
-which can provide this. On other boards it may be necessary to
-remove/bridge diodes.
+the COM USB port providing power to other USB devices connected to the
+native USB. Furthermore the FPGA may also be powered from this source.
+Some boards have solder jumpers e.g. labeled ```USB OTG``` and
+```IN-OUT``` which can provide this. On other boards it may be
+necessary to remove/bridge diodes.
 
 ## Features and limitations
 
   - Requires an ESP32 variante with USB host support (ESP32-S2 or S3)
   - Only one USB device possible (no hubs)
+  - Can provide wireless network connectivity (not yet implemented)
+  - Can provide support for Bluetooth peripherials (not yet implemented)
 
 ## Building
 
