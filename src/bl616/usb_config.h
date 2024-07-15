@@ -6,6 +6,8 @@
 #ifndef CHERRYUSB_CONFIG_H
 #define CHERRYUSB_CONFIG_H
 
+#define CHERRYUSB_VERSION_STR  "1.x.x"
+
 // new in 1.0.0:
 #define CONFIG_USB_EHCI_HCOR_OFFSET     (0x10)
 #define CONFIG_USBHOST_MAX_BUS              1
