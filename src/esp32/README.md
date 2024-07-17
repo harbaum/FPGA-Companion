@@ -89,7 +89,7 @@ and change a few settings:
   - Set ```Long filename support``` to ```Long filename buffer in heap```
 - Navigate to ```Component Config``` and then to ```Wear Leveling```
   - Set ```Wear Levelling library sector size``` to 512
-- Navigate to ```Component Config``` and then to ```FreeRTOS`` and ```Kernel````
+- Navigate to ```Component Config``` and then to ```FreeRTOS``` and ```Kernel```
   - Set ```configTICK_RATE_HZ``` to 1000
 
 Finally start the build with 
