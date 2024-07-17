@@ -61,6 +61,25 @@ Additional debug output is sent via UART at 115200 bit/s on GP0
 | GP19 | MOSI | SPI data to FPGA |
 | GP22 | IRQn | SPI interrupt from FPGA |
 
+## Using the internal micro USB connector
+
+The RP2040 can use the pins GP2 and GP3 for a USB host port as
+depicted below. This is the default configuration for the
+FPGA Companion, although it's possible to use the standard
+on-board micro USB connector instead.
+
+To do so in the file ```tusb_config.h``` the PIO USB
+needs to be disabled by setting the following value
+to 0:
+
+```
+// change to 0 if using on-board native micro USB
+// change to 1 if using pico-pio-usb as host controller for raspberry rp2040
+#define CFG_TUH_RPI_PIO_USB   1
+```
+
+To use this you need a micro-USB to USB-A-OTG adapter.
+
 # Example wiring
 
 ![Tang Nano 20k with Raspberry Pi Pico](pico_tn20k.png)

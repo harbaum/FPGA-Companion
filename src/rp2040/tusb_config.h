@@ -35,6 +35,7 @@
 //--------------------------------------------------------------------+
 
 #if CFG_TUSB_MCU == OPT_MCU_RP2040
+// change to 0 if using on-board native micro USB
 // change to 1 if using pico-pio-usb as host controller for raspberry rp2040
 #define CFG_TUH_RPI_PIO_USB   1
 #define BOARD_TUH_RHPORT      CFG_TUH_RPI_PIO_USB

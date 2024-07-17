@@ -73,7 +73,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   uint16_t vid, pid;
   tuh_vid_pid_get(dev_addr, &vid, &pid);
   usb_debugf("[%04x:%04x][%u] HID Interface%u, Protocol = %s",
-	     vid, pid, dev_addr, instance, protocol_str[itf_protocol]);
+  	     vid, pid, dev_addr, instance, protocol_str[itf_protocol]);
 
   // search for a free hid entry
   int idx;
@@ -112,7 +112,7 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
 }
 
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len) {
-  usb_debugf("[%u] HID Interface%u", dev_addr, instance);
+  // usb_debugf("[%u] HID Interface%u", dev_addr, instance);
 
   // find matching hid report
   for(int idx=0;idx<MAX_HID_DEVICES;idx++)
@@ -134,15 +134,15 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 extern TaskHandle_t com_task_handle;
 static SemaphoreHandle_t sem;
 
-static void irq_handler(__attribute__((unused)) unsigned int gpio,
-			__attribute__((unused)) uint32_t event_mask) {
-  // debugf("IRQ %u %lu", gpio, event_mask);
+static void irq_handler(void) {
   // Disable interrupt. It will be re-enabled by the com task
   gpio_set_irq_enabled(22, GPIO_IRQ_LEVEL_LOW, false);
 
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR( com_task_handle, &xHigherPriorityTaskWoken );
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  if(com_task_handle) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR( com_task_handle, &xHigherPriorityTaskWoken );
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  }
 }
 
 void mcu_hw_spi_init(void) {
@@ -170,11 +170,20 @@ void mcu_hw_spi_init(void) {
   // The interruput input isn't strictly part of the SPi
   // The interrupt is active low on GP22
   debugf("  IRQn = %d", 22);
-  gpio_set_irq_enabled_with_callback(22, GPIO_IRQ_LEVEL_LOW, 1, irq_handler);
+  // set handler but not enable yet as the main task may not be ready  
+  gpio_add_raw_irq_handler(22, irq_handler);  
 }
 
 void mcu_hw_irq_ack(void) {
-  // re-enable the interrupt since it was now serviced outside the irq handeler
+  static bool first = true;
+
+  if(first) {
+    debugf("enable IRQ");
+    irq_set_enabled(IO_IRQ_BANK0, true);
+    first = false;
+  }
+  
+  // re-enable the interrupt since it was now serviced outside the irq handler
   gpio_set_irq_enabled(22, GPIO_IRQ_LEVEL_LOW, 1); 
 }
 

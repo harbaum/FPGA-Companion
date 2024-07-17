@@ -38,6 +38,7 @@ add_executable(${PROJECT}
 	../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
 	../tusb_xinput/xinput_host.c
 	../config.c
+	../freertos_callbacks.c
 	../xml.c
 )
 
@@ -45,7 +46,6 @@ family_add_pico_pio_usb(${PROJECT})
 
 target_compile_definitions(${PROJECT} PRIVATE
         PIO_USB_DP_PIN_DEFAULT=2
-#	CFG_TUSB_DEBUG=3
         )
 
 target_include_directories(${PROJECT} PRIVATE

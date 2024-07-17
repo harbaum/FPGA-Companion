@@ -77,10 +77,10 @@ static void com_task(__attribute__((unused)) void *p ) {
   debugf("Entering main loop");
   
   for(;;) {
-    ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
-    sys_handle_interrupts(sys_irq_ctrl(0xff));
-      
     mcu_hw_irq_ack();  // re-enable interrupt
+    
+    ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
+    sys_handle_interrupts(sys_irq_ctrl(0xff));      
   }
 }
 
