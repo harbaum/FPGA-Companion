@@ -426,10 +426,12 @@ void spi_isr(uint8_t pin) {
   if (pin == SPI_PIN_IRQ) {
     // disable further interrupts until thread has processed the current message
     bflb_irq_disable(gpio->irq_num);
-    
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR( com_task_handle, &xHigherPriorityTaskWoken );
-    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+
+    if(com_task_handle) {    
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      vTaskNotifyGiveFromISR( com_task_handle, &xHigherPriorityTaskWoken );
+      portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+    }
   }
 }
 

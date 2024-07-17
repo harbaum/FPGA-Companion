@@ -93,7 +93,7 @@ void hid_host_device_event(hid_host_device_handle_t hid_device_handle,
 
         USB_ERROR_CHECK( hid_host_device_open(hid_device_handle, &dev_config) );
 	// the following fails on the Rii R8
-	USB_ERROR_CHECK( hid_class_request_set_protocol(hid_device_handle, HID_REPORT_PROTOCOL_BOOT));
+	// USB_ERROR_CHECK( hid_class_request_set_protocol(hid_device_handle, HID_REPORT_PROTOCOL_BOOT));
 	//	if (HID_PROTOCOL_KEYBOARD == dev_params.proto)
 	//  USB_ERROR_CHECK( hid_class_request_set_idle(hid_device_handle, 0, 0));
 
@@ -152,6 +152,7 @@ static void usb_lib_task(void *arg) {
     }
 }
 
+#if 0
 /* ============================ XBOX ====================================== */
 
 static usb_host_client_handle_t xbox_client_handle;
@@ -241,6 +242,7 @@ static void xbox_client_event_cb(const usb_host_client_event_msg_t *event, void 
     usb_host_client_handle_events(xbox_client_handle, portMAX_DELAY);
   }
 }
+#endif
 
 /**
  * @brief HID Host main task
@@ -323,6 +325,7 @@ static void usb_init(void) {
     task_created = xTaskCreate(&hid_host_task, "hid_task", 4 * 1024, NULL, 2, NULL);
     assert(task_created == pdTRUE);
 
+#if 0
     /* =========================== xbox ================================== */    
     usb_host_client_config_t xbox_client_config = {
       .is_synchronous = false,
@@ -334,6 +337,7 @@ static void usb_init(void) {
     // register xbox driver
     ESP_ERROR_CHECK( usb_host_client_register(&xbox_client_config, &xbox_client_handle));
     xTaskCreatePinnedToCore(xbox_event_handler_task, "USB XBOX Host", 2048, NULL, 2, NULL, 0);
+#endif
 }
 
 /* ========================================================================= */
@@ -354,12 +358,16 @@ static spi_device_handle_t spi;
 static SemaphoreHandle_t sem;
 
 static void irq_handler(void *) {
+  // debugf("IRQ");
+  
   // Disable interrupt. It will be re-enabled by the com task
   gpio_intr_disable(PIN_NUM_IRQ);
 
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR( com_task_handle, &xHigherPriorityTaskWoken );
-  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  if(com_task_handle) {    
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR( com_task_handle, &xHigherPriorityTaskWoken );
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  }
 }
   
 void mcu_hw_spi_init(void) {
@@ -401,24 +409,12 @@ void mcu_hw_spi_init(void) {
  
   // The interruput input isn't strictly part of the SPi
   // The interrupt is active low
-  debugf("  IRQn = GPIO%d", PIN_NUM_IRQ);  
+  debugf("  IRQn = GPIO%d", PIN_NUM_IRQ);
   gpio_set_pull_mode(PIN_NUM_IRQ, GPIO_PULLUP_ONLY);
   gpio_set_direction(PIN_NUM_IRQ, GPIO_MODE_INPUT);  
   gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
   gpio_isr_handler_add(PIN_NUM_IRQ, irq_handler, NULL);
   gpio_set_intr_type(PIN_NUM_IRQ, GPIO_INTR_LOW_LEVEL);
-  gpio_intr_enable(PIN_NUM_IRQ);
-
-#if 0
-  // loopback test
-  mcu_hw_spi_begin();
-  uint8_t r0 = mcu_hw_spi_tx_u08(0x55);
-  uint8_t r1 = mcu_hw_spi_tx_u08(0x42);
-  uint8_t r2 = mcu_hw_spi_tx_u08(0x23);
-  mcu_hw_spi_end();
-
-  debugf("SPI test: %02x %02x %02x", r0, r1, r2);
-#endif
 }
 
 void mcu_hw_irq_ack(void) {

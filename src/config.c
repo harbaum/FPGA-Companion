@@ -360,7 +360,7 @@ static void config_dump_menu(config_menu_t *mnu) {
     case CONFIG_MENU_ENTRY_BUTTON:
       config_dump_button(mnu->entries[i].button);
       break;
-    }
+    }    
   }
 }
 
@@ -422,7 +422,7 @@ static void config_xml_fsel_attribute(char *name, char *value) {
 }
 
 static void config_dump_fileselector(config_fsel_t *fs) {
-  debugf("Fileselector, index=%d, label=\"%s\" ext=[%s], default=\"%s\"", fs->index, fs->label, fs->ext[0], fs->def);
+  debugf("Fileselector, index=%d, label=\"%s\" ext=[%s], default=\"%s\"", fs->index, fs->label, fs->ext[0], fs->def?fs->def:"<none>");
   for(int i=1;fs->ext[i];i++) debugf("  further ext: \"%s\"", fs->ext[i]);
   if(fs->action) config_dump_action(fs->action);
 }
@@ -558,7 +558,7 @@ void config_dump(void) {
   if(action) { debugf("On init:"); config_dump_action(action); }
   action = config_get_action("ready");
   if(action) { debugf("On ready:"); config_dump_action(action); }
-
+  
   if(cfg->menu)
     config_dump_menu(cfg->menu);
 }

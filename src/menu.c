@@ -1097,11 +1097,10 @@ static void menu_file_selector_open(config_menu_entry_t *entry) {
   
   // scan file system
   menu_state->dir = sdc_readdir(entry->fsel->index, NULL, (void*)entry->fsel->ext);
-
   // try to jump to current file. Get the current image name and path
   char *name = sdc_get_image_name(entry->fsel->index);
-  debugf("trying to jump to %s", name);
   if(name) {
+    debugf("trying to jump to %s", name);
     // try to find name in file list
     for(int i=0;i<menu_state->dir->len;i++) {
       if(strcmp(menu_state->dir->files[i].name, name) == 0) {
