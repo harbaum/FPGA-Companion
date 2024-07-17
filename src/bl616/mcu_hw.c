@@ -15,8 +15,6 @@
 #include "../debug.h"
 #include "../mcu_hw.h"
 
-// #define SPI_POLL   // enable to poll and don't use interrupts
-
 extern uint32_t __HeapBase;
 extern uint32_t __HeapLimit;
 
@@ -435,35 +433,6 @@ void spi_isr(uint8_t pin) {
   }
 }
 
-#if 0
-// this task receives the interrupt request. Since we cannot
-// call sys_irq_ctrl from the interrupt as spi_begin might
-// block we need to do this from the task (which is allowed to
-// block). The SPI task then demultiplexes the event sources.
-static void spi_task(void *parms) {
-  // initialize SD card
-  sdc_init(spi);
-  
-  while(1) {
-#ifdef SPI_POLL
-    // polling simply means that we run a timout and
-    // request the interrupt state manually every 100ms
-    ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS(10000));
-#else
-    ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-#endif
-
-    // get pending interrupts and ack them all
-    unsigned char pending = sys_irq_ctrl(spi, 0xff);
-#ifdef SPI_POLL
-    printf("IRQ = %02x\r\n", pending);
-#endif
-    if(pending) sys_handle_interrupts(pending);
-    bflb_irq_enable(gpio->irq_num);   // resume interrupt processing
-  }
-}
-#endif
-
 static void mcu_hw_spi_init(void) {
   // when FPGA sets data on rising edge:
   // stable with long cables up to 20Mhz
@@ -498,19 +467,11 @@ static void mcu_hw_spi_init(void) {
   // semaphore to access the spi bus
   spi_sem = xSemaphoreCreateMutex();
 
-#if 0 // XYZ  
-
-  xTaskCreate(spi_task, (char *)"spi_task", 512, &spi, configMAX_PRIORITIES-2, &spi_task_handle);
-#endif
-  
   /* interrupt input */
   bflb_irq_disable(gpio->irq_num);
   bflb_gpio_init(gpio, SPI_PIN_IRQ, GPIO_INPUT | GPIO_PULLUP | GPIO_SMT_EN);
   bflb_gpio_int_init(gpio, SPI_PIN_IRQ, GPIO_INT_TRIG_MODE_SYNC_LOW_LEVEL);
   bflb_gpio_irq_attach(SPI_PIN_IRQ, spi_isr);
-  bflb_irq_enable(gpio->irq_num);
-
-  printf("IRQ enabled\r\n");
 }
 
 // spi may be used by different threads. Thus begin and end are using
