@@ -5,9 +5,15 @@ for the Raspberry Pi Pico (W).
 
 ## Building
 
-### Install the Pi Pico Toolchain
+### Install the Pi Pico Toolchain (Ubuntu)
 ```
- sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
+sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
+```
+
+### Install the Pi Pico Toolchain (Fedora)
+```
+sudo dnf groupinstall "Development tools"
+sudo dnf install cmake gcc-arm-linux-gnu arm-none-eabi-gcc-cs-c++ arm-none-eabi-gcc-cs arm-none-eabi-binutils arm-none-eabi-newlib
 ```
 
 ### Download an install the Pi Pico SDK

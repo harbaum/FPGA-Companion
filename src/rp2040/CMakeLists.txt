@@ -55,7 +55,7 @@ target_include_directories(${PROJECT} PRIVATE
       ${CMAKE_CURRENT_LIST_DIR}/../tusb_xinput
 )
 
-string(APPEND CMAKE_C_FLAGS " -Os -fdata-sections -ffunction-sections")
+string(APPEND CMAKE_C_FLAGS " -Os -fdata-sections -ffunction-sections -Wno-error=incompatible-pointer-types" )
 
 target_link_libraries(${PROJECT} PRIVATE pico_stdlib FreeRTOS-Kernel FreeRTOS-Kernel-Heap1)
 target_link_libraries(${PROJECT} PRIVATE pico_multicore hardware_pio hardware_dma hardware_spi)
