@@ -158,7 +158,7 @@ const unsigned char core_c64_keymap[] = {
   MATRIX( 1,0), // 28: return
   MATRIX( 7,7), // 29: esc  as run/stop
   MATRIX( 0,0), // 2a: backspace as del
-  MISS,            // 2b: tab
+  MATRIX( 7,1), // lshift // 2b: tab
   MATRIX( 4,7), // 2c: space
 
   MATRIX( 3,5), // 2d: - as -
@@ -186,18 +186,18 @@ const unsigned char core_c64_keymap[] = {
   MATRIX( 3,0), // 41: F8
   MATRIX( 6,6), // 42: F9  as arrow up
   MATRIX( 5,6), // 43: F10 as equal
-  MISS,            // 44: F11 as restore (NMI) WIP !
-  MISS,            // 45: F12 (OSD)
+  MATRIX( 7,1), // lshift // 44: F11 as restore (NMI) !
+  MISS,         // 45: F12 (OSD)
 
-  MISS,            // 46: PrtScr
-  MISS,            // 47: Scroll Lock
-  MISS,            // 48: Pause
+  MATRIX( 7,1), // lshift // 46: PrtScr
+  MATRIX( 7,1), // lshift // 47: Scroll Lock
+  MATRIX( 7,1), // lshift // 48: Pause
   MATRIX( 3,6), // 49: Insert as CLR
-  MISS,            // 4a: Home
-  MISS,            // 4b: PageUp
+  MATRIX( 7,1), // lshift // 4a: Home
+  MATRIX( 7,1), // lshift // 4b: PageUp
   MATRIX( 3,6), // 4c: Delete as CLR
-  MISS,            // 4d: End
-  MISS,            // 4e: PageDown
+  MATRIX( 7,1), // lshift // 4d: End
+  MATRIX( 7,1), // lshift // 4e: PageDown
   
   // cursor keys
   MATRIX( 2,0), // 4f: right
@@ -205,26 +205,26 @@ const unsigned char core_c64_keymap[] = {
   MATRIX( 7,0), // 51: down
   MATRIX( 7,0), // 52: up
   
-  MISS,            // 53: Num Lock
+  MATRIX( 7,1), // lshift // 53: Num Lock
 
   // keypad
-  MISS,//  MATRIX(,), // 54: KP /
-  MISS,//  MATRIX(,), // 55: KP *
-  MISS,//  MATRIX(,), // 56: KP -
-  MISS,//  MATRIX(,), // 57: KP +
-  MISS,//  MATRIX(,), // 58: KP Enter
-  MISS,//  MATRIX(,), // 59: KP 1
-  MISS,//  MATRIX(,), // 5a: KP 2
-  MISS,//  MATRIX(,), // 5b: KP 3
-  MISS,//  MATRIX(,), // 5c: KP 4
-  MISS,//  MATRIX(,), // 5d: KP 5
-  MISS,//  MATRIX(,), // 5e: KP 6
-  MISS,//  MATRIX(,), // 5f: KP 7
-  MISS,//  MATRIX(,), // 60: KP 8
-  MISS,//  MATRIX(,), // 61: KP 9
-  MISS,//  MATRIX(,), // 62: KP 0
-  MISS,//  MATRIX(,), // 63: KP .
-  MISS,//  MATRIX(,), // 64: EUR-2
+  MATRIX( 7,1), // lshift // 54: KP /
+  MATRIX( 7,1), // lshift // 55: KP *
+  MATRIX( 7,1), // lshift // 56: KP -
+  MATRIX( 7,1), // lshift // 57: KP +
+  MATRIX( 7,1), // lshift // 58: KP Enter
+  MATRIX( 7,1), // lshift // 59: KP 1
+  MATRIX( 7,1), // lshift // 5a: KP 2
+  MATRIX( 7,1), // lshift // 5b: KP 3
+  MATRIX( 7,1), // lshift // 5c: KP 4
+  MATRIX( 7,1), // lshift // 5d: KP 5
+  MATRIX( 7,1), // lshift // 5e: KP 6
+  MATRIX( 7,1), // lshift // 5f: KP 7
+  MATRIX( 7,1), // lshift // 60: KP 8
+  MATRIX( 7,1), // lshift // 61: KP 9
+  MATRIX( 7,1), // lshift // 62: KP 0
+  MATRIX( 7,1), // lshift // 63: KP .
+  MATRIX( 7,1), // lshift // 64: EUR-2
 };  
   
 const unsigned char core_c64_modifier[] = {
@@ -236,9 +236,9 @@ const unsigned char core_c64_modifier[] = {
   MATRIX( 2,7), // ctrl (left)
   MATRIX( 7,1), // lshift
   MATRIX( 5,7), // lalt as CBM 
-  MISS,         // lgui
+  MATRIX( 7,1), // lshift  // lgui
   MATRIX( 2,7), // ctrl (right)
   MATRIX( 4,6), // rshift
   MATRIX( 5,7), // ralt as CBM
-  MISS          // rgui
+  MATRIX( 7,1)  // lshift  // rgui
 };

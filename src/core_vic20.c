@@ -144,7 +144,7 @@ const unsigned char core_vic20_keymap[] = {
   MATRIX( 1,7), // 28: return
   MATRIX( 3,0), // 29: esc  as run/stop
   MATRIX( 0,7), // 2a: backspace as del
-  MISS,              // 2b: tab
+  MATRIX( 3,1), // lshift // 2b: tab
   MATRIX( 4,0), // 2c: space
 
   MATRIX( 7,5), // 2d: - as -
@@ -172,45 +172,44 @@ const unsigned char core_vic20_keymap[] = {
   MATRIX( 7,7), // 41: F8
   MATRIX( 6,6), // 42: F9  as arrow up
   MATRIX( 5,6), // 43: F10 as equal
-  MISS,              // 44: F11 as restore
-  MISS,              // 45: F12 (OSD)
+  MATRIX( 3,1), // lshift // 44: F11 as restore
+  MISS,         // 45: F12 (OSD)
 
-  MISS,            // 46: PrtScr
-  MISS,            // 47: Scroll Lock
-  MISS,            // 48: Pause
+  MATRIX( 3,1), // lshift // 46: PrtScr
+  MATRIX( 3,1), // lshift // 47: Scroll Lock
+  MATRIX( 3,1), // lshift // 48: Pause
   MATRIX( 7,6), // 49: Insert as CLR
-  MISS,            // 4a: Home
-  MISS,            // 4b: PageUp
+  MATRIX( 3,1), // lshift // 4a: Home
+  MATRIX( 3,1), // lshift // 4b: PageUp
   MATRIX( 7,6), // 4c: Delete as CLR
-  MISS,            // 4d: End
-  MISS,            // 4e: PageDown
+  MATRIX( 3,1), // lshift // 4d: End
+  MATRIX( 3,1), // lshift // 4e: PageDown
   
   // cursor keys
   MATRIX( 2,7), // 4f: right
   MATRIX( 2,7), // 50: left
   MATRIX( 3,7), // 51: down
   MATRIX( 3,7), // 52: up
-  
-  MISS,// 53: Num Lock
+  MATRIX( 3,1), // lshift // 53: Num Lock
 
   // keypad
-  MISS,//  54: KP /
-  MISS,//  55: KP *
-  MISS,//  56: KP -
-  MISS,//  57: KP +
-  MISS,//  58: KP Enter
-  MISS,//  59: KP 1
-  MISS,//  a: KP 2
-  MISS,//  5b: KP 3
-  MISS,//  5c: KP 4
-  MISS,//  5d: KP 5
-  MISS,//  5e: KP 6
-  MISS,//  f: KP 7
-  MISS,//  60: KP 8
-  MISS,//  61: KP 9
-  MISS,//  62: KP 0
-  MISS,//  63: KP .
-  MISS,//  64: EUR-2
+  MATRIX( 3,1), // lshift//  54: KP /
+  MATRIX( 3,1), // lshift//  55: KP *
+  MATRIX( 3,1), // lshift//  56: KP -
+  MATRIX( 3,1), // lshift//  57: KP +
+  MATRIX( 3,1), // lshift//  58: KP Enter
+  MATRIX( 3,1), // lshift//  59: KP 1
+  MATRIX( 3,1), // lshift//  a: KP 2
+  MATRIX( 3,1), // lshift//  5b: KP 3
+  MATRIX( 3,1), // lshift//  5c: KP 4
+  MATRIX( 3,1), // lshift//  5d: KP 5
+  MATRIX( 3,1), // lshift//  5e: KP 6
+  MATRIX( 3,1), // lshift//  f: KP 7
+  MATRIX( 3,1), // lshift//  60: KP 8
+  MATRIX( 3,1), // lshift//  61: KP 9
+  MATRIX( 3,1), // lshift//  62: KP 0
+  MATRIX( 3,1), // lshift//  63: KP .
+  MATRIX( 3,1), // lshift//  64: EUR-2
 };  
   
 const unsigned char core_vic20_modifier[] = {
@@ -222,10 +221,10 @@ const unsigned char core_vic20_modifier[] = {
   MATRIX( 2,0), // ctrl (left)
   MATRIX( 3,1), // lshift
   MATRIX( 5,0), // lalt as CBM 
-  MISS,         // lgui
+  MATRIX( 3,1), // lshift        // lgui
   MATRIX( 2,0), // ctrl (right)
   MATRIX( 4,6), // rshift
   MATRIX( 5,0), // ralt as CBM
-  MISS          // rgui
+  MATRIX( 3,1) // lshift         // rgui
 };
   
