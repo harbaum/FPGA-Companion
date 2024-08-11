@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include "pio_usb.h"
 #include "pico/multicore.h"
+#include "hardware/clocks.h"
 
 #include "../debug.h"
 #include "../config.h"

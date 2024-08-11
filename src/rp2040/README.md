@@ -13,7 +13,7 @@ sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
 ### Install the Pi Pico Toolchain (Fedora)
 ```
 sudo dnf groupinstall "Development tools"
-sudo dnf install cmake gcc-arm-linux-gnu arm-none-eabi-gcc-cs-c++ arm-none-eabi-gcc-cs arm-none-eabi-binutils arm-none-eabi-newlib
+sudo dnf install clang cmake gcc-arm-linux-gnu arm-none-eabi-gcc-cs-c++ arm-none-eabi-gcc-cs arm-none-eabi-binutils arm-none-eabi-newlib
 ```
 
 ### Download an install the Pi Pico SDK
@@ -101,7 +101,7 @@ The RP2040 is by default somewhat inconvenient to develop for
 as it has to be mounted manually as mass-storage to copy the
 uf2 file onto it.
 
-It's thus recommanded to use a second Pi-Pico as a SWD programmng
+It's thus recommended to use a second Pi-Pico as a SWD programming
 adapter. The details are explained in appendix A of
 [Getting started with Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf) under section ```Debug with a second Pico```.
 
