@@ -1,3 +1,6 @@
+# to build for waveshare rp2040-zero do
+# cmake -DWS2040_ZERO=ON ..
+
 cmake_minimum_required(VERSION 3.13)
 
 set(PROJECT fpga_companion)
@@ -47,6 +50,21 @@ family_add_pico_pio_usb(${PROJECT})
 target_compile_definitions(${PROJECT} PRIVATE
         PIO_USB_DP_PIN_DEFAULT=2
         )
+	
+option(WS2040_ZERO "Build for Waveshare RP2040-Zero" OFF) # Regular Pico by default
+if(WS2040_ZERO)
+        add_compile_definitions(${PROJECT} PRIVATE WAVESHARE_RP2040_ZERO=1)
+        add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Waveshare RP2040-Zero.")
+else(WS2040_ZERO)
+        add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico or Pico-W.")
+endif(WS2040_ZERO)
+
+target_include_directories(${PROJECT} PRIVATE
+      ${CMAKE_CURRENT_LIST_DIR}
+      ${CMAKE_CURRENT_LIST_DIR}/../fatfs/source
+      ${CMAKE_CURRENT_LIST_DIR}/../u8g2/csrc
+      ${CMAKE_CURRENT_LIST_DIR}/../tusb_xinput
+)
 
 target_include_directories(${PROJECT} PRIVATE
       ${CMAKE_CURRENT_LIST_DIR}

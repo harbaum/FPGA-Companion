@@ -95,6 +95,43 @@ To use this you need a micro-USB to USB-A-OTG adapter.
 
 ![Tang Nano 20k with Raspberry Pi Pico](pico_tn20k.png)
 
+# Using the Waveshare RP2040-Zero
+
+The Raspberry Pi Pico is rather big and only comes with a Micro USB
+port. The [Waveshare RP2040-Zero](https://www.waveshare.com/rp2040-zero.htm) is a little
+smaller and comes with a USB-C connector which makes it easier to use
+it as a USB host using a regular USB-C to USB-A host adapter.
+
+To build the firmware for the RP2040-Zero use the following
+command:
+
+```
+cmake -DWS2040_ZERO=ON ..
+```
+
+The build process will then end with the following message:
+
+```
+Firmware has been built for Waveshare RP2040-Zero.
+```
+
+The SPI pins used on the RP2040-Zero differ from the ones used on the
+regular pico:
+
+| Pin | Signal | Description |
+|---|---|---|
+| GP0  | UART_TX  | Serial debug output |
+| GP4 | MISO | SPI data from FPGA |
+| GP5 | CSn | SPI chip select to FPGA |
+| GP6 | SCK | SPI clock to FPGA |
+| GP7 | MOSI | SPI data to FPGA |
+| GP8 | IRQn | SPI interrupt from FPGA |
+
+Also the RP2040-Zero comes with a WS2812 RGB led instead of a regular
+LED. Driving the RGB LED requies a PIO unit and thus cannot be used at
+the same time as the PIO-USB. The native USB of the RP2040-Zero must
+therefore always be used, anyway.
+
 # Convenient development
 
 The RP2040 is by default somewhat inconvenient to develop for

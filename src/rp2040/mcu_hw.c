@@ -22,6 +22,34 @@
 
 #include "../mcu_hw.h"
 
+#ifdef WAVESHARE_RP2040_ZERO
+#warning "Building for Waveshare RP2040-Zero mini board"
+
+// the waveshare mini does not expose the default spi0 pins, so we need
+// to specify them
+#define SPI_RX_PIN    4
+#define SPI_SCK_PIN   6
+#define SPI_TX_PIN    7
+#define SPI_CSN_PIN   5
+#define SPI_IRQ_PIN   8
+#define SPI_BUS  spi0
+#define WS2812_PIN    16
+#else
+#warning "Building for Pi Pico and Pico(W)"
+
+// the regular pi pico uses spi0 by default
+#define SPI_RX_PIN   PICO_DEFAULT_SPI_RX_PIN
+#define SPI_SCK_PIN  PICO_DEFAULT_SPI_SCK_PIN
+#define SPI_TX_PIN   PICO_DEFAULT_SPI_TX_PIN
+#define SPI_CSN_PIN  PICO_DEFAULT_SPI_CSN_PIN
+#define SPI_IRQ_PIN  22
+#define SPI_BUS  spi_default
+#endif
+
+#ifdef WS2812_PIN
+#include "ws2812.pio.h"
+#endif
+
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
 /* ============================================================================================= */
@@ -36,6 +64,11 @@
 
 #if TUSB_VERSION_NUMBER < 1700
 #error "Please update your TinyUSB installation!"
+#endif
+
+#include "tusb_config.h"
+#if defined(WS2812_PIN) && CFG_TUH_RPI_PIO_USB == 1
+#error "WS2812B and PIO USB cannot be used simultaneously!"
 #endif
 
 static struct {
@@ -137,7 +170,7 @@ static SemaphoreHandle_t sem;
 
 static void irq_handler(void) {
   // Disable interrupt. It will be re-enabled by the com task
-  gpio_set_irq_enabled(22, GPIO_IRQ_LEVEL_LOW, false);
+  gpio_set_irq_enabled(SPI_IRQ_PIN, GPIO_IRQ_LEVEL_LOW, false);
 
   if(com_task_handle) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -152,27 +185,27 @@ void mcu_hw_spi_init(void) {
   sem = xSemaphoreCreateMutex();
 
   // init SPI at 20Mhz, mode 1
-  spi_init(spi_default, 20000000);
-  spi_set_format(spi_default, 8, SPI_CPOL_0, SPI_CPHA_1, SPI_MSB_FIRST);
+  spi_init(SPI_BUS, 20000000);
+  spi_set_format(SPI_BUS, 8, SPI_CPOL_0, SPI_CPHA_1, SPI_MSB_FIRST);
   
-  debugf("  MISO = %d", PICO_DEFAULT_SPI_RX_PIN);
-  gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
-  debugf("  SCK  = %d", PICO_DEFAULT_SPI_SCK_PIN);
-  gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
-  debugf("  MOSI = %d", PICO_DEFAULT_SPI_TX_PIN);
-  gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
+  debugf("  MISO = %d", SPI_RX_PIN);
+  gpio_set_function(SPI_RX_PIN, GPIO_FUNC_SPI);
+  debugf("  SCK  = %d", SPI_SCK_PIN);
+  gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
+  debugf("  MOSI = %d", SPI_TX_PIN);
+  gpio_set_function(SPI_TX_PIN, GPIO_FUNC_SPI);
   
   // Chip select is active-low, so we'll initialise it to a driven-high state
-  debugf("  CSn  = %d", PICO_DEFAULT_SPI_CSN_PIN);
-  gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
-  gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
-  gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+  debugf("  CSn  = %d", SPI_CSN_PIN);
+  gpio_init(SPI_CSN_PIN);
+  gpio_set_dir(SPI_CSN_PIN, GPIO_OUT);
+  gpio_put(SPI_CSN_PIN, 1);
 
   // The interruput input isn't strictly part of the SPi
   // The interrupt is active low on GP22
-  debugf("  IRQn = %d", 22);
-  // set handler but not enable yet as the main task may not be ready  
-  gpio_add_raw_irq_handler(22, irq_handler);  
+  debugf("  IRQn = %d", SPI_IRQ_PIN);
+  // set handler but not enable yet as the main task may not be ready
+  gpio_add_raw_irq_handler(SPI_IRQ_PIN, irq_handler);
 }
 
 void mcu_hw_irq_ack(void) {
@@ -185,22 +218,22 @@ void mcu_hw_irq_ack(void) {
   }
   
   // re-enable the interrupt since it was now serviced outside the irq handler
-  gpio_set_irq_enabled(22, GPIO_IRQ_LEVEL_LOW, 1); 
+  gpio_set_irq_enabled(SPI_IRQ_PIN, GPIO_IRQ_LEVEL_LOW, 1); 
 }
 
 void mcu_hw_spi_begin() {
   xSemaphoreTake(sem, 0xffffffffUL);      // wait forever
-  gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);  // Active low
+  gpio_put(SPI_CSN_PIN, 0);  // Active low
 }
 
 void mcu_hw_spi_end() {
-  gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+  gpio_put(SPI_CSN_PIN, 1);
   xSemaphoreGive(sem);
 }
 
 unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
   unsigned char retval;
-  spi_write_read_blocking(spi_default, &b, &retval, 1);
+  spi_write_read_blocking(SPI_BUS, &b, &retval, 1);
   return retval;
 }
 
@@ -215,12 +248,21 @@ void mcu_hw_init(void) {
   stdio_init_all();    // ... so stdio can adjust its bit rate
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for RP2040\r\n\r\n");
+#if CFG_TUH_RPI_PIO_USB == 0
+  printf("Using native USB\r\n");
+#else
   printf("USB D+/D- on GP%d and GP%d\r\n", PIO_USB_DP_PIN_DEFAULT, PIO_USB_DP_PIN_DEFAULT+1);
-  
+#endif
+
+#ifdef WS2812_PIN
+  uint offset = pio_add_program(pio0, &ws2812_program);  
+  ws2812_program_init(pio0, 0, offset, WS2812_PIN, 800000, 0);
+#else
   gpio_init(PICO_DEFAULT_LED_PIN);
   gpio_set_dir(PICO_DEFAULT_LED_PIN, 1);
   gpio_put(PICO_DEFAULT_LED_PIN, !PICO_DEFAULT_LED_PIN_INVERTED);
-
+#endif
+  
   mcu_hw_spi_init();
 
   tuh_init(BOARD_TUH_RHPORT);
@@ -363,10 +405,18 @@ void vApplicationIdleHook( void ) {
 
 void vApplicationTickHook( void ) { }
 
+#ifdef WS2812_PIN
+static void led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
+  static char state = 0;
+  pio_sm_put_blocking(pio0, 0, state?0xff000000:0x00000000);  // GRBX
+  state = !state;
+}
+#else
 static void led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
   gpio_xor_mask( 1u << PICO_DEFAULT_LED_PIN );
 }
-  
+#endif
+
 void mcu_hw_main_loop(void) {
   TimerHandle_t led_timer_handle = xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE,
 						NULL, led_timer);
