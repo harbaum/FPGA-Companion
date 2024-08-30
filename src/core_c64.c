@@ -30,12 +30,12 @@ static const char main_form_c64[] =
 static const char system_form_c64[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport 1:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off,Q;"
-  "L,Joyport 2:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off,J;"
+  "L,Joyport 1:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off|USB #1 Padd|USB #2 Padd,Q;"
+  "L,Joyport 2:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off|USB #1 Padd|USB #2 Padd,J;"
   "L,REU 1750:,Off|On,V;"
   "L,c1541 ROM:,Dolphin DOS|CBM DOS|Speed DOS P|Jiffy DOS,D;"
   "L,Turbo mode:,Off|C128|Smart,X;"
-	"L,Turbo speed:,2x|3x|4x,Y;"
+  "L,Turbo speed:,2x|3x|4x,Y;"
   "L,Video Std:,PAL|NTSC,E;"
   "L,Midi:,Off|Sequential|Passport|DATEL|Namesoft,N;"
   "L,Pause OSD:,Off|On,G;"
