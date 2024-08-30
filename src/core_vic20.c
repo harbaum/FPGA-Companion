@@ -33,7 +33,7 @@ static const char main_form_vic20[] =
 static const char system_form_vic20[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off,Q;" // Joystick port 1 mapping
+  "L,Joyport:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|DS Paddle|Off|USB #1 Padd|USB #2 Padd,Q;" // Joystick port 1 mapping
   "L,c1541 ROM:,Dolphin DOS|CBM DOS|Speed DOS P|Jiffy DOS,D;"  // c1541 compatibility
   "L,RAM $04 3K:,Off|On,U;"
   "L,RAM $20 8K:,Off|On,X;"
