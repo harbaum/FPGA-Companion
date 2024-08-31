@@ -408,7 +408,7 @@ void vApplicationTickHook( void ) { }
 #ifdef WS2812_PIN
 static void led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
   static char state = 0;
-  pio_sm_put_blocking(pio0, 0, state?0xff000000:0x00000000);  // GRBX
+  pio_sm_put_blocking(pio0, 0, state?0x40000000:0x00000000);  // GRBX
   state = !state;
 }
 #else
