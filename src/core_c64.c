@@ -49,7 +49,7 @@ static const char system_form_c64[] =
   "L,RS232 mode:,VIC-1011|UP9600|SwiftLnk DE|SwiftLnk DF|SwiftLnk D7,<;"
   "L,GeoRAM:,Off|On,#;"
   "L,Tape Sound:,Off|On,I;"
-	"L,RS232 connection:,Tang USB-C|External|reserved,*;"
+	"L,RS232 port:,Tang USB-C|External|reserved,*;"
   "B,C1541 Reset,Z;"
   "B,Cold Boot,B;"; 
 
