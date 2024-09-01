@@ -264,8 +264,8 @@ void joystick_parse(const hid_report_t *report, struct hid_joystick_state_S *sta
     mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
     mcu_hw_spi_tx_u08(state->js_index);
     mcu_hw_spi_tx_u08(joy);
-    mcu_hw_spi_tx_u08((a[0]>> 8) & 0xff);
-    mcu_hw_spi_tx_u08((a[1]>> 8) & 0xff);
+    mcu_hw_spi_tx_u08(a[0]);
+    mcu_hw_spi_tx_u08(a[1]);
     mcu_hw_spi_end();
   }
 }
