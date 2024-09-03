@@ -57,7 +57,8 @@ make
 The resulting file named ```fpga_companion.uf2``` is loaded onto the
 Pico as usual. Once successfully booted the Pico's LED will blink.
 
-Additional debug output is sent via UART at 115200 bit/s on GP0
+Additional debug output is sent via UART at 921600 bit/s on GP0 on
+a regular Pi Pico or Pico(W) and at 460800 bit/s on Waveshare RP2040-Zero.
 
 # Pin usage
 
