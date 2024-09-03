@@ -287,8 +287,10 @@ void rii_joy_parse(const unsigned char *buffer) {
 }
 
 void hid_parse(const hid_report_t *report, hid_state_t *state, uint8_t const* data, uint16_t len) {
-  //  usb_debugf("hid parse");
-  //  hexdump((void*)report, len);
+  //  usb_debugf("hid parse %d, expect %d", len, report->report_size);
+  if(!len) return;
+  
+  // hexdump((void*)data, len);
 
   // the following is a hack for the Rii keyboard/touch combos to use the
   // left top multimedia pad as a joystick. These special keys are sent
@@ -300,12 +302,14 @@ void hid_parse(const hid_report_t *report, hid_state_t *state, uint8_t const* da
     rii_joy_parse(data+1);
     return;
   }
-  
+
   // check and skip report id if present
-  if(report->report_id_present) {
-    if(!len || (data[0] != report->report_id))
+  if(report->report_id_present && (len-1 == report->report_size)) {
+    if(data[0] != report->report_id) {
+      usb_debugf("FAIL %d != %d", data[0], report->report_id);
       return;
-    
+    }
+        
     // skip report id
     data++; len--;
   }
