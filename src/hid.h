@@ -16,6 +16,8 @@ struct hid_mouse_state_S {
 struct hid_joystick_state_S {
   unsigned char last_state;
   unsigned char js_index;
+  unsigned char last_state_x;
+  unsigned char last_state_y;
 };
 
 typedef union {
