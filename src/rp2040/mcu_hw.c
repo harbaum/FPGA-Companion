@@ -120,6 +120,13 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
       hid_device[idx].instance = instance;
       if(hid_device[idx].rep.type == REPORT_TYPE_JOYSTICK)
 	hid_device[idx].state.joystick.js_index = hid_allocate_joystick();
+      else if(hid_device[idx].rep.type == REPORT_TYPE_MOUSE) {
+	// switch mice to report mode
+	if(!tuh_hid_set_protocol(dev_addr, instance, HID_PROTOCOL_REPORT)) {
+	  usb_debugf("Failed to set report mode");
+	  hid_device[idx].rep.report_id_present = false;
+	}
+      }
     } else
       usb_debugf("ignoring device");
   } else
@@ -237,15 +244,17 @@ unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
   return retval;
 }
 
-/* ============================================================================================= */
-/* ============                        XBOX controllers                          =============== */
-/* ============================================================================================= */
-
 void mcu_hw_init(void) {
   // default 125MHz is not appropreate. Sysclock should be multiple of 12MHz.
-  set_sys_clock_khz(120000, true);
+  set_sys_clock_khz(240000, true);
   
   stdio_init_all();    // ... so stdio can adjust its bit rate
+#ifdef WAVESHARE_RP2040_ZERO
+  // the waveshare mini does not support SWD and we thus use a simpler (slower) UART
+  uart_set_baudrate(uart0, 460800);  
+#else
+  uart_set_baudrate(uart0, 921600);
+#endif
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for RP2040\r\n\r\n");
 #if CFG_TUH_RPI_PIO_USB == 0
@@ -270,6 +279,10 @@ void mcu_hw_init(void) {
   TaskHandle_t pio_usb_handle;
   xTaskCreate(pio_usb_task, "usb_task", 2048, NULL, configMAX_PRIORITIES, &pio_usb_handle);
 }
+
+/* ============================================================================================= */
+/* ============                        XBOX controllers                          =============== */
+/* ============================================================================================= */
 
 #include "xinput_host.h"
 

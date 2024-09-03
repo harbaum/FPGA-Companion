@@ -100,5 +100,5 @@ add_custom_target(reset
 )
 
 add_custom_target(term
-    COMMAND term.sh /dev/ttyACM0 115200
+    COMMAND term.sh /dev/ttyACM0 921600
 )
