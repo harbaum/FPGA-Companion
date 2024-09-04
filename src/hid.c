@@ -248,22 +248,43 @@ void joystick_parse(const hid_report_t *report, struct hid_joystick_state_S *sta
     if(buffer[report->joystick_mouse.button[i].byte_offset] & 
        report->joystick_mouse.button[i].bitmask)
       joy |= (0x10<<i);
-  
+
+  // ... and the eight extra buttons
+  unsigned char btn_extra = 0;
+  for(int i=4;i<12;i++)
+    if(buffer[report->joystick_mouse.button[i].byte_offset] & 
+      report->joystick_mouse.button[i].bitmask) 
+      btn_extra |= (1<<(i-4));
+
   // map directions to digital
   if(a[0] > 0xc0) joy |= 0x01;
   if(a[0] < 0x40) joy |= 0x02;
   if(a[1] > 0xc0) joy |= 0x04;
   if(a[1] < 0x40) joy |= 0x08;
 
-  if(joy != state->last_state) {  
+  int ax = 0;
+  int ay = 0;
+  ax = a[0];
+  ay = a[1];
+
+  if((joy != state->last_state) || 
+     (ax != state->last_state_x) || 
+     (ay != state->last_state_y) || 
+     (btn_extra != state->last_state_btn_extra))  {
     state->last_state = joy;
-    usb_debugf("JOY%d: %02x", state->js_index, joy);
-  
+    state->last_state_x = ax;
+    state->last_state_y = ay;
+    state->last_state_btn_extra = btn_extra;
+    usb_debugf("JOY%d: D %02x A0 %02x A1 %02x B %02x", state->js_index, joy, ax, ay, btn_extra);
+
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);
     mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
     mcu_hw_spi_tx_u08(state->js_index);
     mcu_hw_spi_tx_u08(joy);
+    mcu_hw_spi_tx_u08(ax); // e.g. gamepad X
+    mcu_hw_spi_tx_u08(ay); // e.g. gamepad Y
+    mcu_hw_spi_tx_u08(btn_extra); // e.g. gamepad extra buttons
     mcu_hw_spi_end();
   }
 }

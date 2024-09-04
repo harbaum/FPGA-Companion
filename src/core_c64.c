@@ -30,12 +30,12 @@ static const char main_form_c64[] =
 static const char system_form_c64[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport 1:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off,Q;"
-  "L,Joyport 2:,Retro D9|USB #1|USB #2|NumPad|DualShock|Mouse|Paddle|Off,J;"
+  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;"
+  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,J;"
   "L,REU 1750:,Off|On,V;"
   "L,c1541 ROM:,Dolphin DOS|CBM DOS|Speed DOS P|Jiffy DOS,D;"
   "L,Turbo mode:,Off|C128|Smart,X;"
-	"L,Turbo speed:,2x|3x|4x,Y;"
+  "L,Turbo speed:,2x|3x|4x,Y;"
   "L,Video Std:,PAL|NTSC,E;"
   "L,Midi:,Off|Sequential|Passport|DATEL|Namesoft,N;"
   "L,Pause OSD:,Off|On,G;"
@@ -49,6 +49,7 @@ static const char system_form_c64[] =
   "L,RS232 mode:,VIC-1011|UP9600|SwiftLnk DE|SwiftLnk DF|SwiftLnk D7,<;"
   "L,GeoRAM:,Off|On,#;"
   "L,Tape Sound:,Off|On,I;"
+	"L,RS232 port:,Tang USB-C|External|reserved,*;"
   "B,C1541 Reset,Z;"
   "B,Cold Boot,B;"; 
 
@@ -102,6 +103,7 @@ menu_legacy_variable_t core_c64_variables[] = {
   { 'H', { 0 }},    // default SID Filter = default
   { '#', { 0 }},    // default GeoRAM = off
   { '<', { 0 }},    // default RS232 mode = standard
+  { '*', { 0 }},    // default RS232 connection = Tang USB-C
   { '\0',{ 0 }}
 };
 
