@@ -13,6 +13,8 @@ const char * core_amiga_default_images[] = {
   CARD_MOUNTPOINT "/df1.adf",
   CARD_MOUNTPOINT "/df2.adf",
   CARD_MOUNTPOINT "/df3.adf",
+  CARD_MOUNTPOINT "/dh0.hdf",
+  CARD_MOUNTPOINT "/dh1.hdf",
   NULL
 };
 
@@ -42,10 +44,12 @@ static const char system_form_amiga[] =
   // --------
   "L,Drives:,1|2|3|4,D;"                // Floppy Drives
   "L,Speed:,Normal|Fast,S;"             // Floppy Speed
-  "F,Floppy DF0,0|adf;"                 // image selector
-  "F,Floppy DF1,1|adf;" 
-  "F,Floppy DF2,2|adf;" 
-  "F,Floppy DF3,3|adf;"; 
+  "F,Floppy DF0:,0|adf;"                // image selector
+  "F,Floppy DF1:,1|adf;" 
+  "F,Floppy DF2:,2|adf;" 
+  "F,Floppy DF3:,3|adf;"
+  "F,Harddisk DH0:,4|hdf;"
+  "F,Harddisk DH1:,5|hdf;"; 
 
 static const char settings_form_amiga[] =
   "Settings,0|4;"                       // return to form 0, entry 4

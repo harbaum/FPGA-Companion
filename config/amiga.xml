@@ -36,7 +36,7 @@
   </actions>
   
   <menu label="NanoMig">
-    <fileselector label="Floppy DF0:" ext="adf;hdf" index="0"/>
+    <fileselector label="Floppy DF0:" ext="adf" index="0"/>
     <menu label="System">
       <list label="Chipset:" id="C" default="2" action="reset">
 	<listentry label="OCS-A500" value="0"/>
@@ -71,10 +71,12 @@
 	<listentry label="Normal" value="0"/>
 	<listentry label="Fast" value="1"/>
       </list>
-      <fileselector label="Floppy DF0:" ext="adf;hdf" index="0" default="df0.adf"/>
+      <fileselector label="Floppy DF0:" ext="adf" index="0" default="df0.adf"/>
       <fileselector label="Floppy DF1:" ext="adf" index="1" default="df1.adf"/>
       <fileselector label="Floppy DF2:" ext="adf" index="2" default="df2.adf"/>
       <fileselector label="Floppy DF3:" ext="adf" index="3" default="df3.adf"/>
+      <fileselector label="Harddisk DH0:" ext="hdf" index="4" default="dh0.hdf"/>
+      <fileselector label="Harddisk DH1:" ext="hdf" index="5" default="dh1.hdf"/>
     </menu>
     <menu label="Settings">
       <list label="Scanlines:" id="L" default="0">
