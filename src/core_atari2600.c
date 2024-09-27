@@ -28,11 +28,11 @@ static const char system_form_atari2600[] =
   "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;"
   "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,J;"
   "L,Invert Paddle:,Off|On,V;"
-  "L,Difficulty P1:,B|A,X;"
-  "L,Difficulty P2:,B|A,Y;"
+  "L,Difficulty P1:,A|B,X;"
+  "L,Difficulty P2:,A|B,Y;"
   "L,De-comb:,Off|On,C;"
-  "L,VBlank:,Regenerate|Original,M;"
-  "L,Video mode:,Color|Mono,O;"
+  "L,VBlank:,Original|Regenerate,M;"
+  "L,Video mode:,Mono|Color,O;"
   "L,SuperChip:,Auto|Off|On,U;"
   "L,Video Std:,NTSC|PAL,E;"
   "B,Cold Boot,B;"; 
@@ -58,18 +58,18 @@ const char *core_atari2600_forms[] = {
 };
 // Q J V X Y C M O U E
 menu_legacy_variable_t core_atari2600_variables[] = {
-  { 'X', { 0 }},    // default Difficulty P1
-  { 'Y', { 0 }},    // default Difficulty P2
-  { 'V', { 0 }},    // default Invert Paddle
+  { 'X', { 0 }},    // default Difficulty P1 = A
+  { 'Y', { 0 }},    // default Difficulty P2 = A
+  { 'V', { 0 }},    // default Invert Paddle = off
   { 'S', { 0 }},    // default scanlines = none
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'Q', { 1 }},    // Joystick port 1 mapping, USB #1
   { 'J', { 9 }},    // Joystick port 2 mapping, OFF
   { 'E', { 0 }},    // default standard = NTSC
-  { 'C', { 0 }},    // default De-comb
-  { 'M', { 0 }},    // default VBlank
-  { 'O', { 0 }},    // default Video mode
+  { 'C', { 0 }},    // default De-comb = off
+  { 'M', { 0 }},    // default VBlank = original
+  { 'O', { 1 }},    // default Video mode = color
   { 'U', { 0 }},    // default SuperChip = auto
   { '\0',{ 0 }}
 };
