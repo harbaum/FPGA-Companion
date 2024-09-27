@@ -112,7 +112,6 @@
     </menu>
     <menu label="Storage">
       <fileselector label="Cartridge:" ext="bin;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0" default="a2600crt.bin"/>
-      </list>
     </menu>
     <menu label="Settings">
       <list label="Screen:" id="W" default="0">
