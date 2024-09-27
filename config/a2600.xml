@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A2600 configuration -->
+<config name="A2600Nano" version="0">
+  <actions>
+    <!-- the init action is being executed immediately -->
+    <!-- when this file has been loaded -->
+    <action name="init">
+      <!-- (try to) load config from sd card -->
+      <load file="a2600.ini"/>
+      <set id="R" value="1"/>  <!-- keep machine in reset -->
+    </action>
+    
+    <!-- the ready action is being executed once all -->
+    <!-- initialization has been done -->
+    <action name="ready">
+      <set id="R" value="0"/>  <!-- release reset -->
+    </action>
+      
+    <action name="save">
+      <!-- save config to sd card -->
+      <save file="a2600.ini"/>
+    </action>
+      
+    <action name="reset">
+      <!-- trigger a system reset -->
+      <set id="R" value="1"/>
+      <delay ms="10"/>
+      <set id="R" value="0"/>      
+    </action>
+    
+    <action name="reset_hide">
+      <!-- trigger a system reset and hide OSD -->
+      <link action="reset"/>
+      <hide/>      
+    </action>      
+
+    <action name="cold_reset">
+      <!-- trigger a cold system reset -->
+      <set id="R" value="3"/>
+      <delay ms="10"/>
+      <set id="R" value="0"/>      
+    </action>
+    
+    <action name="cold_reset_hide">
+      <!-- trigger a cold reset and hide OSD -->
+      <link action="cold_reset"/>
+      <hide/>      
+    </action>
+  </actions>
+  
+  <menu label="A2600Nano">
+    <fileselector label="Cartridge:" ext="bin;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0"/>
+    <menu label="System">
+      <list label="Joyport 1:" id="Q" default="1">
+ <listentry label="Retro D9" value="0"/>
+ <listentry label="USB #1 Joy" value="1"/>
+ <listentry label="USB #2 Joy" value="2"/>
+ <listentry label="NumPad" value="3"/>
+ <listentry label="DualShock2" value="4"/>
+ <listentry label="Mouse" value="5"/>
+ <listentry label="DS2 Paddle" value="6"/>
+ <listentry label="USB #1 Padd" value="7"/>
+ <listentry label="USB #2 Padd" value="8"/>
+ <listentry label="Off" value="9"/>
+      </list>
+      <list label="Joyport 2:" id="J" default="9">
+ <listentry label="Retro D9" value="0"/>
+ <listentry label="USB #1 Joy" value="1"/>
+ <listentry label="USB #2 Joy" value="2"/>
+ <listentry label="NumPad" value="3"/>
+ <listentry label="DualShock2" value="4"/>
+ <listentry label="Mouse" value="5"/>
+ <listentry label="DS2 Paddle" value="6"/>
+ <listentry label="USB #1 Padd" value="7"/>
+ <listentry label="USB #2 Padd" value="8"/>
+ <listentry label="Off" value="9"/>
+      </list>
+      <list label="Invert Paddle:" id="V" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+      <list label="Difficulty P1:" id="X" default="0">
+ <listentry label="A" value="0"/>
+ <listentry label="B" value="1"/>
+      </list>
+      <list label="Difficulty P2:" id="Y" default="0">
+ <listentry label="A" value="0"/>
+ <listentry label="B" value="1"/>
+      </list>
+      <list label="De-comb:" id="C" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
+      </list>
+       <list label="VBlank:" id="M" default="0">
+ <listentry label="Original" value="0"/>
+ <listentry label="Regenerate" value="1"/>
+      </list>
+       <list label="Video mode:" id="O" default="1">
+ <listentry label="Mono" value="0"/>
+ <listentry label="Color" value="1"/>
+      </list>
+       <list label="SuperChip:" id="U" default="0">
+ <listentry label="Auto" value="0"/>
+ <listentry label="Off" value="1"/>
+ <listentry label="On" value="2"/>
+      </list>
+      <list label="Video Std:" id="E" default="0">
+ <listentry label="NTSC" value="0"/>
+ <listentry label="PAL" value="1"/>
+      </list>
+ <button label="Cold Boot" action="cold_reset_hide"/>
+    </menu>
+    <menu label="Storage">
+      <fileselector label="Cartridge:" ext="bin;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0" default="a2600crt.bin"/>
+      </list>
+    </menu>
+    <menu label="Settings">
+      <list label="Screen:" id="W" default="0">
+	<listentry label="Normal" value="0"/>
+	<listentry label="Wide" value="1"/>
+      </list>
+      <list label="Scanlines:" id="S" default="0">
+	<listentry label="None" value="0"/>
+	<listentry label="25%" value="1"/>
+	<listentry label="50%" value="2"/>
+	<listentry label="75%" value="3"/>
+      </list>
+      <list label="Volume:" id="A" default="2">
+	<listentry label="Mute" value="0"/>
+	<listentry label="33%" value="1"/>
+	<listentry label="66%" value="2"/>
+	<listentry label="100%" value="3"/>
+      </list>
+      <button label="Save settings" action="save"/>
+    </menu>
+    <button label="Reset" action="reset_hide"/>
+  </menu>    
+</config>

@@ -9,7 +9,7 @@
 #include "debug.h"
 
 const char * core_atari2600_default_images[] = {
-  CARD_MOUNTPOINT "/atari2600crt.bin",
+  CARD_MOUNTPOINT "/a2600crt.bin",
   NULL
 };
 
