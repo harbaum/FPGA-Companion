@@ -6,7 +6,7 @@
     <!-- when this file has been loaded -->
     <action name="init">
       <!-- (try to) load config from sd card -->
-      <load file="a2600.ini"/>
+      <load file="atari2600.ini"/>
       <set id="R" value="1"/>  <!-- keep machine in reset -->
     </action>
     
@@ -18,7 +18,7 @@
       
     <action name="save">
       <!-- save config to sd card -->
-      <save file="a2600.ini"/>
+      <save file="atari2600.ini"/>
     </action>
       
     <action name="reset">
