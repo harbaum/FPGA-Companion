@@ -13,8 +13,9 @@ The FPGA Companion replaces the MiSTeryNano firmware that was
 formerly part of the [MiSTeryNano
 project](https://github.com/harbaum/MiSTeryNano). It is also
 used by the [NanoMig](https://github.com/harbaum/nanomig), the
-[C64Nano](https://github.com/vossstef/tang_nano_20k_c64) and the
-[VIC20Nano](https://github.com/vossstef/VIC20Nano).
+[C64Nano](https://github.com/vossstef/tang_nano_20k_c64), the
+[VIC20Nano](https://github.com/vossstef/VIC20Nano) and the
+[A2600Nano](https://github.com/vossstef/A2600Nano).
 
 ## Supported MCUs
 
