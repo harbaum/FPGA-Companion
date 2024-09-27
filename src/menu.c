@@ -1335,7 +1335,7 @@ void menu_init(void) {
     sys_set_val('R', 3);
     sys_set_val('R', 0);
   
-    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20||core_id == CORE_ID_ATARI_2600) {  // c64 core, c1541 reset at power-up
+    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c64 core, c1541 reset at power-up
       sys_set_val('Z', 1);
       sys_set_val('Z', 0);
     }
