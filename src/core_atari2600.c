@@ -35,6 +35,7 @@ static const char system_form_atari2600[] =
   "L,Video mode:,Mono|Color,O;"
   "L,SuperChip:,Auto|Off|On,U;"
   "L,Video Std:,NTSC|PAL,E;"
+  "L,File EXT:,.BIN|.F8|.F6|.FE|.E0|.3F|.F4|.P2|.FA|.CV|.UA|.E7|.F0|.32,H;"
   "B,Cold Boot,B;"; 
 
 static const char storage_form_atari2600[] =
@@ -71,6 +72,7 @@ menu_legacy_variable_t core_atari2600_variables[] = {
   { 'M', { 0 }},    // default VBlank = original
   { 'O', { 1 }},    // default Video mode = color
   { 'U', { 0 }},    // default SuperChip = auto
+  { 'H', { 0 }},    // default file ext = 0
   { '\0',{ 0 }}
 };
 

@@ -108,6 +108,22 @@
  <listentry label="NTSC" value="0"/>
  <listentry label="PAL" value="1"/>
       </list>
+      <list label="File EXT:" id="H" default="0">
+ <listentry label=".BIN" value="0"/>
+ <listentry label=".F8" value="1"/>
+ <listentry label=".F6" value="2"/>
+ <listentry label=".FE" value="3"/>
+ <listentry label=".E0" value="4"/>
+ <listentry label=".3F" value="5"/>
+ <listentry label=".F4" value="6"/>
+ <listentry label=".P2" value="7"/> <!-- Pitfall II -->
+ <listentry label=".FA" value="8"/>
+ <listentry label=".CV" value="9"/>
+ <listentry label=".UA" value="11"/>
+ <listentry label=".E7" value="12"/>
+ <listentry label=".F0" value="13"/>
+ <listentry label=".32" value="14"/>
+     </list>
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
     <menu label="Storage">
