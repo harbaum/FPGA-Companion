@@ -16,6 +16,7 @@ target_sources(app PRIVATE
         ../core_c64.c
         ../core_vic20.c
         ../core_amiga.c
+        ../core_atari2600.c
    	../hidparser.c
    	../hid.c
    	../inifile.c

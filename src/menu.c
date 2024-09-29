@@ -286,6 +286,14 @@ static void menu_legacy_variable_set(const char *s, int val) {
 	  sys_set_val('R', 0);
 	}
       }
+  if(core_id == CORE_ID_ATARI_2600) {
+	// trigger reset 
+	if(id == 'E') {
+	  sys_set_val('R', 3);
+	  sys_set_val('R', 0);
+	}
+      }
+
     }
   }
 }

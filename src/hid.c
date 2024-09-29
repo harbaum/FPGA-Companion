@@ -103,12 +103,12 @@ void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kb
   } 
   
   // prepare for parsing numpad joystick
-  if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) kbd_num2joy(0, 0);
+  if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20||core_id == CORE_ID_ATARI_2600) kbd_num2joy(0, 0);
   
   // check if regular keys have changed
   for(int i=0;i<6;i++) {
     // C64 uses some keys for joystick emulation
-    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) kbd_num2joy(1, buffer[2+i]);
+    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20||core_id == CORE_ID_ATARI_2600) kbd_num2joy(1, buffer[2+i]);
     
     if(buffer[2+i] != state->last_report[2+i]) {
       // key released?
@@ -151,7 +151,7 @@ void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kb
   memcpy(state->last_report, buffer, 8);
 
   // check if numpad joystick has changed state and send message if so
-  if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) kbd_num2joy(2, 0);
+  if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20||core_id == CORE_ID_ATARI_2600) kbd_num2joy(2, 0);
 }
 
 // collect bits from byte stream and assemble them into a signed word

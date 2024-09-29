@@ -18,7 +18,8 @@ static const char *settings_file[] = {
   CARD_MOUNTPOINT "/atarist.ini",  // core id = 1
   CARD_MOUNTPOINT "/c64.ini",      // core id = 2
   CARD_MOUNTPOINT "/vic20.ini",    // core id = 3
-  CARD_MOUNTPOINT "/amiga.ini"     // core id = 4
+  CARD_MOUNTPOINT "/amiga.ini",    // core id = 4
+  CARD_MOUNTPOINT "/atari2600.ini" // core id = 5
 };
 
 static int iswhite(char c) {

@@ -7,6 +7,7 @@
 #include "core_c64.h"
 #include "core_vic20.h"
 #include "core_amiga.h"
+#include "core_atari2600.h"
 #include "sysctrl.h"    // for core_id
 #include "debug.h"
 
@@ -22,6 +23,8 @@ void core_set_default_images(void) {
     images = core_vic20_default_images;
   else if(core_id == CORE_ID_AMIGA)
     images = core_amiga_default_images;
+  else if(core_id == CORE_ID_ATARI_2600)
+    images = core_atari2600_default_images;
   else
     debugf("%s: unsupported core %d", __func__, core_id);
 
@@ -39,6 +42,8 @@ uint8_t core_map_key(uint8_t code) {
     return core_vic20_keymap[code];
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_keymap[code];
+  if(core_id == CORE_ID_ATARI_2600)
+    return core_atari2600_keymap[code];
 
   debugf("%s: unsupported core %d", __func__, core_id);
   return 0;
@@ -53,6 +58,8 @@ uint8_t core_map_modifier_key(uint8_t code) {
     return core_vic20_modifier[code];
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_modifier[code];
+  if(core_id == CORE_ID_ATARI_2600)
+    return core_atari2600_modifier[code];
 
   debugf("%s: unsupported core %d", __func__, core_id);
   return 0;
@@ -67,6 +74,8 @@ const char **core_get_forms(void) {
     return core_vic20_forms;
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_forms;
+  if(core_id == CORE_ID_ATARI_2600)
+    return core_atari2600_forms;
 
   debugf("%s: unsupported core %d", __func__, core_id);
   return NULL;
@@ -81,6 +90,8 @@ menu_legacy_variable_t *core_get_variables(void) {
     return core_vic20_variables;
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_variables;
+  if(core_id == CORE_ID_ATARI_2600)
+    return core_atari2600_variables;
 
   debugf("%s: unsupported core %d", __func__, core_id);
   return NULL;
