@@ -49,7 +49,7 @@
   </actions>
   
   <menu label="A2600Nano">
-    <fileselector label="Cartridge:" ext="bin;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0"/>
+    <fileselector label="Cartridge:" ext="BIN;A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0"/>
     <menu label="System">
       <list label="Joyport 1:" id="Q" default="1">
  <listentry label="Retro D9" value="0"/>
@@ -110,6 +110,7 @@
       </list>
       <list label="File EXT:" id="H" default="0">
  <listentry label=".BIN" value="0"/>
+ <listentry label=".A26" value="0"/>
  <listentry label=".F8" value="1"/>
  <listentry label=".F6" value="2"/>
  <listentry label=".FE" value="3"/>
@@ -127,7 +128,7 @@
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
     <menu label="Storage">
-      <fileselector label="Cartridge:" ext="bin;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0" default="a2600crt.bin"/>
+      <fileselector label="Cartridge:" ext="BIN A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0" default="a2600crt.bin"/>
     </menu>
     <menu label="Settings">
       <list label="Screen:" id="W" default="0">
