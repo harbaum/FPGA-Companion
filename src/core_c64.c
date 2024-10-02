@@ -32,6 +32,8 @@ static const char system_form_c64[] =
   // --------
   "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;"
   "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,J;"
+  "L,Swap Joysticks:,Off|On,&;"
+  "L,Invert Paddle:,Off|On,=;"
   "L,REU 1750:,Off|On,V;"
   "L,c1541 ROM:,Dolphin DOS|CBM DOS|Speed DOS P|Jiffy DOS,D;"
   "L,Turbo mode:,Off|C128|Smart,X;"
@@ -104,6 +106,8 @@ menu_legacy_variable_t core_c64_variables[] = {
   { '#', { 0 }},    // default GeoRAM = off
   { '<', { 0 }},    // default RS232 mode = standard
   { '*', { 0 }},    // default RS232 connection = Tang USB-C
+  { '&', { 0 }},    // default Joystick swap = Off
+  { '=', { 0 }},    // default Paddle Invert = Off
   { '\0',{ 0 }}
 };
 
