@@ -16,7 +16,7 @@ const char * core_atari2600_default_images[] = {
 static const char main_form_atari2600[] =
   "A2600Nano,;"                           // main form has no parent
   // --------
-  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+UA+E7+F0+32;" // fileselector for ROM
+  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+2K+UA+E7+F0+32+AR;" // fileselector for ROM
   "S,System,1;"                         // System submenu is form 1
   "S,Storage,2;"                        // Storage submenu
   "S,Settings,3;"                       // Settings submenu is form 2
@@ -35,13 +35,13 @@ static const char system_form_atari2600[] =
   "L,Video mode:,Mono|Color,O;"
   "L,SuperChip:,Auto|Off|On,U;"
   "L,Video Std:,NTSC|PAL,E;"
-  "L,File EXT:,BIN A26|.F8|.F6|.FE|.E0|.3F|.F4|.P2|.FA|.CV|.XYZ|.UA|.E7|.F0|.32|.ZYX,H;"
+  "L,File EXT:,AUTO BIN A26|.F8|.F6|.FE|.E0|.3F|.F4|.P2|.FA|.CV|.2K|.UA|.E7|.F0|.32|.AR,H;"
   "B,Cold Boot,B;"; 
 
 static const char storage_form_atari2600[] =
   "Storage,0|3;"                        // return to form 0, entry 3
   // --------
-  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+UA+E7+F0+32;";  // fileselector 
+  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+2K+UA+E7+F0+32+AR;";  // fileselector 
 
 static const char settings_form_atari2600[] =
   "Settings,0|4;"                       // return to form 0, entry 3
