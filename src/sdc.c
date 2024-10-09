@@ -365,7 +365,7 @@ int sdc_handle_event(void) {
   return 0;
 }
 
-static int sdc_image_inserted(char drive, unsigned long size) {
+static int sdc_image_inserted(char drive, unsigned long size, char *ext) {
   // report the size of the inserted image to the core. This is needed
   // to guess sector/track/side information for floppy disk images, so the
   // core can translate from floppy disk to LBA
@@ -376,10 +376,21 @@ static int sdc_image_inserted(char drive, unsigned long size) {
   sdc_spi_begin();
   mcu_hw_spi_tx_u08(SPI_SDC_INSERTED);
   mcu_hw_spi_tx_u08(drive);
+
+  // send file length
   mcu_hw_spi_tx_u08((size >> 24) & 0xff);
   mcu_hw_spi_tx_u08((size >> 16) & 0xff);
   mcu_hw_spi_tx_u08((size >> 8) & 0xff);
   mcu_hw_spi_tx_u08(size & 0xff);
+
+  // send nul teminated
+  if(ext)
+    while(*ext)
+      mcu_hw_spi_tx_u08(*ext++);
+
+  // send termination character, even if no image is selected
+  mcu_hw_spi_tx_u08(0);
+  
   mcu_hw_spi_end();
 
   return 0;
@@ -387,7 +398,7 @@ static int sdc_image_inserted(char drive, unsigned long size) {
 
 int sdc_image_open(int drive, char *name) {
   // tell core that the "disk" has been removed
-  sdc_image_inserted(drive, 0);
+  sdc_image_inserted(drive, 0, NULL);
 
   // forget about any previous name
   if(image_name[drive]) {
@@ -460,9 +471,15 @@ int sdc_image_open(int drive, char *name) {
 
   // remember current image name
   image_name[drive] = strdup(name);
+
+  // skip to file extensoin to be able to send it
+  char *ext = name;
+  while(*ext) ext++;                        // skip to end of name
+  while(*ext != '.' && ext != name) ext--;  // skip to last '.' (or begin)
+  if(*ext == '.') ext++;                    // ext starts after '.'
   
   // image has successfully been opened, so report image size to core
-  sdc_image_inserted(drive, fil[drive].obj.objsize);
+  sdc_image_inserted(drive, fil[drive].obj.objsize, ext);
   
   return 0;
 }
