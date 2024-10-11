@@ -130,7 +130,7 @@
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
     <menu label="Storage">
-      <fileselector label="Cartridge:" ext="AUTO BIN A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;2K;UA;E7;F0;32;AR" index="0" default="a2600crt.bin"/>
+      <fileselector label="Cartridge:" ext="BIN;A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;2K;UA;E7;F0;32;AR" index="0"/>
     </menu>
     <menu label="Settings">
       <list label="Screen:" id="W" default="0">
