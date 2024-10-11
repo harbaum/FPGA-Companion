@@ -300,58 +300,27 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
       // find matching hid report
       for(int idx=0;idx<MAX_XBOX_DEVICES;idx++) {
 	if(xbox_state[idx].dev_addr == dev_addr && xbox_state[idx].instance == instance) {
-/*
-DPAD_UP        0x0001
-DPAD_DOWN      0x0002
-DPAD_LEFT      0x0004
-DPAD_RIGHT     0x0008
-START          0x0010
-BACK           0x0020
-LEFT_THUMB     0x0040
-RIGHT_THUMB    0x0080
-LEFT_SHOULDER  0x0100
-RIGHT_SHOULDER 0x0200
-GUIDE          0x0400
-SHARE          0x0800
-A              0x1000
-B              0x2000
-X              0x4000
-Y              0x8000
-*/
+      
 	  // build new state
 	  unsigned char state =
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_UP   )?0x08:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
-	    ((p->wButtons & 0xf000) >> 8);  // A,B,X,Y button
-	  // build extra buttons state
-	  unsigned char state_extrabutton =
-	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER )?0x0100:0x0000) |
-	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)?0x0200:0x0000) |
-	    ((p->wButtons & XINPUT_GAMEPAD_BACK )?0x0400:0x0000) |
-	    ((p->wButtons & XINPUT_GAMEPAD_START )?0x0800:0x0000) |
- 	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_THUMB )?0x1000:0x0000) |
- 	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_THUMB )?0x2000:0x0000) |
- 	    ((p->wButtons & XINPUT_GAMEPAD_GUIDE )?0x4000:0x0000) |
- 	    ((p->wButtons & XINPUT_GAMEPAD_SHARE )?0x8000:0x0000);
-
+	    ((p->wButtons & 0xf000) >> 8);
+	  
 	  // submit if state has changed
 	  if(state != xbox_state[idx].state) {    
 	    usb_debugf("XBOX Joy%d: %02x", xbox_state[idx].js_index, state);
-	  if(state_extrabutton != xbox_state[idx].state_extrabutton) {    
-	    usb_debugf("XBOX Joy%d: extrabutton %02x", xbox_state[idx].js_index, state_extrabutton);
 	    
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08(state_extrabutton);
 	    mcu_hw_spi_end();
 	    
 	    xbox_state[idx].state = state;
-	    xbox_state[idx].state_extrabutton = state_extrabutton;
 	  }
 	}
       }
