@@ -207,24 +207,21 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   if(xbox->buffer[0] != 0 || xbox->buffer[1] != 20)
     return;
 
-  // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
   /*
   needed:
+  dpright       0x0001
+  dpleft        0x0002
+  dpdown        0x0004
+  dpup          0x0008
+  b             0x0010
+  a             0x0020
+  y             0x0040
+  x             0x0080
+  leftshoulder  0x0100
+  rightshoulder 0x0200
+  back          0x0400
+  start         0x0800
 
-  dpright
-  dpleft
-  dpdown
-  dpup
-  b
-  a
-  y
-  x
-  leftshoulder
-  rightshoulder
-  back
-  start
-
-  //XINPUT defines and struct format from
   //https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
   DPAD_UP 0x0001
   DPAD_DOWN 0x0002
@@ -234,6 +231,7 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   BACK 0x0020
   LEFT_THUMB 0x0040
   RIGHT_THUMB 0x0080
+  //
   LEFT_SHOULDER 0x0100
   RIGHT_SHOULDER 0x0200
   GUIDE 0x0400
@@ -249,10 +247,10 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   unsigned char state =
     ((xbox->buffer[2] & 0x01)<<3) | ((xbox->buffer[2] & 0x02)<<1) |
     ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
-    (xbox->buffer[3] & 0xf0);
+    (xbox->buffer[3] & 0xf0);  // A, B, X, Y
   
   unsigned char state_btn_extra = 
-    xbox->buffer[3] & 0x0f;
+    xbox->buffer[2] & 0xf0; //
 
   // submit if state has changed
   if(state != xbox->last_state || state_btn_extra != xbox->last_state_btn_extra ) {
