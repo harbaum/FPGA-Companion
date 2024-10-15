@@ -60,7 +60,7 @@
  <listentry label="Mouse" value="5"/>
  <listentry label="Off" value="6"/>
       </list>
-      <list label="Joyport 2:" id="J" default="9">
+      <list label="Joyport 2:" id="J" default="6">
  <listentry label="Retro D9" value="0"/>
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>

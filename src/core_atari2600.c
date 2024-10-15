@@ -67,7 +67,7 @@ menu_legacy_variable_t core_atari2600_variables[] = {
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'Q', { 1 }},    // Joystick port 1 mapping, USB #1
-  { 'J', { 9 }},    // Joystick port 2 mapping, OFF
+  { 'J', { 6 }},    // Joystick port 2 mapping, OFF
   { 'E', { 0 }},    // default standard = NTSC
   { 'C', { 0 }},    // default De-comb = off
   { 'M', { 0 }},    // default VBlank = original
