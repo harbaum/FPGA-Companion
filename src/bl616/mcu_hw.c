@@ -68,6 +68,8 @@ static struct usb_config {
     TaskHandle_t task_handle;    
     unsigned char last_state;
     unsigned char js_index;
+    int state_btn_extra;
+    unsigned char last_state_btn_extra;
 #ifdef RATE_CHECK
     TickType_t rate_start;
     unsigned long rate_events;
@@ -205,6 +207,43 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   if(xbox->buffer[0] != 0 || xbox->buffer[1] != 20)
     return;
 
+  // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+  /*
+  needed:
+
+  dpright
+  dpleft
+  dpdown
+  dpup
+  b
+  a
+  y
+  x
+  leftshoulder
+  rightshoulder
+  back
+  start
+
+  //XINPUT defines and struct format from
+  //https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+  DPAD_UP 0x0001
+  DPAD_DOWN 0x0002
+  DPAD_LEFT 0x0004
+  DPAD_RIGHT 0x0008
+  START 0x0010
+  BACK 0x0020
+  LEFT_THUMB 0x0040
+  RIGHT_THUMB 0x0080
+  LEFT_SHOULDER 0x0100
+  RIGHT_SHOULDER 0x0200
+  GUIDE 0x0400
+  SHARE 0x0800
+  A 0x1000
+  B 0x2000
+  X 0x4000
+  Y 0x8000
+  */
+
   // the xbox controller sends the direction bits in exactly the
   // reversed order than we expect ...
   unsigned char state =
@@ -212,8 +251,11 @@ static void xbox_parse(struct xbox_info_S *xbox) {
     ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
     (xbox->buffer[3] & 0xf0);
   
+  unsigned char state_btn_extra = 
+    xbox->buffer[3] & 0x0f;
+
   // submit if state has changed
-  if(state != xbox->last_state) {
+  if(state != xbox->last_state || state_btn_extra != xbox->last_state_btn_extra ) {
     
     usb_debugf("XBOX Joy%d: %02x", xbox->js_index, state);
   
@@ -222,9 +264,13 @@ static void xbox_parse(struct xbox_info_S *xbox) {
     mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
     mcu_hw_spi_tx_u08(xbox->js_index);
     mcu_hw_spi_tx_u08(state);
+    mcu_hw_spi_tx_u08(0); // gamepad analog X
+    mcu_hw_spi_tx_u08(0); // gamepad analog Y
+    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
     mcu_hw_spi_end();
     
     xbox->last_state = state;
+    xbox->last_state_btn_extra = state_btn_extra;
   }
 }
 

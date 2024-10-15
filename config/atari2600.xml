@@ -58,10 +58,7 @@
  <listentry label="NumPad" value="3"/>
  <listentry label="DualShock2" value="4"/>
  <listentry label="Mouse" value="5"/>
- <listentry label="DS2 Paddle" value="6"/>
- <listentry label="USB #1 Padd" value="7"/>
- <listentry label="USB #2 Padd" value="8"/>
- <listentry label="Off" value="9"/>
+ <listentry label="Off" value="6"/>
       </list>
       <list label="Joyport 2:" id="J" default="9">
  <listentry label="Retro D9" value="0"/>
@@ -70,10 +67,11 @@
  <listentry label="NumPad" value="3"/>
  <listentry label="DualShock2" value="4"/>
  <listentry label="Mouse" value="5"/>
- <listentry label="DS2 Paddle" value="6"/>
- <listentry label="USB #1 Padd" value="7"/>
- <listentry label="USB #2 Padd" value="8"/>
- <listentry label="Off" value="9"/>
+ <listentry label="Off" value="6"/>
+      </list>
+      <list label="Swap Joyst:" id="&" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
       </list>
       <list label="Invert Paddle:" id="V" default="0">
  <listentry label="Off" value="0"/>
@@ -108,25 +106,6 @@
  <listentry label="NTSC" value="0"/>
  <listentry label="PAL" value="1"/>
       </list>
-      <list label="File EXT:" id="H" default="0">
- <listentry label=".BIN" value="0"/>
- <listentry label=".A26" value="0"/>
- <listentry label=".F8" value="1"/>
- <listentry label=".F6" value="2"/>
- <listentry label=".FE" value="3"/>
- <listentry label=".E0" value="4"/>
- <listentry label=".3F" value="5"/>
- <listentry label=".F4" value="6"/>
- <listentry label=".P2" value="7"/> <!-- Pitfall II -->
- <listentry label=".FA" value="8"/>
- <listentry label=".CV" value="9"/>
- <listentry label=".2K" value="10"/>
- <listentry label=".UA" value="11"/>
- <listentry label=".E7" value="12"/>
- <listentry label=".F0" value="13"/>
- <listentry label=".32" value="14"/>
- <listentry label=".AR" value="15"/>
-     </list>
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
     <menu label="Storage">
