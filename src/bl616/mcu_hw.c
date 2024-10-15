@@ -247,10 +247,10 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   unsigned char state =
     ((xbox->buffer[2] & 0x01)<<3) | ((xbox->buffer[2] & 0x02)<<1) |
     ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
-    (xbox->buffer[3] & 0xf0);  // A, B, X, Y
+    (xbox->buffer[3] & 0xf0);  // Y, X, B, A
   
   unsigned char state_btn_extra = 
-    xbox->buffer[2] & 0xf0; //
+    (xbox->buffer[2] & 0xf0)>>4; // RT LT BACK START
 
   // submit if state has changed
   if(state != xbox->last_state || state_btn_extra != xbox->last_state_btn_extra ) {
