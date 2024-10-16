@@ -93,7 +93,7 @@
  <listentry label="Original" value="0"/>
  <listentry label="Regenerate" value="1"/>
       </list>
-       <list label="Video mode:" id="O" default="1">
+       <list label="Black&White:" id="O" default="1">
  <listentry label="Mono" value="0"/>
  <listentry label="Color" value="1"/>
       </list>
@@ -102,9 +102,10 @@
  <listentry label="Off" value="1"/>
  <listentry label="On" value="2"/>
       </list>
-      <list label="Video Std:" id="E" default="0">
- <listentry label="NTSC" value="0"/>
- <listentry label="PAL" value="1"/>
+      <list label="Region:" id="E" default="0">
+ <listentry label="Auto" value="0"/>
+ <listentry label="NTSC" value="1"/>
+ <listentry label="PAL" value="2"/>
       </list>
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>

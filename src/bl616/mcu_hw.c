@@ -255,7 +255,7 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   // submit if state has changed
   if(state != xbox->last_state || state_btn_extra != xbox->last_state_btn_extra ) {
     
-    usb_debugf("XBOX Joy%d: %02x", xbox->js_index, state);
+    usb_debugf("XBOX Joy%d: %02x %02x", xbox->js_index, state, state_btn_extra);
   
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);

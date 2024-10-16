@@ -33,9 +33,9 @@ static const char system_form_atari2600[] =
   "L,Difficulty P2:,A|B,Y;"
   "L,De-comb:,Off|On,C;"
   "L,VBlank:,Original|Regenerate,M;"
-  "L,Video mode:,Mono|Color,O;"
+  "L,Black&White:,Mono|Color,O;"
   "L,SuperChip:,Auto|Off|On,U;"
-  "L,Video Std:,NTSC|PAL,E;"
+  "L,Region:,Auto|NTSC|PAL,E;"
   "B,Cold Boot,B;"; 
 
 static const char storage_form_atari2600[] =
@@ -68,7 +68,7 @@ menu_legacy_variable_t core_atari2600_variables[] = {
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'Q', { 1 }},    // Joystick port 1 mapping, USB #1
   { 'J', { 6 }},    // Joystick port 2 mapping, OFF
-  { 'E', { 0 }},    // default standard = NTSC
+  { 'E', { 0 }},    // default standard = Auto
   { 'C', { 0 }},    // default De-comb = off
   { 'M', { 0 }},    // default VBlank = original
   { 'O', { 1 }},    // default Video mode = color
