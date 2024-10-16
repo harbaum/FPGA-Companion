@@ -173,10 +173,6 @@
  <listentry label="SwiftLnk DF" value="3"/>
  <listentry label="SwiftLnk D7" value="4"/>
       </list>
-      <list label="SID Digifix:" id="U" default="0">
- <listentry label="Off" value="0"/>
- <listentry label="On" value="1"/>
-      </list>
       <list label="GeoRAM:" id="#" default="0">
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
