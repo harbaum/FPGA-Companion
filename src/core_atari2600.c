@@ -25,17 +25,17 @@ static const char main_form_atari2600[] =
 static const char system_form_atari2600[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;"
-  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,J;"
+  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|Off,Q;"
+  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|Off,J;"
+  "L,Swap Joyst:,Off|On,&;"
   "L,Invert Paddle:,Off|On,V;"
   "L,Difficulty P1:,A|B,X;"
   "L,Difficulty P2:,A|B,Y;"
   "L,De-comb:,Off|On,C;"
   "L,VBlank:,Original|Regenerate,M;"
-  "L,Video mode:,Mono|Color,O;"
+  "L,Black&White:,Mono|Color,O;"
   "L,SuperChip:,Auto|Off|On,U;"
-  "L,Video Std:,NTSC|PAL,E;"
-  "L,File EXT:,AUTO BIN A26|.F8|.F6|.FE|.E0|.3F|.F4|.P2|.FA|.CV|.2K|.UA|.E7|.F0|.32|.AR,H;"
+  "L,Region:,Auto|NTSC|PAL,E;"
   "B,Cold Boot,B;"; 
 
 static const char storage_form_atari2600[] =
@@ -61,18 +61,18 @@ const char *core_atari2600_forms[] = {
 menu_legacy_variable_t core_atari2600_variables[] = {
   { 'X', { 0 }},    // default Difficulty P1 = A
   { 'Y', { 0 }},    // default Difficulty P2 = A
+  { '&', { 0 }},    // default Joystick swap = Off
   { 'V', { 0 }},    // default Invert Paddle = off
   { 'S', { 0 }},    // default scanlines = none
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'Q', { 1 }},    // Joystick port 1 mapping, USB #1
-  { 'J', { 9 }},    // Joystick port 2 mapping, OFF
-  { 'E', { 0 }},    // default standard = NTSC
+  { 'J', { 6 }},    // Joystick port 2 mapping, OFF
+  { 'E', { 0 }},    // default standard = Auto
   { 'C', { 0 }},    // default De-comb = off
   { 'M', { 0 }},    // default VBlank = original
   { 'O', { 1 }},    // default Video mode = color
   { 'U', { 0 }},    // default SuperChip = auto
-  { 'H', { 0 }},    // default file ext = 0
   { '\0',{ 0 }}
 };
 
