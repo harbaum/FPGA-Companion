@@ -111,7 +111,7 @@
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
-      <list label="C1541 ROM:" id="D" default="0">
+      <list label="C1541 ROM:" id="D" default="0" action="c1541_reset">
  <listentry label="Dolphin DOS" value="0"/>
  <listentry label="CBM DOS" value="1"/>
  <listentry label="Speed DOS P" value="2"/>
@@ -127,7 +127,7 @@
  <listentry label="3x" value="1"/>
  <listentry label="4x" value="2"/>
       </list>
-      <list label="Video Std:" id="E" default="0">
+      <list label="Video Std:" id="E" default="0" action="cold_reset">
  <listentry label="PAL" value="0"/>
  <listentry label="NTSC" value="1"/>
       </list>
@@ -137,10 +137,6 @@
  <listentry label="Passport" value="2"/>
  <listentry label="DATEL" value="3"/>
  <listentry label="Namesoft" value="4"/>
-      </list>
-      <list label="Pause OSD:" id="G" default="0">
- <listentry label="Off" value="0"/>
- <listentry label="On" value="1"/>
       </list>
       <list label="VIC-II:" id="C" default="0">
  <listentry label="656x" value="0"/>
@@ -184,9 +180,6 @@
       <list label="RS232 mode:" id="<" default="0">
  <listentry label="VIC-1011" value="0"/>
  <listentry label="UP9600" value="1"/>
- <listentry label="SwiftLnk DE" value="2"/>
- <listentry label="SwiftLnk DF" value="3"/>
- <listentry label="SwiftLnk D7" value="4"/>
       </list>
       <list label="GeoRAM:" id="#" default="0">
  <listentry label="Off" value="0"/>
