@@ -7,13 +7,17 @@
     <action name="init">
       <!-- (try to) load config from sd card -->
       <load file="c64.ini"/>
-      <set id="R" value="1"/>  <!-- keep machine in reset -->
+      <set id="R" value="3"/>  <!-- keep machine in cold reset -->
+      <set id="Z" value="1"/>  <!-- default c1541 -->
+      <set id="F" value="0"/>  <!-- default cartridge detach -->
     </action>
     
     <!-- the ready action is being executed once all -->
     <!-- initialization has been done -->
     <action name="ready">
       <set id="R" value="0"/>  <!-- release reset -->
+      <set id="F" value="0"/>  <!-- default cartridge detach -->
+      <set id="Z" value="0"/>  <!-- c1541 out of reset -->
     </action>
       
     <action name="save">
@@ -37,7 +41,6 @@
     <action name="cold_reset">
       <!-- trigger a cold system reset -->
       <set id="R" value="3"/>
-      <delay ms="10"/>
       <set id="R" value="0"/>      
     </action>
     
@@ -50,8 +53,7 @@
     <action name="c1541_reset">
       <!-- trigger a cold system reset -->
       <set id="Z" value="1"/>
-      <delay ms="10"/>
-      <set id="Z" value="0"/>      
+      <set id="Z" value="0"/>
     </action>
 
     <action name="c1541_reset_hide">
@@ -59,12 +61,25 @@
       <link action="c1541_reset"/>
       <hide/>      
     </action>
+
+    <action name="detach_reset">
+      <!-- trigger a detach reset -->
+      <set id="F" value="1"/>
+      <set id="F" value="0"/>
+    </action>
+
+    <action name="detach_reset_hide">
+      <!-- trigger a detach reset and hide OSD -->
+      <link action="detach_reset"/>
+      <hide/>      
+    </action>
+
   </actions>
   
   <menu label="C64Nano">
-    <fileselector label="Floppy 8:" ext="d64;g64" index="0"/>
+ <button label="Detach Cartridge & Reset" action="detach_reset_hide"/>
     <menu label="System">
-      <list label="Joyport 1:" id="Q" default="7">
+      <list label="Joyport 1:" id="Q" default="9">
  <listentry label="Retro D9" value="0"/>
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>
@@ -76,7 +91,7 @@
  <listentry label="USB #2 Padd" value="8"/>
  <listentry label="Off" value="9"/>
       </list>
-      <list label="Joyport 2:" id="J" default="0">
+      <list label="Joyport 2:" id="J" default="1">
  <listentry label="Retro D9" value="0"/>
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>
