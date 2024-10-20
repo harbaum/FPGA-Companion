@@ -92,3 +92,10 @@ make
 ```
 
 program the firmware by using [instructions](https://github.com/harbaum/MiSTeryNano/tree/main/firmware)
+
+figure out µC bootloader COM port and use shell command:  
+Press Windows + R keyboard shortcut to launch the Windows Run box, type “devmgmt. msc” , and click the OK button
+
+```
+make CHIP=bl616 COMX=COMabc  flash
+```

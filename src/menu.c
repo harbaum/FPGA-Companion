@@ -286,14 +286,6 @@ static void menu_legacy_variable_set(const char *s, int val) {
 	  sys_set_val('R', 0);
 	}
       }
-  if(core_id == CORE_ID_ATARI_2600) {
-	// trigger reset 
-	if(id == 'E') {
-	  sys_set_val('R', 3);
-	  sys_set_val('R', 0);
-	}
-      }
-
     }
   }
 }
@@ -719,11 +711,20 @@ static void menu_legacy_select(void) {
       osd_enable(OSD_INVISIBLE);  // hide OSD
     }
 
-    // c64 and vic20 core, c1541 reset
-    if(id == 'Z') {    
-      sys_set_val('Z', 1);
-      sys_set_val('Z', 0);
-      osd_enable(OSD_INVISIBLE);  // hide OSD
+    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {
+      // c64 and vic20 core, c1541 reset
+      if(id == 'Z') {
+        sys_set_val('Z', 1);
+        sys_set_val('Z', 0);
+        osd_enable(OSD_INVISIBLE);  // hide OSD
+      }
+
+      // c64 and vic20 core, detach cartridge
+      if(id == 'F') {
+        sys_set_val('F', 1);
+        sys_set_val('F', 0);
+        osd_enable(OSD_INVISIBLE);  // hide OSD
+      }
     }
   } break;
 	
@@ -1338,6 +1339,7 @@ void menu_init(void) {
     if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c64 core, c1541 reset at power-up
       sys_set_val('Z', 1);
       sys_set_val('Z', 0);
+      sys_set_val('F', 0); // default cartridge unload
     }
     
     menu_do(0);
