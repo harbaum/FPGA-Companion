@@ -52,22 +52,28 @@
     <fileselector label="Cartridge:" ext="BIN;A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;2K;UA;E7;F0;32;AR" index="0"/>
     <menu label="System">
       <list label="Joyport 1:" id="Q" default="1">
- <listentry label="Retro D9" value="0"/>
+ <listentry label="Retro #1 D9" value="0"/>
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DualShock2" value="4"/>
+ <listentry label="DS2 #1 Joy" value="4"/>
  <listentry label="Mouse" value="5"/>
  <listentry label="Off" value="6"/>
+ <listentry label="DS2 #2 Joy" value="7"/>
+ <listentry label="R #2 D9 PMOD" value="8"/>
+ <listentry label="R #2 D9 ALT" value="9"/>
       </list>
       <list label="Joyport 2:" id="J" default="6">
- <listentry label="Retro D9" value="0"/>
+ <listentry label="Retro #1 D9" value="0"/>
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DualShock2" value="4"/>
+ <listentry label="DS2 #1 Joy" value="4"/>
  <listentry label="Mouse" value="5"/>
  <listentry label="Off" value="6"/>
+ <listentry label="DS2 #2 Joy" value="7"/>
+ <listentry label="R #2 D9 PMOD" value="8"/>
+ <listentry label="R #2 D9 ALT" value="9"/>
       </list>
       <list label="Swap Joyst:" id="&" default="0">
  <listentry label="Off" value="0"/>
