@@ -25,8 +25,8 @@ static const char main_form_atari2600[] =
 static const char system_form_atari2600[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|Off,Q;"
-  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|Off,J;"
+  "L,Joyport 1:,Retro #1 D9|USB #1 Joy|USB #2 Joy|NumPad|DS2 #1 Joy|Mouse|Off|DS2 #2 Joy|R #2 D9 PMOD|R #2 D9 ALT,Q;"
+  "L,Joyport 2:,Retro #1 D9|USB #1 Joy|USB #2 Joy|NumPad|DS2 #1 Joy|Mouse|Off|DS2 #2 Joy|R #2 D9 PMOD|R #2 D9 ALT,J;"
   "L,Swap Joyst:,Off|On,&;"
   "L,Invert Paddle:,Off|On,V;"
   "L,Difficulty P1:,A|B,X;"
