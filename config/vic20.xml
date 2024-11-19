@@ -7,13 +7,17 @@
     <action name="init">
       <!-- (try to) load config from sd card -->
       <load file="vic20.ini"/>
-      <set id="R" value="1"/>  <!-- keep machine in reset -->
+      <set id="R" value="3"/>  <!-- keep machine in cold reset -->
+      <set id="Z" value="1"/>  <!-- default c1541 -->
+      <set id="F" value="0"/>  <!-- default cartridge detach -->
     </action>
     
     <!-- the ready action is being executed once all -->
     <!-- initialization has been done -->
     <action name="ready">
       <set id="R" value="0"/>  <!-- release reset -->
+      <set id="F" value="0"/>  <!-- default cartridge detach -->
+      <set id="Z" value="0"/>  <!-- c1541 out of reset -->
     </action>
       
     <action name="save">
@@ -37,7 +41,6 @@
     <action name="cold_reset">
       <!-- trigger a cold system reset -->
       <set id="R" value="3"/>
-      <delay ms="10"/>
       <set id="R" value="0"/>      
     </action>
     
@@ -50,8 +53,7 @@
     <action name="c1541_reset">
       <!-- trigger a cold system reset -->
       <set id="Z" value="1"/>
-      <delay ms="10"/>
-      <set id="Z" value="0"/>      
+      <set id="Z" value="0"/>
     </action>
 
     <action name="c1541_reset_hide">
@@ -59,10 +61,23 @@
       <link action="c1541_reset"/>
       <hide/>      
     </action>
+
+    <action name="detach_reset">
+      <!-- trigger a detach reset -->
+      <set id="F" value="1"/>
+      <set id="F" value="0"/>
+    </action>
+
+    <action name="detach_reset_hide">
+      <!-- trigger a detach reset and hide OSD -->
+      <link action="detach_reset"/>
+      <hide/>      
+    </action>
+
   </actions>
   
   <menu label="VIC20Nano">
-    <fileselector label="Floppy 8:" ext="d64;g64" index="0"/>
+ <button label="Detach Cartridge & Reset" action="detach_reset_hide"/>
     <menu label="System">
       <list label="Joyport:" id="Q" default="7">
  <listentry label="Retro D9" value="0"/>
