@@ -24,7 +24,7 @@ const char * core_vic20_default_images[] = {
 static const char main_form_vic20[] =
   "VIC20Nano,;"                         // main form has no parent
   // --------
-  "F,Floppy 8:,0|d64+g64;"              // fileselector for Floppy 8:
+  "B,Detach Cartridge & Reset,F;"
   "S,System,1;"                         // System submenu is form 1
   "S,Storage,2;"                        // Storage submenu
   "S,Settings,3;"                       // Settings submenu is form 2
