@@ -279,6 +279,12 @@ static void menu_legacy_variable_set(const char *s, int val) {
 	  sys_set_val('Z', 1);
 	  sys_set_val('Z', 0); }
       }
+  if(core_id == CORE_ID_VIC20){
+  // trigger reset in case memory configuration change
+  if(id == 'U' || id == 'X' || id == 'Y' || id == 'N') {
+    sys_set_val('R', 3);
+    sys_set_val('R', 0); }
+  }
       if(core_id == CORE_ID_AMIGA) {      
 	// trigger reset if memory or chipset settings changed
 	if((id == 'Y') || (id == 'X') || (id == 'C')) {
@@ -1336,10 +1342,10 @@ void menu_init(void) {
     sys_set_val('R', 3);
     sys_set_val('R', 0);
   
-    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c64 core, c1541 reset at power-up
+    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c1541 reset at power-up
+      sys_set_val('F', 0);
       sys_set_val('Z', 1);
       sys_set_val('Z', 0);
-      sys_set_val('F', 0); // default cartridge unload
     }
     
     menu_do(0);
