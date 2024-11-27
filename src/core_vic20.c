@@ -83,7 +83,7 @@ menu_legacy_variable_t core_vic20_variables[] = {
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'P', { 0 }},    // default no floppy write protected
-  { 'Q', { 0 }},    // Joystick port 1 mapping = DB9
+  { 'Q', { 1 }},    // Joystick port 1 mapping = USB 1
   { 'E', { 0 }},    // default standard = PAL
   { 'J', { 1 }},    // Screen center = Both
   { 'V', { 1 }},    // Cartridge writable = On
