@@ -55,6 +55,7 @@ static const char storage_form_vic20[] =
   "F,PRG BASIC:,2|prg;"                 // fileselector for PRG
   "F,VIC20 Kernal:,3|bin;"              // fileselector for Kernal ROM
   "F,TAP Tape:,4|tap;"                  // fileselector for TAP
+  "F,MEGACART ROM:,5|rom;"              // fileselector for Megacart
   "L,Disk prot.:,None|8:,P;";           // Enable/Disable Floppy write protection
 
 static const char settings_form_vic20[] =

@@ -145,6 +145,7 @@
       <fileselector label="PRG BASIC:" ext="prg" index="2" default="vic20prg.prg"/>
       <fileselector label="VIC20 KERNAL:" ext="bin" index="3" default="vic20kernal.bin"/>
       <fileselector label="TAP TAPE:" ext="tap" index="4" default="vic20tap.tap"/>
+      <fileselector label="MEGACART ROM:" ext="rom" index="5" default="vic20mc.rom"/>
       <list label="Disk prot.:" id="P" default="0">
 	<listentry label="None" value="0"/>
 	<listentry label="8:" value="1"/>
