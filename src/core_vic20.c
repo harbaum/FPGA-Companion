@@ -44,6 +44,7 @@ static const char system_form_vic20[] =
   "L,Vid. cent:,Off|Both|Horz|Vert,J;"
   "L,CRT write:,Off|On,V;"
   "L,Tape Sound:,Off|On,I;"
+	"L,RS232 port:,Tang USB-C|External|reserved,*;"
   "B,c1541 Reset,Z;"
   "B,Cold Boot,B;"; 
 
@@ -89,6 +90,7 @@ menu_legacy_variable_t core_vic20_variables[] = {
   { 'J', { 1 }},    // Screen center = Both
   { 'V', { 1 }},    // Cartridge writable = On
   { 'I', { 1 }},    // default Tape sound = On
+  { '*', { 0 }},    // default RS232 connection = Tang USB-C
   { '\0',{ 0 }}
 };
 
