@@ -13,7 +13,7 @@ const char * core_c64_default_images[] = {
   CARD_MOUNTPOINT "/c64crt.crt",
   CARD_MOUNTPOINT "/c64prg.prg",
   CARD_MOUNTPOINT "/c64kernal.bin",
-  CARD_MOUNTPOINT "/c64tap.tap",
+  CARD_MOUNTPOINT "",  // tape intentionally excluded
   CARD_MOUNTPOINT "/c64flt.flt",
   NULL
 };
