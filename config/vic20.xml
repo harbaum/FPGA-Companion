@@ -16,7 +16,6 @@
     <!-- initialization has been done -->
     <action name="ready">
       <set id="R" value="0"/>  <!-- release reset -->
-      <set id="F" value="0"/>  <!-- default cartridge detach -->
       <set id="Z" value="0"/>  <!-- c1541 out of reset -->
     </action>
       
@@ -41,6 +40,7 @@
     <action name="cold_reset">
       <!-- trigger a cold system reset -->
       <set id="R" value="3"/>
+      <delay ms="10"/>
       <set id="R" value="0"/>      
     </action>
     
@@ -53,6 +53,7 @@
     <action name="c1541_reset">
       <!-- trigger a cold system reset -->
       <set id="Z" value="1"/>
+      <delay ms="10"/>
       <set id="Z" value="0"/>
     </action>
 
@@ -65,6 +66,7 @@
     <action name="detach_reset">
       <!-- trigger a detach reset -->
       <set id="F" value="1"/>
+      <delay ms="10"/>
       <set id="F" value="0"/>
     </action>
 
@@ -79,37 +81,39 @@
   <menu label="VIC20Nano">
  <button label="Detach Cartridge & Reset" action="detach_reset_hide"/>
     <menu label="System">
-      <list label="Joyport:" id="Q" default="7">
+      <list label="Joyport:" id="Q" default="1">
  <listentry label="Retro D9" value="0"/>
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DualShock2" value="4"/>
+ <listentry label="DS #1 Joy" value="4"/>
  <listentry label="Mouse" value="5"/>
- <listentry label="DS2 Paddle" value="6"/>
+ <listentry label="DS #1 Paddle" value="6"/>
  <listentry label="USB #1 Padd" value="7"/>
  <listentry label="USB #2 Padd" value="8"/>
  <listentry label="Off" value="9"/>
+ <listentry label="DS #2 Joy" value="10"/>
+ <listentry label="DS #2 Paddle" value="11"/>
       </list>
-      <list label="C1541 ROM:" id="D" default="1">
+      <list label="C1541 ROM:" id="D" default="1" action="c1541_reset_hide">
  <listentry label="Dolphin DOS" value="0"/>
  <listentry label="CBM DOS" value="1"/>
  <listentry label="Speed DOS P" value="2"/>
  <listentry label="Jiffy DOS" value="3"/>
       </list>
-      <list label="RAM $04 3K:" id="U" default="0">
+      <list label="RAM $04 3K:" id="U" default="0" action="cold_reset">
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
-      <list label="RAM $20 8K:" id="X" default="0">
+      <list label="RAM $20 8K:" id="X" default="0" action="cold_reset">
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
-      <list label="RAM $40 8K:" id="Y" default="0">
+      <list label="RAM $40 8K:" id="Y" default="0" action="cold_reset">
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
-      <list label="RAM $60 8K:" id="N" default="0">
+      <list label="RAM $60 8K:" id="N" default="0" action="cold_reset">
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
@@ -117,7 +121,7 @@
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
-      <list label="Video Std:" id="E" default="0">
+      <list label="Video Std:" id="E" default="0" action="cold_reset">
  <listentry label="PAL" value="0"/>
  <listentry label="NTSC" value="1"/>
       </list>
@@ -134,6 +138,11 @@
  <listentry label="Off" value="0"/>
  <listentry label="On" value="1"/>
       </list>
+      <list label="RS232 port:" id="*" default="0">
+ <listentry label="Tang USB-C" value="0"/>
+ <listentry label="External" value="1"/>
+ <listentry label="reserved" value="2"/>
+      </list>
  <button label="C1541 Reset" action="c1541_reset_hide"/>
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
@@ -143,6 +152,7 @@
       <fileselector label="PRG BASIC:" ext="prg" index="2" default="vic20prg.prg"/>
       <fileselector label="VIC20 KERNAL:" ext="bin" index="3" default="vic20kernal.bin"/>
       <fileselector label="TAP TAPE:" ext="tap" index="4" default="vic20tap.tap"/>
+      <fileselector label="MEGACART ROM:" ext="rom" index="5" default="vic20mc.rom"/>
       <list label="Disk prot.:" id="P" default="0">
 	<listentry label="None" value="0"/>
 	<listentry label="8:" value="1"/>
