@@ -13,7 +13,8 @@ const char * core_vic20_default_images[] = {
   CARD_MOUNTPOINT "/vic20crt.crt",
   CARD_MOUNTPOINT "/vic20prg.prg",
   CARD_MOUNTPOINT "/vic20kernal.bin",
-  CARD_MOUNTPOINT "/vic20tap.tap",
+  CARD_MOUNTPOINT "", // tape intentionally excluded
+  CARD_MOUNTPOINT "/vic20mc.rom",
   NULL
 };
 
