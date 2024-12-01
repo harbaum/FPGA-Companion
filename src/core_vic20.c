@@ -44,7 +44,7 @@ static const char system_form_vic20[] =
   "L,Vid. cent:,Off|Both|Horz|Vert,J;"
   "L,CRT write:,Off|On,V;"
   "L,Tape Sound:,Off|On,I;"
-	"L,RS232 port:,Tang USB-C|External|reserved,*;"
+  "L,RS232 port:,Tang USB-C|External|reserved,*;"
   "B,c1541 Reset,Z;"
   "B,Cold Boot,B;"; 
 
