@@ -86,12 +86,14 @@
  <listentry label="USB #1 Joy" value="1"/>
  <listentry label="USB #2 Joy" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DualShock2" value="4"/>
+ <listentry label="DS #1 Joy" value="4"/>
  <listentry label="Mouse" value="5"/>
- <listentry label="DS2 Paddle" value="6"/>
+ <listentry label="DS #1 Paddle" value="6"/>
  <listentry label="USB #1 Padd" value="7"/>
  <listentry label="USB #2 Padd" value="8"/>
  <listentry label="Off" value="9"/>
+ <listentry label="DS #2 Joy" value="10"/>
+ <listentry label="DS #2 Paddle" value="11"/>
       </list>
       <list label="C1541 ROM:" id="D" default="1" action="c1541_reset_hide">
  <listentry label="Dolphin DOS" value="0"/>
