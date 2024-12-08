@@ -33,5 +33,8 @@ char *sdc_get_image_name(int drive);
 char *sdc_get_cwd(int drive);
 void sdc_set_default(int drive, const char *name);
 void sdc_mount_defaults(void);
+#ifdef ESP_PLATFORM
+void sdc_load_core(char *fname);
+#endif
 
 #endif // SDC_H
