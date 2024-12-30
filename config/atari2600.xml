@@ -53,27 +53,31 @@
     <menu label="System">
       <list label="Joyport 1:" id="Q" default="1">
  <listentry label="Retro #1 D9" value="0"/>
- <listentry label="USB #1 Joy" value="1"/>
- <listentry label="USB #2 Joy" value="2"/>
+ <listentry label="USB #1 Joyst" value="1"/>
+ <listentry label="USB #2 Joyst" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DS2 #1 Joy" value="4"/>
- <listentry label="Mouse" value="5"/>
- <listentry label="Off" value="6"/>
- <listentry label="DS2 #2 Joy" value="7"/>
- <listentry label="R #2 D9 PMOD" value="8"/>
- <listentry label="R #2 D9 ALT" value="9"/>
+ <listentry label="DS #1 Joyst" value="4"/>
+ <listentry label="DS #2 Joyst" value="5"/>
+ <listentry label="Mouse" value="6"/>
+ <listentry label="USB #1 Paddl" value="7"/>
+ <listentry label="USB #2 Paddl" value="8"/>
+ <listentry label="DS #1 Paddle" value="9"/>
+ <listentry label="DS #2 Paddle" value="10"/>
+ <listentry label="Off" value="11"/>
       </list>
-      <list label="Joyport 2:" id="J" default="6">
+      <list label="Joyport 2:" id="J" default="11">
  <listentry label="Retro #1 D9" value="0"/>
- <listentry label="USB #1 Joy" value="1"/>
- <listentry label="USB #2 Joy" value="2"/>
+ <listentry label="USB #1 Joyst" value="1"/>
+ <listentry label="USB #2 Joyst" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DS2 #1 Joy" value="4"/>
- <listentry label="Mouse" value="5"/>
- <listentry label="Off" value="6"/>
- <listentry label="DS2 #2 Joy" value="7"/>
- <listentry label="R #2 D9 PMOD" value="8"/>
- <listentry label="R #2 D9 ALT" value="9"/>
+ <listentry label="DS #1 Joyst" value="4"/>
+ <listentry label="DS #2 Joyst" value="5"/>
+ <listentry label="Mouse" value="6"/>
+ <listentry label="USB #1 Paddl" value="7"/>
+ <listentry label="USB #2 Paddl" value="8"/>
+ <listentry label="DS #1 Paddle" value="9"/>
+ <listentry label="DS #2 Paddle" value="10"/>
+ <listentry label="Off" value="11"/>
       </list>
       <list label="Swap Joyst:" id="&" default="0">
  <listentry label="Off" value="0"/>
