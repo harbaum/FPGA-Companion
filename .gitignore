@@ -52,3 +52,5 @@ Mkfile.old
 dkms.conf
 
 build/
+managed_components/
+dependencies.lock

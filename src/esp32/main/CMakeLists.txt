@@ -14,7 +14,7 @@ idf_component_register(SRCS
 	"../../core_c64.c"
 	"../../core_vic20.c"
 	"../../core_amiga.c"
-	"../../core_atari2600.c
+	"../../core_atari2600.c"
 	"../../config.c"
 	"../../xml.c"
 	"../mcu_hw.c"
