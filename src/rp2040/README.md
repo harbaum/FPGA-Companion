@@ -41,6 +41,24 @@ cd tinyusb
 python3 tools/get_deps.py rp2040
 ```
 
+### Clone this respository
+
+Thhis repository has to be cloned recursively to make sure the submodules
+are included.
+
+```
+git clone https://github.com/harbaum/FPGA-Companion.git  --recursive
+cd FPGA-Companion
+```
+
+Alternally do a
+
+```
+git submodule update --init
+```
+
+after a non-recursive clone to update the submodules.
+
 ### Run cmake and make
 
 To start the build process create a build directory and start the
