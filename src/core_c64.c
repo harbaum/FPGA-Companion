@@ -13,7 +13,7 @@ const char * core_c64_default_images[] = {
   CARD_MOUNTPOINT "/c64crt.crt",
   CARD_MOUNTPOINT "/c64prg.prg",
   CARD_MOUNTPOINT "/c64kernal.bin",
-  CARD_MOUNTPOINT "/c64tap.tap",
+  CARD_MOUNTPOINT "",  // tape intentionally excluded
   CARD_MOUNTPOINT "/c64flt.flt",
   NULL
 };
@@ -21,7 +21,7 @@ const char * core_c64_default_images[] = {
 static const char main_form_c64[] =
   "C64Nano,;"                           // main form has no parent
   // --------
-  "F,Floppy 8:,0|d64+g64;"              // fileselector for Floppy 8:
+  "B,Detach Cartridge & Reset,F;"
   "S,System,1;"                         // System submenu is form 1
   "S,Storage,2;"                        // Storage submenu
   "S,Settings,3;"                       // Settings submenu is form 2
@@ -30,8 +30,8 @@ static const char main_form_c64[] =
 static const char system_form_c64[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;"
-  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,J;"
+  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DS #1 Joy|Mouse|DS #1 Paddle|USB #1 Padd|USB #2 Padd|Off|DS #2 Joy|DS #2 Paddle,Q;"
+  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DS #1 Joy|Mouse|DS #1 Paddle|USB #1 Padd|USB #2 Padd|Off|DS #2 Joy|DS #2 Paddle,J;"
   "L,Swap Joyst:,Off|On,&;"
   "L,REU 1750:,Off|On,V;"
   "L,c1541 ROM:,Dolphin DOS|CBM DOS|Speed DOS P|Jiffy DOS,D;"
@@ -90,8 +90,8 @@ menu_legacy_variable_t core_c64_variables[] = {
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'P', { 0 }},    // default no floppy write protected
-  { 'Q', { 7 }},    // Joystick port 1 mapping, OFF
-  { 'J', { 0 }},    // Joystick port 2 mapping, DB9
+  { 'Q', { 9 }},    // Joystick port 1 mapping, off
+  { 'J', { 1 }},    // Joystick port 2 mapping, USB #1
   { 'E', { 0 }},    // default standard = PAL
   { 'N', { 0 }},    // default MIDI = Off
   { 'G', { 0 }},    // default OSD Pause = Off

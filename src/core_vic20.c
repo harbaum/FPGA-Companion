@@ -13,7 +13,8 @@ const char * core_vic20_default_images[] = {
   CARD_MOUNTPOINT "/vic20crt.crt",
   CARD_MOUNTPOINT "/vic20prg.prg",
   CARD_MOUNTPOINT "/vic20kernal.bin",
-  CARD_MOUNTPOINT "/vic20tap.tap",
+  CARD_MOUNTPOINT "", // tape intentionally excluded
+  CARD_MOUNTPOINT "/vic20mc.rom",
   NULL
 };
 
@@ -24,7 +25,7 @@ const char * core_vic20_default_images[] = {
 static const char main_form_vic20[] =
   "VIC20Nano,;"                         // main form has no parent
   // --------
-  "F,Floppy 8:,0|d64+g64;"              // fileselector for Floppy 8:
+  "B,Detach Cartridge & Reset,F;"
   "S,System,1;"                         // System submenu is form 1
   "S,Storage,2;"                        // Storage submenu
   "S,Settings,3;"                       // Settings submenu is form 2
@@ -33,7 +34,7 @@ static const char main_form_vic20[] =
 static const char system_form_vic20[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;" // Joystick port 1 mapping
+  "L,Joyport:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DS #1 Joy|Mouse|DS #1 Paddle|USB #1 Padd|USB #2 Padd|Off|DS #2 Joy|DS #2 Paddle,Q;"
   "L,c1541 ROM:,Dolphin DOS|CBM DOS|Speed DOS P|Jiffy DOS,D;"  // c1541 compatibility
   "L,RAM $04 3K:,Off|On,U;"
   "L,RAM $20 8K:,Off|On,X;"
@@ -44,6 +45,7 @@ static const char system_form_vic20[] =
   "L,Vid. cent:,Off|Both|Horz|Vert,J;"
   "L,CRT write:,Off|On,V;"
   "L,Tape Sound:,Off|On,I;"
+  "L,RS232 port:,Tang USB-C|External|reserved,*;"
   "B,c1541 Reset,Z;"
   "B,Cold Boot,B;"; 
 
@@ -55,6 +57,7 @@ static const char storage_form_vic20[] =
   "F,PRG BASIC:,2|prg;"                 // fileselector for PRG
   "F,VIC20 Kernal:,3|bin;"              // fileselector for Kernal ROM
   "F,TAP Tape:,4|tap;"                  // fileselector for TAP
+  "F,MEGACART ROM:,5|rom;"              // fileselector for Megacart
   "L,Disk prot.:,None|8:,P;";           // Enable/Disable Floppy write protection
 
 static const char settings_form_vic20[] =
@@ -83,11 +86,12 @@ menu_legacy_variable_t core_vic20_variables[] = {
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'P', { 0 }},    // default no floppy write protected
-  { 'Q', { 0 }},    // Joystick port 1 mapping = DB9
+  { 'Q', { 1 }},    // Joystick port 1 mapping = USB 1
   { 'E', { 0 }},    // default standard = PAL
   { 'J', { 1 }},    // Screen center = Both
   { 'V', { 1 }},    // Cartridge writable = On
   { 'I', { 1 }},    // default Tape sound = On
+  { '*', { 0 }},    // default RS232 connection = Tang USB-C
   { '\0',{ 0 }}
 };
 

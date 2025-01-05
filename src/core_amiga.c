@@ -48,6 +48,7 @@ static const char system_form_amiga[] =
   "F,Floppy DF1:,1|adf;" 
   "F,Floppy DF2:,2|adf;" 
   "F,Floppy DF3:,3|adf;"
+  "L,IDE,Enabled|Disabled,I;"
   "F,Harddisk DH0:,4|hdf;"
   "F,Harddisk DH1:,5|hdf;"; 
 
@@ -74,6 +75,7 @@ menu_legacy_variable_t core_amiga_variables[] = {
   { 'L', { 0 }},    // default no scanlines
   { 'Y', { 0 }},    // default 512k chip ram
   { 'X', { 1 }},    // default 512k slow ram
+  { 'I', { 1 }},    // default IDE enabled
   { '\0',{ 0 }}
 };
 

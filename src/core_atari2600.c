@@ -16,7 +16,7 @@ const char * core_atari2600_default_images[] = {
 static const char main_form_atari2600[] =
   "A2600Nano,;"                           // main form has no parent
   // --------
-  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+UA+E7+F0+32;" // fileselector for ROM
+  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+2K+UA+E7+F0+32+AR;" // fileselector for ROM
   "S,System,1;"                         // System submenu is form 1
   "S,Storage,2;"                        // Storage submenu
   "S,Settings,3;"                       // Settings submenu is form 2
@@ -25,23 +25,23 @@ static const char main_form_atari2600[] =
 static const char system_form_atari2600[] =
   "System,0|2;"                         // return to form 0, entry 2
   // --------
-  "L,Joyport 1:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,Q;"
-  "L,Joyport 2:,Retro D9|USB #1 Joy|USB #2 Joy|NumPad|DualShock 2|Mouse|DS2 Paddle|USB #1 Padd|USB #2 Padd|Off,J;"
+  "L,Joyport 1:,Retro #1 D9|USB #1 Joy|USB #2 Joy|NumPad|DS2 #1 Joy|Mouse|Off|DS2 #2 Joy|R #2 D9 PMOD|R #2 D9 ALT,Q;"
+  "L,Joyport 2:,Retro #1 D9|USB #1 Joy|USB #2 Joy|NumPad|DS2 #1 Joy|Mouse|Off|DS2 #2 Joy|R #2 D9 PMOD|R #2 D9 ALT,J;"
+  "L,Swap Joyst:,Off|On,&;"
   "L,Invert Paddle:,Off|On,V;"
   "L,Difficulty P1:,A|B,X;"
   "L,Difficulty P2:,A|B,Y;"
   "L,De-comb:,Off|On,C;"
   "L,VBlank:,Original|Regenerate,M;"
-  "L,Video mode:,Mono|Color,O;"
+  "L,Black&White:,Mono|Color,O;"
   "L,SuperChip:,Auto|Off|On,U;"
-  "L,Video Std:,NTSC|PAL,E;"
-  "L,File EXT:,BIN A26|.F8|.F6|.FE|.E0|.3F|.F4|.P2|.FA|.CV|.XYZ|.UA|.E7|.F0|.32|.ZYX,H;"
+  "L,Region:,Auto|NTSC|PAL,E;"
   "B,Cold Boot,B;"; 
 
 static const char storage_form_atari2600[] =
   "Storage,0|3;"                        // return to form 0, entry 3
   // --------
-  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+UA+E7+F0+32;";  // fileselector 
+  "F,Cartridge:,0|BIN+A26+F8+F6+FE+E0+3F+F4+P2+FA+CV+2K+UA+E7+F0+32+AR;";  // fileselector 
 
 static const char settings_form_atari2600[] =
   "Settings,0|4;"                       // return to form 0, entry 3
@@ -61,18 +61,18 @@ const char *core_atari2600_forms[] = {
 menu_legacy_variable_t core_atari2600_variables[] = {
   { 'X', { 0 }},    // default Difficulty P1 = A
   { 'Y', { 0 }},    // default Difficulty P2 = A
+  { '&', { 0 }},    // default Joystick swap = Off
   { 'V', { 0 }},    // default Invert Paddle = off
   { 'S', { 0 }},    // default scanlines = none
   { 'A', { 2 }},    // default volume = 66%
   { 'W', { 0 }},    // default normal (4:3) screen
   { 'Q', { 1 }},    // Joystick port 1 mapping, USB #1
-  { 'J', { 9 }},    // Joystick port 2 mapping, OFF
-  { 'E', { 0 }},    // default standard = NTSC
+  { 'J', { 6 }},    // Joystick port 2 mapping, OFF
+  { 'E', { 0 }},    // default standard = Auto
   { 'C', { 0 }},    // default De-comb = off
   { 'M', { 0 }},    // default VBlank = original
   { 'O', { 1 }},    // default Video mode = color
   { 'U', { 0 }},    // default SuperChip = auto
-  { 'H', { 0 }},    // default file ext = 0
   { '\0',{ 0 }}
 };
 

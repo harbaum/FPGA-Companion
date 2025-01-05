@@ -136,7 +136,7 @@ const unsigned char core_atarist_keymap[] = {
   MATRIX(10,3), // 2f: [			  
   MATRIX(10,4), // 30: ]
   MATRIX(11,4), // 31: backslash 
-  MISS,         // 32: EUR-1
+  MATRIX(11,4), // 32: backslash on some eur keyboards(near enter)
   MATRIX(10,5), // 33: ;
   MATRIX(11,6), // 34: ' 
   MATRIX(10,2), // 35: `

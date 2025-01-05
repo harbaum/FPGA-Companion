@@ -49,31 +49,39 @@
   </actions>
   
   <menu label="A2600Nano">
-    <fileselector label="Cartridge:" ext="BIN;A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0"/>
+    <fileselector label="Cartridge:" ext="BIN;A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;2K;UA;E7;F0;32;AR" index="0"/>
     <menu label="System">
       <list label="Joyport 1:" id="Q" default="1">
- <listentry label="Retro D9" value="0"/>
- <listentry label="USB #1 Joy" value="1"/>
- <listentry label="USB #2 Joy" value="2"/>
+ <listentry label="Retro #1 D9" value="0"/>
+ <listentry label="USB #1 Joyst" value="1"/>
+ <listentry label="USB #2 Joyst" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DualShock2" value="4"/>
- <listentry label="Mouse" value="5"/>
- <listentry label="DS2 Paddle" value="6"/>
- <listentry label="USB #1 Padd" value="7"/>
- <listentry label="USB #2 Padd" value="8"/>
- <listentry label="Off" value="9"/>
+ <listentry label="DS #1 Joyst" value="4"/>
+ <listentry label="DS #2 Joyst" value="5"/>
+ <listentry label="Mouse" value="6"/>
+ <listentry label="USB #1 Paddl" value="7"/>
+ <listentry label="USB #2 Paddl" value="8"/>
+ <listentry label="DS #1 Paddle" value="9"/>
+ <listentry label="DS #2 Paddle" value="10"/>
+ <listentry label="Off" value="11"/>
       </list>
-      <list label="Joyport 2:" id="J" default="9">
- <listentry label="Retro D9" value="0"/>
- <listentry label="USB #1 Joy" value="1"/>
- <listentry label="USB #2 Joy" value="2"/>
+      <list label="Joyport 2:" id="J" default="11">
+ <listentry label="Retro #1 D9" value="0"/>
+ <listentry label="USB #1 Joyst" value="1"/>
+ <listentry label="USB #2 Joyst" value="2"/>
  <listentry label="NumPad" value="3"/>
- <listentry label="DualShock2" value="4"/>
- <listentry label="Mouse" value="5"/>
- <listentry label="DS2 Paddle" value="6"/>
- <listentry label="USB #1 Padd" value="7"/>
- <listentry label="USB #2 Padd" value="8"/>
- <listentry label="Off" value="9"/>
+ <listentry label="DS #1 Joyst" value="4"/>
+ <listentry label="DS #2 Joyst" value="5"/>
+ <listentry label="Mouse" value="6"/>
+ <listentry label="USB #1 Paddl" value="7"/>
+ <listentry label="USB #2 Paddl" value="8"/>
+ <listentry label="DS #1 Paddle" value="9"/>
+ <listentry label="DS #2 Paddle" value="10"/>
+ <listentry label="Off" value="11"/>
+      </list>
+      <list label="Swap Joyst:" id="&" default="0">
+ <listentry label="Off" value="0"/>
+ <listentry label="On" value="1"/>
       </list>
       <list label="Invert Paddle:" id="V" default="0">
  <listentry label="Off" value="0"/>
@@ -95,7 +103,7 @@
  <listentry label="Original" value="0"/>
  <listentry label="Regenerate" value="1"/>
       </list>
-       <list label="Video mode:" id="O" default="1">
+       <list label="Black&White:" id="O" default="1">
  <listentry label="Mono" value="0"/>
  <listentry label="Color" value="1"/>
       </list>
@@ -104,31 +112,15 @@
  <listentry label="Off" value="1"/>
  <listentry label="On" value="2"/>
       </list>
-      <list label="Video Std:" id="E" default="0">
- <listentry label="NTSC" value="0"/>
- <listentry label="PAL" value="1"/>
+      <list label="Region:" id="E" default="0">
+ <listentry label="Auto" value="0"/>
+ <listentry label="NTSC" value="1"/>
+ <listentry label="PAL" value="2"/>
       </list>
-      <list label="File EXT:" id="H" default="0">
- <listentry label=".BIN" value="0"/>
- <listentry label=".A26" value="0"/>
- <listentry label=".F8" value="1"/>
- <listentry label=".F6" value="2"/>
- <listentry label=".FE" value="3"/>
- <listentry label=".E0" value="4"/>
- <listentry label=".3F" value="5"/>
- <listentry label=".F4" value="6"/>
- <listentry label=".P2" value="7"/> <!-- Pitfall II -->
- <listentry label=".FA" value="8"/>
- <listentry label=".CV" value="9"/>
- <listentry label=".UA" value="11"/>
- <listentry label=".E7" value="12"/>
- <listentry label=".F0" value="13"/>
- <listentry label=".32" value="14"/>
-     </list>
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
     <menu label="Storage">
-      <fileselector label="Cartridge:" ext="BIN A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;UA;E7;F0;32" index="0" default="a2600crt.bin"/>
+      <fileselector label="Cartridge:" ext="BIN;A26;F8;F6;FE;E0;3F;F4;P2;FA;CV;2K;UA;E7;F0;32;AR" index="0" default="a2600crt.bin"/>
     </menu>
     <menu label="Settings">
       <list label="Screen:" id="W" default="0">
