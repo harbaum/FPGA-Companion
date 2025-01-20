@@ -12,11 +12,11 @@ sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
 
 ### Install the Pi Pico Toolchain (Fedora)
 ```
-sudo dnf groupinstall "Development tools"
+sudo dnf group install "development-tools"
 sudo dnf install clang cmake gcc-arm-linux-gnu arm-none-eabi-gcc-cs-c++ arm-none-eabi-gcc-cs arm-none-eabi-binutils arm-none-eabi-newlib
 ```
 
-### Download an install the Pi Pico SDK
+### Download and install the Pi Pico SDK
 
 Download the [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
 and set the ```PICO_SDK_PATH``` environment variable to point to the
@@ -43,7 +43,7 @@ python3 tools/get_deps.py rp2040
 
 ### Clone this respository
 
-Thhis repository has to be cloned recursively to make sure the submodules
+This repository has to be cloned recursively to make sure the submodules
 are included.
 
 ```
