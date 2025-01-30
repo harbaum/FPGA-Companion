@@ -48,7 +48,7 @@ static const char system_form_amiga[] =
   "F,Floppy DF1:,1|adf;" 
   "F,Floppy DF2:,2|adf;" 
   "F,Floppy DF3:,3|adf;"
-  "L,IDE,Enabled|Disabled,I;"
+  "L,IDE,Disabled|Enabled,I;"
   "F,Harddisk DH0:,4|hdf;"
   "F,Harddisk DH1:,5|hdf;"; 
 
