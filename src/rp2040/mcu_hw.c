@@ -325,8 +325,8 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
       ((0x0 & 0xf000) >> 8);
 
 	  // build analog stick x,y state
-	    int ax = p->sThumbLX;
-	    int ay = p->sThumbLY;
+      int16_t ax = p->sThumbLX;
+      int16_t ay = p->sThumbLY;
 
       // submit if state has changed
 	  if(state != xbox_state[idx].state ||
@@ -340,8 +340,8 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08((uint8_t)ax); // gamepad analog X
-	    mcu_hw_spi_tx_u08((uint8_t)ay); // gamepad analog Y
+	    mcu_hw_spi_tx_u08((uint8_t)(ax >> 8)); // gamepad analog X
+	    mcu_hw_spi_tx_u08((uint8_t)(ay >> 8)); // gamepad analog Y
 	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
 
