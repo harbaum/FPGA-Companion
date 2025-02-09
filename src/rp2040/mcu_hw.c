@@ -83,6 +83,9 @@ static struct {
   uint8_t instance;
   uint8_t js_index;
   uint8_t state;
+  uint8_t state_x;
+  uint8_t state_y;
+  uint8_t state_btn_extra;
 } xbox_state[MAX_XBOX_DEVICES];
   
 static void pio_usb_task(__attribute__((unused)) void *parms) {
@@ -309,19 +312,40 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
 	    ((p->wButtons & 0xf000) >> 8);
 	  
-	  // submit if state has changed
-	  if(state != xbox_state[idx].state) {    
-	    usb_debugf("XBOX Joy%d: %02x", xbox_state[idx].js_index, state);
-	    
+	  // build extra button new state
+	  unsigned char state_btn_extra =
+	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x04:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x08:0x00) |
+      ((0x0 & 0xf000) >> 8);
+
+	  // build analog stick x,y state
+	    int ax = p->sThumbLX;
+	    int ay = p->sThumbLY;
+
+      // submit if state has changed
+	  if(state != xbox_state[idx].state ||
+      state_btn_extra != xbox_state[idx].state_btn_extra ||
+      ax != xbox_state[idx].state_x ||
+      ay != xbox_state[idx].state_y) {
+	    usb_debugf("XBOX Joy%d: B %02x EB %02x X %d Y %d", xbox_state[idx].js_index, state, state_btn_extra, ax , ay );
+
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
+	    mcu_hw_spi_tx_u08(ax); // gamepad analog X
+	    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
+	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
-	    
+
 	    xbox_state[idx].state = state;
-	  }
+      xbox_state[idx].state_btn_extra = state_btn_extra;
+      xbox_state[idx].state_x = ax;
+      xbox_state[idx].state_y = ay;
+    }
 	}
       }
     }
