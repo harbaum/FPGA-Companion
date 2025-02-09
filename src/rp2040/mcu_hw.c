@@ -310,9 +310,13 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
-	    ((p->wButtons & 0xf000) >> 8);
-	  
-	  // build extra button new state
+	    ((p->wButtons & XINPUT_GAMEPAD_A)         ?0x10:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_B)         ?0x20:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_X)         ?0x80:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_Y)         ?0x40:0x00);
+//    ((p->wButtons & 0xf000) >> 8);
+
+// build extra button new state
 	  unsigned char state_btn_extra =
 	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
@@ -336,8 +340,8 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08(ax); // gamepad analog X
-	    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
+	    mcu_hw_spi_tx_u08((uint8_t)ax); // gamepad analog X
+	    mcu_hw_spi_tx_u08((uint8_t)ay); // gamepad analog Y
 	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
 
@@ -363,7 +367,10 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
     usb_debugf("Using XBOX entry %d", idx);
     xbox_state[idx].dev_addr = dev_addr;
     xbox_state[idx].instance = instance;
-    xbox_state[idx].state = 0xff;    
+    xbox_state[idx].state = 0xff;
+    xbox_state[idx].state_btn_extra = 0xff;
+    xbox_state[idx].state_x = 128;
+    xbox_state[idx].state_y = 128;
     xbox_state[idx].js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free XBOX entries");
