@@ -305,7 +305,8 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	if(xbox_state[idx].dev_addr == dev_addr && xbox_state[idx].instance == instance) {
       
 	  // build new state
-	  unsigned char state =
+	  unsigned char state = 0;
+    state =
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_UP   )?0x08:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
@@ -316,8 +317,9 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_Y)         ?0x40:0x00);
 //    ((p->wButtons & 0xf000) >> 8);
 
-// build extra button new state
-	  unsigned char state_btn_extra =
+    // build extra button new state
+	  unsigned char state_btn_extra = 0;
+    state_btn_extra =
 	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x04:0x00) |
@@ -327,12 +329,12 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
       int16_t ax = p->sThumbLX;
       int16_t ay = p->sThumbLY;
 
-      // submit if state has changed
+    // submit if state has changed
 	  if((state != xbox_state[idx].state) ||
       (state_btn_extra != xbox_state[idx].state_btn_extra) ||
       (ax != xbox_state[idx].state_x) ||
       (ay != xbox_state[idx].state_y)) {
-	    usb_debugf("XBOX Joy%d: B %02x EB %02x X %d Y %d", xbox_state[idx].js_index, state, state_btn_extra, ax >> 8, ay >> 8);
+	    usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox_state[idx].js_index, state, state_btn_extra, ax >> 8, ay >> 8);
 
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
@@ -343,7 +345,7 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    mcu_hw_spi_tx_u08(ay >> 8); // gamepad analog Y
 	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
-
+	    
 	    xbox_state[idx].state = state;
       xbox_state[idx].state_btn_extra = state_btn_extra;
       xbox_state[idx].state_x = ax;
@@ -366,10 +368,10 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
     usb_debugf("Using XBOX entry %d", idx);
     xbox_state[idx].dev_addr = dev_addr;
     xbox_state[idx].instance = instance;
-    xbox_state[idx].state = 0xff;
-    xbox_state[idx].state_btn_extra = 0x00;
-    xbox_state[idx].state_x = -1;
-    xbox_state[idx].state_y = -1;
+    xbox_state[idx].state = 0;
+    xbox_state[idx].state_btn_extra = 0;
+    xbox_state[idx].state_x = 0;
+    xbox_state[idx].state_y = 0;
     xbox_state[idx].js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free XBOX entries");

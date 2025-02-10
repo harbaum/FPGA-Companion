@@ -272,12 +272,14 @@ static void xbox_parse(struct xbox_info_S *xbox) {
 
   // the xbox controller sends the direction bits in exactly the
   // reversed order than we expect ...
-  unsigned char state =
+  unsigned char state = 0;
+  state =
     ((xbox->buffer[2] & 0x01)<<3) | ((xbox->buffer[2] & 0x02)<<1) |
     ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
     (xbox->buffer[3] & 0xf0);  // Y, X, B, A
   
-  unsigned char state_btn_extra = 
+  unsigned char state_btn_extra = 0;
+  state_btn_extra =
     (xbox->buffer[2] & 0xf0)>>4; // RT LT BACK START
 
   // build analog stick x,y
@@ -291,7 +293,7 @@ static void xbox_parse(struct xbox_info_S *xbox) {
     ax != xbox->last_state_x ||
     ay != xbox->last_state_y) {
 
-    usb_debugf("XBOX Joy%d: B %02x EB %02x X %d Y %d", xbox->js_index, state, state_btn_extra, ax, ay);
+    usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox->js_index, state, state_btn_extra, ax, ay);
 
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);

@@ -76,6 +76,9 @@ static void kbd_num2joy(char state, unsigned char code) {
       mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
       mcu_hw_spi_tx_u08(0x80);  // report this as joystick 0x80 as js0-x are USB joysticks
       mcu_hw_spi_tx_u08(kbd_joy_state);
+      mcu_hw_spi_tx_u08(0);  // analog X
+      mcu_hw_spi_tx_u08(0);  // analog Y
+      mcu_hw_spi_tx_u08(0);  // extra buttons
       mcu_hw_spi_end();
       
       kbd_joy_state_last = kbd_joy_state;
@@ -275,7 +278,7 @@ void joystick_parse(const hid_report_t *report, struct hid_joystick_state_S *sta
     state->last_state_x = ax;
     state->last_state_y = ay;
     state->last_state_btn_extra = btn_extra;
-    usb_debugf("JOY%d: D %02x A0 %02x A1 %02x B %02x", state->js_index, joy, ax, ay, btn_extra);
+    usb_debugf("JOY%d: D %02x X %02x Y %02x EB %02x", state->js_index, joy, ax, ay, btn_extra);
 
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);
