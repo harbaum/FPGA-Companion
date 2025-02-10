@@ -321,27 +321,26 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x04:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x08:0x00) |
-      ((0x0 & 0xf000) >> 8);
+	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x08:0x00);
 
 	  // build analog stick x,y state
       int16_t ax = p->sThumbLX;
       int16_t ay = p->sThumbLY;
 
       // submit if state has changed
-	  if(state != xbox_state[idx].state ||
-      state_btn_extra != xbox_state[idx].state_btn_extra ||
-      ax != xbox_state[idx].state_x ||
-      ay != xbox_state[idx].state_y) {
-	    usb_debugf("XBOX Joy%d: B %02x EB %02x X %d Y %d", xbox_state[idx].js_index, state, state_btn_extra, ax , ay );
+	  if((state != xbox_state[idx].state) ||
+      (state_btn_extra != xbox_state[idx].state_btn_extra) ||
+      (ax != xbox_state[idx].state_x) ||
+      (ay != xbox_state[idx].state_y)) {
+	    usb_debugf("XBOX Joy%d: B %02x EB %02x X %d Y %d", xbox_state[idx].js_index, state, state_btn_extra, ax >> 8, ay >> 8);
 
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08((uint8_t)(ax >> 8)); // gamepad analog X
-	    mcu_hw_spi_tx_u08((uint8_t)(ay >> 8)); // gamepad analog Y
+	    mcu_hw_spi_tx_u08(ax >> 8); // gamepad analog X
+	    mcu_hw_spi_tx_u08(ay >> 8); // gamepad analog Y
 	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
 
@@ -368,9 +367,9 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
     xbox_state[idx].dev_addr = dev_addr;
     xbox_state[idx].instance = instance;
     xbox_state[idx].state = 0xff;
-    xbox_state[idx].state_btn_extra = 0xff;
-    xbox_state[idx].state_x = 0xffff;
-    xbox_state[idx].state_y = 0xffff;
+    xbox_state[idx].state_btn_extra = 0x00;
+    xbox_state[idx].state_x = -1;
+    xbox_state[idx].state_y = -1;
     xbox_state[idx].js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free XBOX entries");

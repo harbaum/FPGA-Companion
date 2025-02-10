@@ -304,6 +304,9 @@ void rii_joy_parse(const unsigned char *buffer) {
   mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
   mcu_hw_spi_tx_u08(0);  // Rii joystick always report as joystick 0
   mcu_hw_spi_tx_u08(b);
+  mcu_hw_spi_tx_u08(0);  // analog X
+  mcu_hw_spi_tx_u08(0);  // analog Y
+  mcu_hw_spi_tx_u08(0);  // extra buttons
   mcu_hw_spi_end();
 }
 
