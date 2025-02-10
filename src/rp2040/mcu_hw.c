@@ -83,8 +83,8 @@ static struct {
   uint8_t instance;
   uint8_t js_index;
   uint8_t state;
-  uint8_t state_x;
-  uint8_t state_y;
+  int16_t state_x;
+  int16_t state_y;
   uint8_t state_btn_extra;
 } xbox_state[MAX_XBOX_DEVICES];
   
@@ -369,8 +369,8 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
     xbox_state[idx].instance = instance;
     xbox_state[idx].state = 0xff;
     xbox_state[idx].state_btn_extra = 0xff;
-    xbox_state[idx].state_x = 128;
-    xbox_state[idx].state_y = 128;
+    xbox_state[idx].state_x = 0xffff;
+    xbox_state[idx].state_y = 0xffff;
     xbox_state[idx].js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free XBOX entries");

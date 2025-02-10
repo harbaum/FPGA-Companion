@@ -68,9 +68,10 @@ static struct usb_config {
     TaskHandle_t task_handle;    
     unsigned char last_state;
     unsigned char js_index;
-    int state_btn_extra;
     unsigned char last_state_btn_extra;
-#ifdef RATE_CHECK
+    unsigned char last_state_x;
+    unsigned char last_state_y;
+    #ifdef RATE_CHECK
     TickType_t rate_start;
     unsigned long rate_events;
 #endif    
@@ -240,7 +241,34 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   B 0x2000
   X 0x4000
   Y 0x8000
-  */
+
+  Offset	 Length (bits)	 Description	 Windows driver
+ 0x00.0	 8	 Message type
+ 0x01.0	 8	 Packet size (20 bytes = 0x14)
+ 0x02.0	 1	 D-Pad up	 D-Pad up
+ 0x02.1	 1	 D-Pad down	 D-Pad down
+ 0x02.2	 1	 D-Pad left	 D-Pad left
+ 0x02.3	 1	 D-pad right	 D-Pad right
+ 0x02.4	 1	 Start button	 Button 8
+ 0x02.5	 1	 Back button	 Button 7
+ 0x02.6	 1	 Left stick press	 Button 9
+ 0x02.7	 1	 Right stick press	 Button 10
+ 0x03.0	 1	 Button LB	 Button 5
+ 0x03.1	 1	 Button RB	 Button 6
+ 0x03.2	 1	 Xbox logo button
+ 0x03.3	 1	 Unused
+ 0x03.4	 1	 Button A	 Button 1
+ 0x03.5	 1	 Button B	 Button 2
+ 0x03.6	 1	 Button X	 Button 3
+ 0x03.7	 1	 Button Y	 Button 4
+ 0x04.0	 8	 Left trigger	 Z-axis down
+ 0x05.0	 8	 Right trigger	 Z-axis up
+ 0x06.0	 16	 Left stick X-axis	 X-axis
+ 0x08.0	 16	 Left stick Y-axis	 Y-axis
+ 0x0a.0	 16	 Right stick X-axis	 X-turn
+ 0x0c.0	 16	 Right stick Y-axis	 Y-turn
+ 0x0e.0	 48	 Unused
+*/
 
   // the xbox controller sends the direction bits in exactly the
   // reversed order than we expect ...
@@ -252,23 +280,33 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   unsigned char state_btn_extra = 
     (xbox->buffer[2] & 0xf0)>>4; // RT LT BACK START
 
+  // build analog stick x,y
+  // 16-bit signed integers. little endian (low byte first), north-east being positive.
+  unsigned char ax = xbox->buffer[7];
+  unsigned char ay = xbox->buffer[9];
+
   // submit if state has changed
-  if(state != xbox->last_state || state_btn_extra != xbox->last_state_btn_extra ) {
-    
-    usb_debugf("XBOX Joy%d: %02x %02x", xbox->js_index, state, state_btn_extra);
-  
+  if(state != xbox->last_state ||
+    state_btn_extra != xbox->last_state_btn_extra ||
+    ax != xbox->last_state_x ||
+    ay != xbox->last_state_y) {
+
+    usb_debugf("XBOX Joy%d: B %02x EB %02x X %d Y %d", xbox->js_index, state, state_btn_extra, ax, ay);
+
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);
     mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
     mcu_hw_spi_tx_u08(xbox->js_index);
     mcu_hw_spi_tx_u08(state);
-    mcu_hw_spi_tx_u08(0); // gamepad analog X
-    mcu_hw_spi_tx_u08(0); // gamepad analog Y
+    mcu_hw_spi_tx_u08(ax); // gamepad analog X
+    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
     mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
     mcu_hw_spi_end();
     
     xbox->last_state = state;
     xbox->last_state_btn_extra = state_btn_extra;
+    xbox->last_state_x = ax;
+    xbox->last_state_y = ay;
   }
 }
 
