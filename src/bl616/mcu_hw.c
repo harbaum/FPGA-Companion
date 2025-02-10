@@ -272,14 +272,12 @@ static void xbox_parse(struct xbox_info_S *xbox) {
 
   // the xbox controller sends the direction bits in exactly the
   // reversed order than we expect ...
-  unsigned char state = 0;
-  state =
+  unsigned char state =
     ((xbox->buffer[2] & 0x01)<<3) | ((xbox->buffer[2] & 0x02)<<1) |
     ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
     (xbox->buffer[3] & 0xf0);  // Y, X, B, A
   
-  unsigned char state_btn_extra = 0;
-  state_btn_extra =
+  unsigned char state_btn_extra =
     (xbox->buffer[2] & 0xf0)>>4; // RT LT BACK START
 
   // build analog stick x,y

@@ -305,8 +305,7 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	if(xbox_state[idx].dev_addr == dev_addr && xbox_state[idx].instance == instance) {
       
 	  // build new state
-	  unsigned char state = 0;
-    state =
+    unsigned char state =
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_UP   )?0x08:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
@@ -318,8 +317,7 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 //    ((p->wButtons & 0xf000) >> 8);
 
     // build extra button new state
-	  unsigned char state_btn_extra = 0;
-    state_btn_extra =
+    unsigned char state_btn_extra =
 	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x04:0x00) |
