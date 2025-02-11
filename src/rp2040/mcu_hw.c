@@ -102,6 +102,15 @@ static void pio_usb_task(__attribute__((unused)) void *parms) {
   }
 }
 
+uint8_t byteScaleAnalog(int16_t xbox_val)
+{
+  // Scale the xbox value from [-32768, 32767] to [1, 255]
+  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
+  uint8_t scale_val = (xbox_val + 32768) / 256;
+  if (scale_val == 0) return 1;
+  return scale_val;
+}
+
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
   // Interface protocol (hid_interface_protocol_enum_t)
   const char* protocol_str[] = { "None", "Keyboard", "Mouse" };
@@ -476,13 +485,4 @@ void mcu_hw_main_loop(void) {
      http://www.freertos.org/a00111.html. */
 
   for( ;; );
-}
-
-uint8_t byteScaleAnalog(int16_t xbox_val)
-{
-  // Scale the xbox value from [-32768, 32767] to [1, 255]
-  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
-  uint8_t scale_val = (xbox_val + 32768) / 256;
-  if (scale_val == 0) return 1;
-  return scale_val;
 }

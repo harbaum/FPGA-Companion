@@ -69,8 +69,8 @@ static struct usb_config {
     unsigned char last_state;
     unsigned char js_index;
     unsigned char last_state_btn_extra;
-    unsigned char last_state_x;
-    unsigned char last_state_y;
+    int16_t last_state_x;
+    int16_t last_state_y;
     #ifdef RATE_CHECK
     TickType_t rate_start;
     unsigned long rate_events;
@@ -97,6 +97,15 @@ static struct usb_config {
   
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t hid_buffer[CONFIG_USBHOST_MAX_HID_CLASS][MAX_REPORT_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t xbox_buffer[CONFIG_USBHOST_MAX_XBOX_CLASS][XBOX_REPORT_SIZE];
+
+uint8_t byteScaleAnalog(int16_t xbox_val)
+{
+  // Scale the xbox value from [-32768, 32767] to [1, 255]
+  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
+  uint8_t scale_val = (xbox_val + 32768) / 256;
+  if (scale_val == 0) return 1;
+  return scale_val;
+}
 
 void usbh_hid_callback(void *arg, int nbytes) {
   struct hid_info_S *hid = (struct hid_info_S *)arg;
@@ -272,6 +281,8 @@ static void xbox_parse(struct xbox_info_S *xbox) {
 
   // the xbox controller sends the direction bits in exactly the
   // reversed order than we expect ...
+  uint16_t wButtons = xbox->buffer[3] << 8 | xbox->buffer[2];
+
   unsigned char state =
     ((xbox->buffer[2] & 0x01)<<3) | ((xbox->buffer[2] & 0x02)<<1) |
     ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
@@ -280,33 +291,31 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   unsigned char state_btn_extra =
     (xbox->buffer[2] & 0xf0)>>4; // RT LT BACK START
 
-  // build analog stick x,y
-  // 16-bit signed integers. little endian (low byte first), north-east being positive.
-  unsigned char ax = xbox->buffer[7];
-  unsigned char ay = xbox->buffer[9];
+  //Map analog sticks
+  int16_t sThumbLX = xbox->buffer[11] << 8 | xbox->buffer[10];
+  int16_t sThumbLY = xbox->buffer[13] << 8 | xbox->buffer[12];
 
   // submit if state has changed
   if(state != xbox->last_state ||
     state_btn_extra != xbox->last_state_btn_extra ||
-    ax != xbox->last_state_x ||
-    ay != xbox->last_state_y) {
+    sThumbLX != xbox->last_state_x ||
+    sThumbLY != xbox->last_state_y) {
 
-    usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox->js_index, state, state_btn_extra, ax, ay);
+    xbox->last_state = state;
+    xbox->last_state_btn_extra = state_btn_extra;
+    xbox->last_state_x = sThumbLX;
+    xbox->last_state_y = sThumbLY;
+    usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox->js_index, state, state_btn_extra, byteScaleAnalog(sThumbLX), byteScaleAnalog(sThumbLY));
 
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);
     mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
     mcu_hw_spi_tx_u08(xbox->js_index);
     mcu_hw_spi_tx_u08(state);
-    mcu_hw_spi_tx_u08(ax); // gamepad analog X
-    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
+    mcu_hw_spi_tx_u08(byteScaleAnalog(sThumbLX)); // gamepad analog X
+    mcu_hw_spi_tx_u08(byteScaleAnalog(sThumbLY)); // gamepad analog Y
     mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
     mcu_hw_spi_end();
-    
-    xbox->last_state = state;
-    xbox->last_state_btn_extra = state_btn_extra;
-    xbox->last_state_x = ax;
-    xbox->last_state_y = ay;
   }
 }
 
