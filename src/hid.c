@@ -76,9 +76,9 @@ static void kbd_num2joy(char state, unsigned char code) {
       mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
       mcu_hw_spi_tx_u08(0x80);  // report this as joystick 0x80 as js0-x are USB joysticks
       mcu_hw_spi_tx_u08(kbd_joy_state);
-      mcu_hw_spi_tx_u08(0);  // analog X
-      mcu_hw_spi_tx_u08(0);  // analog Y
-      mcu_hw_spi_tx_u08(0);  // extra buttons
+//      mcu_hw_spi_tx_u08(0);  // analog X
+//      mcu_hw_spi_tx_u08(0);  // analog Y
+//      mcu_hw_spi_tx_u08(0);  // extra buttons
       mcu_hw_spi_end();
       
       kbd_joy_state_last = kbd_joy_state;
@@ -307,9 +307,9 @@ void rii_joy_parse(const unsigned char *buffer) {
   mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
   mcu_hw_spi_tx_u08(0);  // Rii joystick always report as joystick 0
   mcu_hw_spi_tx_u08(b);
-  mcu_hw_spi_tx_u08(0);  // analog X
-  mcu_hw_spi_tx_u08(0);  // analog Y
-  mcu_hw_spi_tx_u08(0);  // extra buttons
+//  mcu_hw_spi_tx_u08(0);  // analog X
+//  mcu_hw_spi_tx_u08(0);  // analog Y
+//  mcu_hw_spi_tx_u08(0);  // extra buttons
   mcu_hw_spi_end();
 }
 

@@ -332,22 +332,22 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
       (state_btn_extra != xbox_state[idx].state_btn_extra) ||
       (ax != xbox_state[idx].state_x) ||
       (ay != xbox_state[idx].state_y)) {
-	    usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox_state[idx].js_index, state, state_btn_extra, ax >> 8, ay >> 8);
+
+      xbox_state[idx].state = state;
+      xbox_state[idx].state_btn_extra = state_btn_extra;
+      xbox_state[idx].state_x = ax;
+      xbox_state[idx].state_y = ay;
+      usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox_state[idx].js_index, state, state_btn_extra, byteScaleAnalog(ax), byteScaleAnalog(ay));
 
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08(ax >> 8); // gamepad analog X
-	    mcu_hw_spi_tx_u08(ay >> 8); // gamepad analog Y
+	    mcu_hw_spi_tx_u08(byteScaleAnalog(ax)); // gamepad analog X
+	    mcu_hw_spi_tx_u08(byteScaleAnalog(ay)); // gamepad analog Y
 	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
-	    
-	    xbox_state[idx].state = state;
-      xbox_state[idx].state_btn_extra = state_btn_extra;
-      xbox_state[idx].state_x = ax;
-      xbox_state[idx].state_y = ay;
     }
 	}
       }
@@ -476,4 +476,13 @@ void mcu_hw_main_loop(void) {
      http://www.freertos.org/a00111.html. */
 
   for( ;; );
+}
+
+uint8_t byteScaleAnalog(int16_t xbox_val)
+{
+  // Scale the xbox value from [-32768, 32767] to [1, 255]
+  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
+  uint8_t scale_val = (xbox_val + 32768) / 256;
+  if (scale_val == 0) return 1;
+  return scale_val;
 }
