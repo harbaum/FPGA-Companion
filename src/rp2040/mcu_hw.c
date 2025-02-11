@@ -319,18 +319,14 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_A)         ?0x10:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_B)         ?0x20:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_X)         ?0x80:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_Y)         ?0x40:0x00);
-//    ((p->wButtons & 0xf000) >> 8);
+	    ((p->wButtons & 0xf000) >> 8);
 
     // build extra button new state
     unsigned char state_btn_extra =
 	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x04:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x08:0x00);
+	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x10:0x00) | // Rumblepad 2 / Dual Action compatibility
+	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x20:0x00);
 
 	  // build analog stick x,y state
       int16_t ax = p->sThumbLX;
