@@ -49,6 +49,15 @@ static struct bflb_device_s *gpio;
 #define STATE_RUNNING   2
 #define STATE_FAILED    3
 
+#define XINPUT_GAMEPAD_DPAD_UP 0x0001
+#define XINPUT_GAMEPAD_DPAD_DOWN 0x0002
+#define XINPUT_GAMEPAD_DPAD_LEFT 0x0004
+#define XINPUT_GAMEPAD_DPAD_RIGHT 0x0008
+#define XINPUT_GAMEPAD_START 0x0010
+#define XINPUT_GAMEPAD_BACK 0x0020
+#define XINPUT_GAMEPAD_LEFT_SHOULDER 0x0100
+#define XINPUT_GAMEPAD_RIGHT_SHOULDER 0x0200
+
 extern struct bflb_device_s *gpio;
 
 void set_led(int pin, int on) {
@@ -68,9 +77,10 @@ static struct usb_config {
     TaskHandle_t task_handle;    
     unsigned char last_state;
     unsigned char js_index;
-    int state_btn_extra;
     unsigned char last_state_btn_extra;
-#ifdef RATE_CHECK
+    int16_t last_state_x;
+    int16_t last_state_y;
+    #ifdef RATE_CHECK
     TickType_t rate_start;
     unsigned long rate_events;
 #endif    
@@ -96,6 +106,15 @@ static struct usb_config {
   
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t hid_buffer[CONFIG_USBHOST_MAX_HID_CLASS][MAX_REPORT_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t xbox_buffer[CONFIG_USBHOST_MAX_XBOX_CLASS][XBOX_REPORT_SIZE];
+
+uint8_t byteScaleAnalog(int16_t xbox_val)
+{
+  // Scale the xbox value from [-32768, 32767] to [1, 255]
+  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
+  uint8_t scale_val = (xbox_val + 32768) / 256;
+  if (scale_val == 0) return 1;
+  return scale_val;
+}
 
 void usbh_hid_callback(void *arg, int nbytes) {
   struct hid_info_S *hid = (struct hid_info_S *)arg;
@@ -207,68 +226,48 @@ static void xbox_parse(struct xbox_info_S *xbox) {
   if(xbox->buffer[0] != 0 || xbox->buffer[1] != 20)
     return;
 
-  /*
-  needed:
-  dpright       0x0001
-  dpleft        0x0002
-  dpdown        0x0004
-  dpup          0x0008
-  b             0x0010
-  a             0x0020
-  y             0x0040
-  x             0x0080
-  leftshoulder  0x0100
-  rightshoulder 0x0200
-  back          0x0400
-  start         0x0800
+  uint16_t wButtons = xbox->buffer[3] << 8 | xbox->buffer[2];
 
-  //https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
-  DPAD_UP 0x0001
-  DPAD_DOWN 0x0002
-  DPAD_LEFT 0x0004
-  DPAD_RIGHT 0x0008
-  START 0x0010
-  BACK 0x0020
-  LEFT_THUMB 0x0040
-  RIGHT_THUMB 0x0080
-  //
-  LEFT_SHOULDER 0x0100
-  RIGHT_SHOULDER 0x0200
-  GUIDE 0x0400
-  SHARE 0x0800
-  A 0x1000
-  B 0x2000
-  X 0x4000
-  Y 0x8000
-  */
-
-  // the xbox controller sends the direction bits in exactly the
-  // reversed order than we expect ...
+  // build new state
   unsigned char state =
-    ((xbox->buffer[2] & 0x01)<<3) | ((xbox->buffer[2] & 0x02)<<1) |
-    ((xbox->buffer[2] & 0x04)>>1) | ((xbox->buffer[2] & 0x08)>>3) |
-    (xbox->buffer[3] & 0xf0);  // Y, X, B, A
-  
-  unsigned char state_btn_extra = 
-    (xbox->buffer[2] & 0xf0)>>4; // RT LT BACK START
+    ((wButtons & XINPUT_GAMEPAD_DPAD_UP   )?0x08:0x00) |
+    ((wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
+    ((wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
+    ((wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
+    ((wButtons & 0xf000) >> 8); // Y, X, B, A
+
+  // build extra button new state
+  unsigned char state_btn_extra =
+    ((wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
+    ((wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
+    ((wButtons & XINPUT_GAMEPAD_BACK           )?0x10:0x00) | // Rumblepad 2 / Dual Action compatibility
+    ((wButtons & XINPUT_GAMEPAD_START          )?0x20:0x00);
+
+  // build analog stick x,y state
+  int16_t sThumbLX = xbox->buffer[11] << 8 | xbox->buffer[10];
+  int16_t sThumbLY = xbox->buffer[13] << 8 | xbox->buffer[12];
 
   // submit if state has changed
-  if(state != xbox->last_state || state_btn_extra != xbox->last_state_btn_extra ) {
-    
-    usb_debugf("XBOX Joy%d: %02x %02x", xbox->js_index, state, state_btn_extra);
-  
+  if(state != xbox->last_state ||
+    state_btn_extra != xbox->last_state_btn_extra ||
+    sThumbLX != xbox->last_state_x ||
+    sThumbLY != xbox->last_state_y) {
+
+    xbox->last_state = state;
+    xbox->last_state_btn_extra = state_btn_extra;
+    xbox->last_state_x = sThumbLX;
+    xbox->last_state_y = sThumbLY;
+    usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox->js_index, state, state_btn_extra, byteScaleAnalog(sThumbLX), byteScaleAnalog(sThumbLY));
+
     mcu_hw_spi_begin();
     mcu_hw_spi_tx_u08(SPI_TARGET_HID);
     mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
     mcu_hw_spi_tx_u08(xbox->js_index);
     mcu_hw_spi_tx_u08(state);
-    mcu_hw_spi_tx_u08(0); // gamepad analog X
-    mcu_hw_spi_tx_u08(0); // gamepad analog Y
+    mcu_hw_spi_tx_u08(byteScaleAnalog(sThumbLX)); // gamepad analog X
+    mcu_hw_spi_tx_u08(byteScaleAnalog(sThumbLY)); // gamepad analog Y
     mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
     mcu_hw_spi_end();
-    
-    xbox->last_state = state;
-    xbox->last_state_btn_extra = state_btn_extra;
   }
 }
 
