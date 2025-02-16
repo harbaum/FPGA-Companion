@@ -129,6 +129,11 @@ void usbh_xbox_callback(void *arg, int nbytes) {
     xSemaphoreGiveFromISR(xbox->sem, NULL);
 }  
 
+//void usbh_xbox_callback_out(void *arg, int nbytes) {
+//  struct xbox_info_S *xbox = (struct xbox_info_S *)arg;
+//  usb_debugf("xbox tx %x\r\n", nbytes);
+//}
+
 static void usbh_update(struct usb_config *usb) {
   // check for active hid devices
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {
@@ -307,8 +312,14 @@ static void usbh_xbox_client_thread(void *argument) {
 
   usb_debugf("XBOX client #%d: thread started", xbox->index);
 
+  int ret = usbh_submit_urb(&xbox->class->intout_urb);
+  if (ret < 0)
+    usb_debugf("xbox set_led failed\r\n");
+  else
+    usb_debugf("xbox set_led sucess\r\n");
+
   while(1) {
-    int ret = usbh_submit_urb(&xbox->class->intin_urb);
+  int ret = usbh_submit_urb(&xbox->class->intin_urb);
     if (ret < 0)
       usb_debugf("XBOX client #%d: submit failed", xbox->index);
     else {
@@ -331,6 +342,7 @@ static void usbh_hid_thread(void *argument) {
   usb_debugf("Starting usb host task...");
 
   struct usb_config *usb = (struct usb_config *)argument;
+  uint8_t xbox360_wired_led[] = {0x01, 0x03, 0x00};
 
   // request status (currently only dummy data, will return 0x5c, 0x42)
   // in the long term the core is supposed to return its HID demands
@@ -406,7 +418,13 @@ static void usbh_hid_thread(void *argument) {
 			  usb->xbox_info[i].class->intin, usb->xbox_info[i].buffer,
 			  XBOX_REPORT_SIZE,
 			  0, usbh_xbox_callback, &usb->xbox_info[i]);
-	
+
+	usbh_bulk_urb_fill(&usb->xbox_info[i].class->intout_urb,
+			  usb->xbox_info[i].class->hport, 
+			  usb->xbox_info[i].class->intout, xbox360_wired_led,
+			  sizeof(xbox360_wired_led),
+			  0xfffffff, NULL, NULL);
+
 #ifdef RATE_CHECK
 	usb->xbox_info[i].rate_start = xTaskGetTickCount();
 	usb->xbox_info[i].rate_events = 0;
