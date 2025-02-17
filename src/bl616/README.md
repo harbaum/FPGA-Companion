@@ -91,7 +91,7 @@ Press Windows + R keyboard shortcut to launch the Windows Run box, type “devmg
 make CHIP=bl616 COMX=COMabc  flash
 ```
 
-You can also use the graphical [BLFlashCube too](https://github.com/bouffalolab/bouffalo_sdk/tree/master/tools/bflb_tools/bouffalo_flash_cube) tool usinfg the ```fpga_companion_bl616_cfg.ini``` file.
+If you have downloaded the firmware from the [release page](https://github.com/harbaum/FPGA-Companion/releases) you can use the graphical [BLFlashCube](https://github.com/CherryUSB/bouffalo_sdk/tree/master/tools/bflb_tools/bouffalo_flash_cube) tool using the ```fpga_companion_bl616_cfg.ini``` file.
 
 After successful download you need to unplug the device again and reinsert it *without* the BOOT button pressed to boot into the newly installed firmware.
 
@@ -156,6 +156,6 @@ If you have built the firmware yourself and have the SDK installed you can simpl
 BL_SDK_BASE=<where you downloaded the sdk>/bouffalo_sdk/ make CHIP=bl616 COMX=/dev/ttyACM3 flash
 ```
 
-If you have downloaded the firmware from the [release page](https://github.com/harbaum/MiSTeryNano/releases) you can use the graphical [BLFlashCube](https://github.com/bouffalolab/bouffalo_sdk/tree/master/tools/bflb_tools/bouffalo_flash_cube) tool using the ```fpga_companion_bl616_cfg.ini``` file.
+If you have downloaded the firmware from the [release page](https://github.com/harbaum/FPGA-Companion/releases) you can use the graphical [BLFlashCube](https://github.com/CherryUSB/bouffalo_sdk/tree/master/tools/bflb_tools/bouffalo_flash_cube) tool using the ```fpga_companion_bl616_cfg.ini``` file.
 
 After successful download you need to unplug the device again and reinsert it *without* the BOOT button pressed to boot into the newly installed firmware.
