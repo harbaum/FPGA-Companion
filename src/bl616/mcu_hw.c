@@ -429,7 +429,7 @@ void usb_host(void) {
 
   usb_debugf("init usb hid host");
 
-  usbh_initialize(0, USB_BASE);
+  usbh_initialize();
   
   // initialize all HID info entries
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {
