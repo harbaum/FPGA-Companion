@@ -304,8 +304,24 @@ static void usbh_hid_client_thread(void *argument) {
 // ... and XBOX clients as well
 static void usbh_xbox_client_thread(void *argument) {
   struct xbox_info_S *xbox = (struct xbox_info_S *)argument;
+  uint8_t xbox360_wired_led[] = {0x01, 0x03, 0x00};
 
   usb_debugf("XBOX client #%d: thread started", xbox->index);
+
+	usbh_bulk_urb_fill(&xbox->class->intout_urb,
+    xbox->class->hport,
+    xbox->class->intout,
+    xbox360_wired_led,
+    sizeof(xbox360_wired_led),
+    0xfffffff, 
+    NULL,
+    NULL);
+
+  int ret = usbh_submit_urb(&xbox->class->intout_urb);
+  if (ret < 0)
+    usb_debugf("xbox set_led failed\r\n");
+  else
+    usb_debugf("xbox set_led sucess\r\n");
 
   while(1) {
     int ret = usbh_submit_urb(&xbox->class->intin_urb);
