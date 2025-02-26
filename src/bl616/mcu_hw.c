@@ -72,6 +72,7 @@ static struct usb_config {
     int state;
     struct usbh_hid *class;
     uint8_t *buffer;
+    int nbytes;
     struct usb_config *usb;
     SemaphoreHandle_t sem;
     TaskHandle_t task_handle;    
@@ -125,9 +126,9 @@ void usbh_hid_callback(void *arg, int nbytes) {
 
 void usbh_xbox_callback(void *arg, int nbytes) {
   struct xbox_info_S *xbox = (struct xbox_info_S *)arg;
-  if(nbytes == XBOX_REPORT_SIZE)
     xSemaphoreGiveFromISR(xbox->sem, NULL);
-}  
+    xbox->nbytes = nbytes;
+  }  
 
 static void usbh_update(struct usb_config *usb) {
   // check for active hid devices
@@ -304,8 +305,24 @@ static void usbh_hid_client_thread(void *argument) {
 // ... and XBOX clients as well
 static void usbh_xbox_client_thread(void *argument) {
   struct xbox_info_S *xbox = (struct xbox_info_S *)argument;
+  uint8_t xbox360_wired_led[] = {0x01, 0x03, 0x00};
 
   usb_debugf("XBOX client #%d: thread started", xbox->index);
+
+	usbh_bulk_urb_fill(&xbox->class->intout_urb,
+    xbox->class->hport,
+    xbox->class->intout,
+    xbox360_wired_led,
+    sizeof(xbox360_wired_led),
+    0xfffffff, 
+    NULL,
+    NULL);
+
+  int ret = usbh_submit_urb(&xbox->class->intout_urb);
+  if (ret < 0)
+    usb_debugf("xbox set_led failed\r\n");
+  else
+    usb_debugf("xbox set_led sucess\r\n");
 
   while(1) {
     int ret = usbh_submit_urb(&xbox->class->intin_urb);
@@ -314,7 +331,9 @@ static void usbh_xbox_client_thread(void *argument) {
     else {
       // Wait for result
       xSemaphoreTake(xbox->sem, 0xffffffffUL);
-      xbox_parse(xbox);
+      if(xbox->nbytes == XBOX_REPORT_SIZE)
+        xbox_parse(xbox);
+      xbox->nbytes = 0;
     }      
 
 #ifdef RATE_CHECK
@@ -429,7 +448,7 @@ void usb_host(void) {
 
   usb_debugf("init usb hid host");
 
-  usbh_initialize(0, USB_BASE);
+  usbh_initialize();
   
   // initialize all HID info entries
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {
