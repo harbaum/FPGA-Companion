@@ -72,6 +72,7 @@ static struct usb_config {
     int state;
     struct usbh_hid *class;
     uint8_t *buffer;
+    int nbytes;
     struct usb_config *usb;
     SemaphoreHandle_t sem;
     TaskHandle_t task_handle;    
@@ -125,9 +126,9 @@ void usbh_hid_callback(void *arg, int nbytes) {
 
 void usbh_xbox_callback(void *arg, int nbytes) {
   struct xbox_info_S *xbox = (struct xbox_info_S *)arg;
-  if(nbytes == XBOX_REPORT_SIZE)
     xSemaphoreGiveFromISR(xbox->sem, NULL);
-}  
+    xbox->nbytes = nbytes;
+  }  
 
 static void usbh_update(struct usb_config *usb) {
   // check for active hid devices
@@ -330,7 +331,9 @@ static void usbh_xbox_client_thread(void *argument) {
     else {
       // Wait for result
       xSemaphoreTake(xbox->sem, 0xffffffffUL);
-      xbox_parse(xbox);
+      if(xbox->nbytes == XBOX_REPORT_SIZE)
+        xbox_parse(xbox);
+      xbox->nbytes = 0;
     }      
 
 #ifdef RATE_CHECK
