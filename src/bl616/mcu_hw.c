@@ -245,8 +245,14 @@ static void xbox_parse(struct xbox_info_S *xbox) {
     ((wButtons & XINPUT_GAMEPAD_START          )?0x20:0x00);
 
   // build analog stick x,y state
-  int16_t sThumbLX = xbox->buffer[11] << 8 | xbox->buffer[10];
-  int16_t sThumbLY = xbox->buffer[13] << 8 | xbox->buffer[12];
+  int16_t sThumbLX = xbox->buffer[7] << 8 | xbox->buffer[6];
+  int16_t sThumbLY = xbox->buffer[9] << 8 | xbox->buffer[8];
+
+  // map analog stick directions to digital
+  if(byteScaleAnalog(sThumbLX) > (uint8_t) 0xc0) state |= 0x01;
+  if(byteScaleAnalog(sThumbLX) < (uint8_t) 0x40) state |= 0x02;
+  if(byteScaleAnalog(sThumbLY) > (uint8_t) 0xc0) state |= 0x08; //
+  if(byteScaleAnalog(sThumbLY) < (uint8_t) 0x40) state |= 0x04; //
 
   // submit if state has changed
   if(state != xbox->last_state ||
