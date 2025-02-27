@@ -3,7 +3,9 @@
 The is the variant of the MiSTeryNano FPGA companion firmware
 for the BL616 MCU (M0S Dock).
 
-The [instructions in the MiSTerNano repositories](https://github.com/harbaum/MiSTeryNano/tree/main/firmware) mostly apply to this version as well.
+> [!IMPORTANT]
+> * Updated SDK have to be installed!  
+> * SDK Repository location changed
 
 ## Example wiring
 
