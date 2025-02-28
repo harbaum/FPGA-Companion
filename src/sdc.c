@@ -396,6 +396,46 @@ static int sdc_image_inserted(char drive, unsigned long size, char *ext) {
   return 0;
 }
 
+#ifdef ESP_PLATFORM
+
+void sdc_load_core(char *fname) {
+    uint8_t corebuf[256];
+    FIL f;
+
+    sdc_lock();
+    // mcu_hw_spi_flash_begin();    // This is not working... Need to figure out why
+
+    if (f_open(&f, fname, FA_READ) != FR_OK) {
+        debugf("Cannot open core file");
+        return;
+    }
+    int addr = 0x100000;        // Second bit file location in SPI Flash - 1MB - First bit file needs multiboot enabled with SPI Location of 100000. Trigger reconfig_n to jump to this location.
+    unsigned int cnt = 0;
+    debugf("Starting Erase\n");
+    mcu_hw_erase_flash_region(addr, 0x100000);    // Bit file size for Tang Primer 20k is 1MB
+    debugf("Starting Flashing\n");
+    while (!f_eof(&f)) {
+      f_read(&f, corebuf, 256, &cnt);
+      mcu_hw_write_flash(addr, corebuf, cnt);
+      addr += cnt;
+      cnt = 0;
+    }
+    // write remaining data in buffer
+    if (cnt > 0) {
+        mcu_hw_write_flash(addr, corebuf, cnt);
+        addr += cnt;
+    }
+    f_close(&f);
+
+    // mcu_hw_spi_flash_end();
+    sdc_unlock();
+
+    debugf("Core ready. Please reboot");
+
+}
+
+#endif
+
 int sdc_image_open(int drive, char *name) {
   // tell core that the "disk" has been removed
   sdc_image_inserted(drive, 0, NULL);
