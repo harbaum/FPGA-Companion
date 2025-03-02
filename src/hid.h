@@ -16,8 +16,8 @@ struct hid_mouse_state_S {
 struct hid_joystick_state_S {
   unsigned char last_state;
   unsigned char js_index;
-  unsigned char last_state_x;
-  unsigned char last_state_y;
+  int last_state_x;
+  int last_state_y;
   unsigned char last_state_btn_extra;
 };
 
