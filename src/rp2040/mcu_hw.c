@@ -329,8 +329,16 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x20:0x00);
 
 	  // build analog stick x,y state
-      int16_t ax = p->sThumbLX;
-      int16_t ay = p->sThumbLY;
+      int16_t sThumbLX = p->sThumbLX;
+      int16_t sThumbLY = p->sThumbLY;
+      uint8_t ax = byteScaleAnalog(sThumbLX);
+      uint8_t ay = ~byteScaleAnalog(sThumbLY);
+
+    // map analog stick directions to digital
+    if(ax > (uint8_t) 0xc0) state |= 0x01;
+    if(ax < (uint8_t) 0x40) state |= 0x02;
+    if(ay > (uint8_t) 0xc0) state |= 0x04;
+    if(ay < (uint8_t) 0x40) state |= 0x08;
 
     // submit if state has changed
 	  if((state != xbox_state[idx].state) ||
@@ -340,8 +348,8 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 
       xbox_state[idx].state = state;
       xbox_state[idx].state_btn_extra = state_btn_extra;
-      xbox_state[idx].state_x = ax;
-      xbox_state[idx].state_y = ay;
+      xbox_state[idx].state_x = sThumbLX;
+      xbox_state[idx].state_y = sThumbLY;
       usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox_state[idx].js_index, state, state_btn_extra, byteScaleAnalog(ax), byteScaleAnalog(ay));
 
 	    mcu_hw_spi_begin();
@@ -349,8 +357,8 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08(byteScaleAnalog(ax)); // gamepad analog X
-	    mcu_hw_spi_tx_u08(byteScaleAnalog(ay)); // gamepad analog Y
+	    mcu_hw_spi_tx_u08(ax); // gamepad analog X
+	    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
 	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
     }
