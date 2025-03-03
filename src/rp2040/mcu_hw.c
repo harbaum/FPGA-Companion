@@ -258,13 +258,15 @@ unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
 
 void mcu_hw_init(void) {
   // default 125MHz is not appropreate. Sysclock should be multiple of 12MHz.
-  set_sys_clock_khz(240000, true);
-  
-  stdio_init_all();    // ... so stdio can adjust its bit rate
+
 #ifdef WAVESHARE_RP2040_ZERO
   // the waveshare mini does not support SWD and we thus use a simpler (slower) UART
+  set_sys_clock_khz(240000, true);
+  stdio_init_all();    // ... so stdio can adjust its bit rate
   uart_set_baudrate(uart0, 460800);  
 #else
+  set_sys_clock_khz(120000, true); // required for RPiPico
+  stdio_init_all();
   uart_set_baudrate(uart0, 921600);
 #endif
 
