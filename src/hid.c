@@ -265,10 +265,8 @@ void joystick_parse(const hid_report_t *report, struct hid_joystick_state_S *sta
   if(a[1] > 0xc0) joy |= 0x04;
   if(a[1] < 0x40) joy |= 0x08;
 
-  int ax = 0;
-  int ay = 0;
-  ax = a[0];
-  ay = a[1];
+  int ax = a[0];
+  int ay = a[1];
 
   if((joy != state->last_state) || 
      (ax != state->last_state_x) || 
