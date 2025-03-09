@@ -12,7 +12,7 @@
 #include "pico/stdlib.h"
 
 #include <stdio.h>
-#include "pio_usb.h"
+#include "tusb.h"
 #include "pico/multicore.h"
 #include "hardware/clocks.h"
 

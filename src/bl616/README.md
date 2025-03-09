@@ -37,6 +37,15 @@ cd FPGA-Companion
 CROSS_COMPILE=<where you downloaded the toolchain>/toolchain_gcc_t-head_linux/bin/riscv64-unknown-elf- BL_SDK_BASE=<where you downloaded the sdk>/bouffalo_sdk/ make
 ```
 
+You can simplify the make a bit by setting in your bashrc BL_SDK_BASE and include the toolchain_gcc_t-head_linux in the search path.
+
+```bash
+nano ./bashrc
+export BL_SDK_BASE=xyz 
+PATH=$PATH:/abc/toolchain_gcc_t-head_linux/bin
+```
+A simple make / make CHIP=bl616 COMX=/dev/ttyACMxyz flash in your bl616 folder will do then.
+
 ### Flashing the firmware
 
 The resulting binary can be flashed onto the M0S. If you don't have
@@ -148,7 +157,7 @@ git submodule update
 Compile the firmware:  
 
 ```text
-cd %HOMEPATH%/Documents\fork\FPGA-Companion\src\bl616
+cd %HOMEPATH%/Documents\FPGA-Companion\src\bl616
 make clean
 make
 ```

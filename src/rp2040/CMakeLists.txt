@@ -22,8 +22,8 @@ file(GLOB U8G2_SRC ../u8g2/csrc/*.c)
 add_library(u8g2 ${U8G2_SRC})
 
 add_executable(${PROJECT}
-        ../main.c
-        mcu_hw.c
+	../main.c
+	mcu_hw.c
 	../sysctrl.c
 	../hidparser.c
 	../hid.c
@@ -36,7 +36,7 @@ add_executable(${PROJECT}
 	../core_c64.c
 	../core_vic20.c
 	../core_amiga.c
-        ../core_atari2600.c
+	../core_atari2600.c
 	../fatfs/source/ff.c
 	../fatfs/source/ffunicode.c
 	../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
