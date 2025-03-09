@@ -18,6 +18,10 @@ sudo dnf group install "development-tools"
 sudo dnf install clang cmake gcc-arm-linux-gnu arm-none-eabi-gcc-cs-c++ arm-none-eabi-gcc-cs arm-none-eabi-binutils arm-none-eabi-newlib
 ```
 
+### Install the Pi Pico Toolchain (Windows11)
+
+see > ```Install the Pi Pico Toolchain for VisualStudioCode``` as below
+
 ### Download and install the Pi Pico SDK
 
 Download the [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
@@ -31,7 +35,7 @@ export PICO_SDK_PATH=<full-path-to-clones-sdk>
 
 ### PIO-USB component for TinyUSB
 
-Ensure that PIO-USB is installed:
+Ensure that the PIO-USB component is installed:
 
 ```bash
 cd pico-sdk/lib/tinyusb
@@ -75,22 +79,26 @@ Pico as usual. Once successfully booted the Pico's LED will blink.
 Additional debug output is sent via UART at 921600 bit/s on GP0 on
 a regular Pi Pico or Pico(W) and at 460800 bit/s on Waveshare RP2040-Zero.
 
-### Install the Pi Pico Toolchain for VisualStudioCode(Windows11 / Linux)
+### Install the Pi Pico Toolchain for VisualStudioCode (Windows11 / Linux)
 
 Install VSCode [Raspberry Pi Pico](https://marketplace.visualstudio.com/items?itemName=raspberry-pi.raspberry-pi-pico) plugin.
 
-Make sure that PIO-USB is installed:
-```text
+> [!IMPORTANT]
+> Make sure that the PIO-USB component is installed:
+
+```powershell
 Open Start Search, type “cmd” or Win + R and type “cmd” 
 
 cd %HOMEPATH%/.pico-sdk\sdk\2.1.1\lib\tinyusb
 python tools/get_deps.py rp2040
 ```
 
-```Import Project``` with default settings and Press ```Compile Project```
+```Import Project``` by selecting folder ```rp2040``` choose 'default' settings and Press ```Compile Project```
 
 The resulting file named ```fpga_companion.uf2``` is loaded onto the
 Pico as usual. Once successfully booted the Pico's LED will blink.
+
+For a *Waveshare RP2040-Zero* build select ```Switch Board``` and choose waveshare_rp2040_zero
 
 # Pin usage
 
@@ -116,7 +124,7 @@ To do so in the file ```tusb_config.h``` the PIO USB
 needs to be disabled by setting the following value
 to 0:
 
-```
+```c
 // change to 0 if using on-board native micro USB
 // change to 1 if using pico-pio-usb as host controller for raspberry rp2040
 #define CFG_TUH_RPI_PIO_USB   1
@@ -138,13 +146,13 @@ it as a USB host using a regular USB-C to USB-A host adapter.
 To build the firmware for the RP2040-Zero use the following
 command:
 
-```
+```bash
 cmake -DWS2040_ZERO=ON ..
 ```
 
 The build process will then end with the following message:
 
-```
+```text
 Firmware has been built for Waveshare RP2040-Zero.
 ```
 
@@ -178,4 +186,3 @@ adapter. The details are explained in appendix A of
 The ```CMakeLists.txt``` file already contains a matching target and
 with openocd installed a simple ```make flash``` should upload the
 new firmware via the second Pico.
-
