@@ -23,7 +23,7 @@ add_library(u8g2 ${U8G2_SRC})
 
 add_executable(${PROJECT}
 	../main.c
-	./mcu_hw.c
+	mcu_hw.c
 	../sysctrl.c
 	../hidparser.c
 	../hid.c
