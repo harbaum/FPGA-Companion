@@ -6,12 +6,14 @@ for the Raspberry Pi Pico (W).
 ## Building
 
 ### Install the Pi Pico Toolchain (Ubuntu)
-```
+
+```bash
 sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
 ```
 
 ### Install the Pi Pico Toolchain (Fedora)
-```
+
+```bash
 sudo dnf group install "development-tools"
 sudo dnf install clang cmake gcc-arm-linux-gnu arm-none-eabi-gcc-cs-c++ arm-none-eabi-gcc-cs arm-none-eabi-binutils arm-none-eabi-newlib
 ```
@@ -22,22 +24,17 @@ Download the [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
 and set the ```PICO_SDK_PATH``` environment variable to point to the
 SDKs root directory.
 
-```
+```bash
 git clone https://github.com/raspberrypi/pico-sdk --recursive
 export PICO_SDK_PATH=<full-path-to-clones-sdk>
 ```
 
-### Update the TinyUSB component
+### PIO-USB component for TinyUSB
 
-The TinyUSB inside the Pico SDK needs to be at least version 0.17.0.
+Ensure that PIO-USB is installed:
 
-To update it go to pico-sdk/lib and install PIO-USB do:
-
-```
-cd pico-sdk/lib
-mv tinyusb tinyusb.old
-git clone https://github.com/hathach/tinyusb.git
-cd tinyusb
+```bash
+cd pico-sdk/lib/tinyusb
 python3 tools/get_deps.py rp2040
 ```
 
@@ -46,14 +43,14 @@ python3 tools/get_deps.py rp2040
 This repository has to be cloned recursively to make sure the submodules
 are included.
 
-```
+```bash
 git clone https://github.com/harbaum/FPGA-Companion.git  --recursive
 cd FPGA-Companion
 ```
 
 Alternally do a
 
-```
+```bash
 git submodule update --init
 ```
 
@@ -64,7 +61,7 @@ after a non-recursive clone to update the submodules.
 To start the build process create a build directory and start the
 compilation:
 
-```
+```bash
 cd src/rp2040
 mkdir build
 cd build
@@ -77,6 +74,23 @@ Pico as usual. Once successfully booted the Pico's LED will blink.
 
 Additional debug output is sent via UART at 921600 bit/s on GP0 on
 a regular Pi Pico or Pico(W) and at 460800 bit/s on Waveshare RP2040-Zero.
+
+### Install the Pi Pico Toolchain for VisualStudioCode(Windows11 / Linux)
+
+Install VSCode [Raspberry Pi Pico](https://marketplace.visualstudio.com/items?itemName=raspberry-pi.raspberry-pi-pico) plugin.
+
+Make sure that PIO-USB is installed:
+```text
+Open Start Search, type “cmd” or Win + R and type “cmd” 
+
+cd %HOMEPATH%/.pico-sdk\sdk\2.1.1\lib\tinyusb
+python tools/get_deps.py rp2040
+```
+
+```Import Project``` with default settings and Press ```Compile Project```
+
+The resulting file named ```fpga_companion.uf2``` is loaded onto the
+Pico as usual. Once successfully booted the Pico's LED will blink.
 
 # Pin usage
 
