@@ -31,20 +31,21 @@ git clone --recurse-submodules https://github.com/vossstef/bouffalo_sdk.git
 Compile the firmware:
 
 ```bash
+git clone --recurse-submodules https://github.com/harbaum/FPGA-Companion.git
+cd FPGA-Companion
 git submodule init
 git submodule update
-cd FPGA-Companion
 CROSS_COMPILE=<where you downloaded the toolchain>/toolchain_gcc_t-head_linux/bin/riscv64-unknown-elf- BL_SDK_BASE=<where you downloaded the sdk>/bouffalo_sdk/ make
 ```
 
-You can simplify the make a bit by setting in your bashrc BL_SDK_BASE and include the toolchain_gcc_t-head_linux in the search path.
+You can simplify the ```make``` a bit by setting in your bashrc BL_SDK_BASE and include the toolchain_gcc_t-head_linux in the search path.
 
 ```bash
 nano ./bashrc
 export BL_SDK_BASE=xyz 
 PATH=$PATH:/abc/toolchain_gcc_t-head_linux/bin
 ```
-A simple make / make CHIP=bl616 COMX=/dev/ttyACMxyz flash in your bl616 folder will do then.
+A simple make or make CHIP=bl616 COMX=/dev/ttyACMxyz flash in your bl616 folder will do then.
 
 ### Flashing the firmware
 
@@ -95,7 +96,7 @@ Install [cmake for Windows](https://cmake.org/download)
 
 Install Bouffalo RISC-V MCU toolchain
 
-```text
+```shell
 Open Start Search, type “cmd” or Win + R and type “cmd” 
 
 cd %HOMEPATH%
@@ -107,22 +108,22 @@ And the Bouffalo SDK:
 Install Bouffalo SDK with latest CherryUSB stack V1.42 that is maintained by [CherryUSB](https://github.com/cherry-embedded/CherryUSB/blob/master/README.md).  
 In addition it's enhanced with a xbox gamepad driver from [Till Harbaum](https://github.com/harbaum/):
 
-```text
+```shell
 cd %HOMEPATH%
 git clone --recurse-submodules https://github.com/vossstef/bouffalo_sdk.git
 ```
 
 Set Windows SDK Environment Variable:  
 
-Open Start Search, type “env”, and select “Edit the system environment variables”.
-
-```text
+```shell
+Open Start Search, type “env”, and select “Edit the system environment variables”.  
+  
 BL_SDK_BASE=C:\Users\xyzuser\bouffalo_sdk
 ```
 
 Set Windows search PATH for Toolchain:  
 
-```text
+```shell
 C:\Users\xyzuser\toolchain_gcc_t-head_windows\bin
 C:\Users\xyzuser\bouffalo_sdk\tools\make
 C:\Users\xyzuser\bouffalo_sdk\tools\ninja
@@ -130,14 +131,14 @@ C:\Users\xyzuser\bouffalo_sdk\tools\ninja
 
 Close shell
 
-```text
+```shell
 exit
 ```
 
 Open Start Search, type “cmd” or Win + R and type “cmd”  
 check individually proper start of each single tool
 
-```text
+```shell
 make -v
 cmake -version
 ninja --help
@@ -146,9 +147,9 @@ riscv64-unknown-elf-gcc -v
 
 Download FPGA companion repository
 
-```text
+```shell
 cd %HOMEPATH%/Documents
-git clone https://github.com/harbaum/FPGA-Companion.git
+git clone --recurse-submodules https://github.com/harbaum/FPGA-Companion.git
 cd FPGA-Companion
 git submodule init
 git submodule update
@@ -156,11 +157,13 @@ git submodule update
 
 Compile the firmware:  
 
-```text
+```shell
 cd %HOMEPATH%/Documents\FPGA-Companion\src\bl616
 make clean
 make
 ```
+
+Alternative compile option: [ninja](https://ninja-build.org). make clean and then make ninja
 
 ### Flashing the firmware
 
@@ -171,7 +174,7 @@ Device Manager will open.
 Locate Ports (COM & LPT) in the list.  
 Check for the COM ports by expanding the same.  
 
-```text
+```shell
 make CHIP=bl616 COMX=COMabc  flash
 ```
 
