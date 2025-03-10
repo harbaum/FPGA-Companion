@@ -45,6 +45,7 @@ nano ./bashrc
 export BL_SDK_BASE=xyz 
 PATH=$PATH:/abc/toolchain_gcc_t-head_linux/bin
 ```
+
 A simple make or make CHIP=bl616 COMX=/dev/ttyACMxyz flash in your bl616 folder will do then.
 
 ### Flashing the firmware
@@ -115,7 +116,7 @@ git clone --recurse-submodules https://github.com/vossstef/bouffalo_sdk.git
 
 Set Windows SDK Environment Variable:  
 
-```shell
+```text
 Open Start Search, type “env”, and select “Edit the system environment variables”.  
   
 BL_SDK_BASE=C:\Users\xyzuser\bouffalo_sdk
@@ -181,4 +182,3 @@ make CHIP=bl616 COMX=COMabc  flash
 If you have downloaded the firmware from the [release page](https://github.com/harbaum/FPGA-Companion/releases) you can use the graphical [BLFlashCube](https://github.com/CherryUSB/bouffalo_sdk/tree/master/tools/bflb_tools/bouffalo_flash_cube) tool using the ```fpga_companion_bl616_cfg.ini``` file.
 
 After successful download you need to unplug the device again and reinsert it *without* the BOOT button pressed to boot into the newly installed firmware.
-
