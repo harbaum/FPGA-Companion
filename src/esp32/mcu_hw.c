@@ -2,6 +2,9 @@
   mcu_hw.c - MiSTeryNano FPGA companion hardware driver for esp32 s2/s3
 */
 
+#include <stdio.h>
+#include <inttypes.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -13,6 +16,9 @@
 #include "../mcu_hw.h"
 #include "../hid.h"
 #include "../config.h"
+
+#include "../sysctrl.h"
+
 
 
 //#define USB_ERROR_CHECK(a)  ESP_ERROR_CHECK(a)
@@ -346,12 +352,20 @@ static void usb_init(void) {
 
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "esp_flash.h"
+#include "esp_flash_spi_init.h"
 
+#define SPI_HOST_ID SPI3_HOST
 #define PIN_NUM_MISO 13
 #define PIN_NUM_MOSI 11
 #define PIN_NUM_CLK  12
 #define PIN_NUM_CS   10
-#define PIN_NUM_IRQ  14
+#define PIN_NUM_IRQ  9
+#define PIN_NUM_RECONFIG_N   8    // To reconfigure the FPGA after a new bitstream has been written to the flash
+// #define PIN_NUM_IRQ  14
+#define PIN_NUM_FLASH_CS   7
+
+esp_flash_t* ext_flash;
 
 extern TaskHandle_t com_task_handle;
 static spi_device_handle_t spi;
@@ -385,10 +399,11 @@ void mcu_hw_spi_init(void) {
      .sclk_io_num = PIN_NUM_CLK,
      .quadwp_io_num = -1,
      .quadhd_io_num = -1,
+     .intr_flags = ESP_INTR_FLAG_LOWMED,      // Needed to fix "No free interrupt inputs for USB interrupt (flags 0x802)" errors
      .max_transfer_sz = 32
   };
   
-  spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
+  spi_bus_initialize(SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO);
 
   spi_device_interface_config_t devcfg = {
      .clock_speed_hz = 20 * 1000 * 1000,      // 20 MHz
@@ -400,7 +415,7 @@ void mcu_hw_spi_init(void) {
      .queue_size = 7,                         // We want to be able to queue 7 transactions at a time
   };
   
-  spi_bus_add_device(SPI2_HOST, &devcfg, &spi);
+  spi_bus_add_device(SPI_HOST_ID, &devcfg, &spi);
 
   // Chip select is active-low, so we'll initialise it to a driven-high state
   debugf("  CSn  = GPIO%d", PIN_NUM_CS);
@@ -412,9 +427,48 @@ void mcu_hw_spi_init(void) {
   debugf("  IRQn = GPIO%d", PIN_NUM_IRQ);
   gpio_set_pull_mode(PIN_NUM_IRQ, GPIO_PULLUP_ONLY);
   gpio_set_direction(PIN_NUM_IRQ, GPIO_MODE_INPUT);  
-  gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
+  gpio_install_isr_service(ESP_INTR_FLAG_LEVEL2);
   gpio_isr_handler_add(PIN_NUM_IRQ, irq_handler, NULL);
   gpio_set_intr_type(PIN_NUM_IRQ, GPIO_INTR_LOW_LEVEL);
+
+  sys_wait4fpga();
+
+  // Setup SPI Flash
+  const esp_flash_spi_device_config_t device_config = {
+      .host_id = SPI_HOST_ID,
+      .cs_id = 0,
+      .cs_io_num = PIN_NUM_FLASH_CS,
+      // .io_mode = SPI_FLASH_FASTRD,
+      .io_mode = SPI_FLASH_SLOWRD,
+      .freq_mhz = ESP_FLASH_20MHZ
+  };
+
+  ESP_ERROR_CHECK(spi_bus_add_flash_device(&ext_flash, &device_config));
+  
+  // Probe the Flash chip and initialize it
+  esp_err_t err = esp_flash_init(ext_flash);
+  if (err != ESP_OK) {
+      debugf("Failed to initialize external Flash: %s (0x%x)", esp_err_to_name(err), err);
+  }
+
+  // Print out the ID and size
+  uint32_t id;
+  ESP_ERROR_CHECK(esp_flash_read_id(ext_flash, &id));
+  debugf("Initialized external Flash, size=%" PRIu32 " KB, ID=0x%" PRIx32, ext_flash->size / 1024, id);
+
+
+}
+
+void mcu_hw_erase_flash_region(uint32_t addr, uint32_t size) {
+  esp_flash_erase_region(ext_flash, addr, size);
+}
+
+void mcu_hw_write_flash(uint32_t addr, uint8_t *data, uint32_t size) {
+  esp_flash_write(ext_flash, data, addr, size);
+}
+
+void mcu_hw_read_flash(uint32_t addr, uint8_t *data, uint32_t size) {
+  esp_flash_read(ext_flash, data, addr, size);
 }
 
 void mcu_hw_irq_ack(void) {
@@ -429,6 +483,14 @@ void mcu_hw_spi_begin() {
 
 void mcu_hw_spi_end() {
   gpio_set_level(PIN_NUM_CS, 1);
+  xSemaphoreGive(sem);
+}
+
+void mcu_hw_spi_flash_begin() {
+  xSemaphoreTake(sem, 0xffffffffUL);      // wait forever
+}
+
+void mcu_hw_spi_flash_end() {
   xSemaphoreGive(sem);
 }
 
@@ -451,14 +513,25 @@ unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
   return retval;
 }
 
+void mcu_hw_fpga_reset(void) {
+  debugf("FPGA RESET");
+  gpio_set_level(PIN_NUM_RECONFIG_N, 0);
+  vTaskDelay(pdMS_TO_TICKS(100));
+  gpio_set_level(PIN_NUM_RECONFIG_N, 1);
+}
+
 void mcu_hw_reset(void) {
-  debugf("RESET");
+  debugf("MCU RESET");
   esp_restart();
   for(;;);
 }
 
 void mcu_hw_init(void) {
   printf("\r\n\r\n" LOGO "           FPGA Companion for ESP32-S2/S3\r\n\r\n");
+
+  debugf("  FPGA Reconfig  = GPIO%d", PIN_NUM_RECONFIG_N);
+  gpio_set_direction(PIN_NUM_RECONFIG_N, GPIO_MODE_OUTPUT);
+  gpio_set_level(PIN_NUM_RECONFIG_N, 1);
 
   mcu_hw_spi_init();
   usb_init();

@@ -32,6 +32,8 @@
 #include "sysctrl.h"
 #include "debug.h"
 
+#include "mcu_hw.h"
+
 // this is the u8g2_font_helvR08_te with any trailing
 // spaces removed
 #include "font_helvR08_te.c"
@@ -1179,9 +1181,25 @@ static void menu_fileselector_select(sdc_dir_entry_t *entry) {
       }
     }
   } else {
+#ifdef ESP_PLATFORM
+    if(strcmp(sdc_get_cwd(drive), "/cores") == 0) {
+      debugf("loading core %s", entry->name);
+      menu_draw_dialog("Loading Core", "This could take up to 30 seconds.");
+      sdc_load_core(strcat("/cores/",entry->name));
+      menu_draw_dialog("Core loaded", "Restarting FPGA.");
+      vTaskDelay(pdMS_TO_TICKS(3000));   // give user time to read message
+      mcu_hw_fpga_reset();
+    } else {
+      // request insertion of this image
+      debugf("loading image %s", entry->name);
+      sdc_image_open(drive, entry->name);
+    }
+#else
     // request insertion of this image
+    debugf("loading image %s", entry->name);
     sdc_image_open(drive, entry->name);
-    
+#endif
+
     // return to parent form
     menu_pop();
   }
