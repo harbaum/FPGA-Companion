@@ -55,8 +55,6 @@ static void port_line(char *command) {
     at_wifi_puts("  atscan\r\n");
   } else if(strcasecmp(command, "atscan") == 0) {
     mcu_hw_wifi_scan();
-  } else if(strcasecmp(command, "atvis") == 0) {
-    mcu_hw_wifi_connect("visitors", "kA!3MD.kE-92BVtx");
   } else if(strncasecmp(command, "atssid", 6) == 0) {
     // skip to ssid
     char *s = command+6;
@@ -66,10 +64,6 @@ static void port_line(char *command) {
     while(*k && *k != ',') k++;
     if(*k == ',') *k++ = '\0';          
     mcu_hw_wifi_connect(s, k);
-  } else if(strcasecmp(command, "atdf") == 0) {
-    mcu_hw_tcp_connect("darkforce-bbs.dyndns.org", 1040);    
-  } else if(strcasecmp(command, "atbb") == 0) {
-    mcu_hw_tcp_connect("bbsclubhouse.ddns.net", 1040);    
   } else if(strncasecmp(command, "atd", 3) == 0) {
     char *s = command+3;
     while(*s == ' ') s++;
