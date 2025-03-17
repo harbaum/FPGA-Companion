@@ -54,8 +54,6 @@ static void com_task(__attribute__((unused)) void *p ) {
       // no XML on SD card, try to load from core itself
       char *cfg_str = sys_get_config();
       if(cfg_str) {
-	hexdump(cfg_str, 16);
-	
 	debugf("Loading XML config from core");
 	config_init();
 	char *c = cfg_str;
