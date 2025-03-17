@@ -16,6 +16,7 @@ idf_component_register(SRCS
 	"../../core_amiga.c"
 	"../../core_atari2600.c"
 	"../../config.c"
+        "../../at_wifi.c"
 	"../../xml.c"
 	"../mcu_hw.c"
 	${U8G2_SRC}	

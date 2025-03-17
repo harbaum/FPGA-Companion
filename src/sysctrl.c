@@ -16,6 +16,7 @@
 #include "debug.h"
 #include "config.h"
 #include "mcu_hw.h"
+#include "at_wifi.h"
 
 unsigned char core_id = 0;
 
@@ -108,21 +109,62 @@ unsigned char sys_irq_ctrl(unsigned char ack) {
   return ret;
 }
 
-static void sys_handle_event(void) {
+// send a byte for "port" communication which is core specific
+// and may be some serial or parallel port which the MCU implements
+void sys_port_put(unsigned char byte) {
+  sys_begin(SPI_SYS_PORT_IN);
+  mcu_hw_spi_tx_u08(byte);
+  mcu_hw_spi_end();
+}
+
+// read status and byte from port out
+static bool sys_port_get(unsigned char *d) {
+  sys_begin(SPI_SYS_PORT_OUT);
+  mcu_hw_spi_tx_u08(0);
+  unsigned char status = mcu_hw_spi_tx_u08(0);
+  *d = mcu_hw_spi_tx_u08(0);
+  mcu_hw_spi_end();  
+
+  return status & 1;
+}
+
+static void sys_handle_event(bool ignore_coldboot) {
   // the FPGAs cold boot flag was set indicating that the
   // FPGA has be reloaded while the MCU was running. Reset
   // the MCU to re-initialize everything and get into a
   // sane state
+
+  // request interrupt source
+  sys_begin(SPI_SYS_IRQ_SRC);
+  mcu_hw_spi_tx_u08(0);
+  unsigned char irq_src = mcu_hw_spi_tx_u08(0);
+  mcu_hw_spi_end();
   
-  sys_debugf("FPGA cold boot detected, reseting MCU ...");
-  mcu_hw_reset();
+  if(irq_src & 2) {
+    // sys_debugf("Port out data request");
+    
+    // read port data
+    unsigned char byte;
+    while(sys_port_get(&byte))
+      at_wifi_port_byte(byte);
+  }
+  
+  // no irq source given at all means coldboot of a very old core ...
+  if(irq_src & 1 || !irq_src ) {
+    if(ignore_coldboot)
+      sys_debugf("FPGA cold boot detected, ignoring for now");
+    else {
+      sys_debugf("FPGA cold boot detected, reseting MCU ...");
+      mcu_hw_reset();
+    }
+  }
 }
 
-void sys_handle_interrupts(unsigned char pending) {
+void sys_handle_interrupts(unsigned char pending, bool ignore_coldboot) {
   // debugf("IRQ = %02x", pending);
 
   if(pending & 0x01) // irq 0 = SYSCTRL
-    sys_handle_event();
+    sys_handle_event(ignore_coldboot);
 
   if(pending & 0x02) // irq 1 = HID
     hid_handle_event();
@@ -218,4 +260,42 @@ void sys_run_action_by_name(char *name) {
   // check for init action
   config_action_t *action = config_get_action(name);
   if(action) sys_run_action(action);
+}
+
+char *sys_get_config(void) {
+  char *ret = NULL;
+  // (try to) read xml directly from core
+
+  // read the xml two times, one time to determine
+  // the size and a second time to actually read it
+  
+  sys_begin(SPI_SYS_READ_CFG);
+  mcu_hw_spi_tx_u08(0);
+  mcu_hw_spi_tx_u08(0);
+
+  char c = mcu_hw_spi_tx_u08(0);
+  int len;
+  for(len=0;len < 8191 && c >= 32 && c != 0xff;len++)
+    c = mcu_hw_spi_tx_u08(0);
+
+  mcu_hw_spi_end();  
+
+  sys_debugf("core xml config size: %d", len);
+  if(len < 100) return NULL;
+  
+  // allocate enough space
+  ret = malloc(len+1);
+
+  // and read the data into the buffer
+  sys_begin(SPI_SYS_READ_CFG);
+  mcu_hw_spi_tx_u08(0);
+  mcu_hw_spi_tx_u08(0);
+  
+  int i;
+  for(i=0;i<len;i++) ret[i] = mcu_hw_spi_tx_u08(0);
+  ret[i] = '\0';
+  
+  mcu_hw_spi_end();  
+  
+  return ret;
 }

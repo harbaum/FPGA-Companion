@@ -2,8 +2,6 @@
   mcu_hw.c - MiSTeryNano FPGA companion hardware driver for rp2040
 */
 
-// /opt/pico-sdk/lib/tinyusb/examples/host/hid_controller/src/main.c
-
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
@@ -12,13 +10,15 @@
 #include "pico/stdlib.h"
 
 #include <stdio.h>
-#include "tusb.h"
+#include "pio_usb.h"
 #include "pico/multicore.h"
 #include "hardware/clocks.h"
 
 #include "../debug.h"
 #include "../config.h"
 #include "../spi.h"
+#include "../sysctrl.h"
+#include "../at_wifi.h"
 
 #include "../mcu_hw.h"
 
@@ -50,9 +50,9 @@
 #include "ws2812.pio.h"
 #endif
 
-/* ============================================================================================= */
-/* ===============                          USB                                   ============== */
-/* ============================================================================================= */
+/* ======================================================================== */
+/* ===============                USB                        ============== */
+/* ======================================================================== */
 #include "tusb.h"
 #include "../hid.h"
 #include "../hidparser.h"
@@ -83,9 +83,6 @@ static struct {
   uint8_t instance;
   uint8_t js_index;
   uint8_t state;
-  int16_t state_x;
-  int16_t state_y;
-  uint8_t state_btn_extra;
 } xbox_state[MAX_XBOX_DEVICES];
   
 static void pio_usb_task(__attribute__((unused)) void *parms) {
@@ -102,15 +99,6 @@ static void pio_usb_task(__attribute__((unused)) void *parms) {
   }
 }
 
-uint8_t byteScaleAnalog(int16_t xbox_val)
-{
-  // Scale the xbox value from [-32768, 32767] to [1, 255]
-  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
-  uint8_t scale_val = (xbox_val + 32768) / 256;
-  if (scale_val == 0) return 1;
-  return scale_val;
-}
-
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
   // Interface protocol (hid_interface_protocol_enum_t)
   const char* protocol_str[] = { "None", "Keyboard", "Mouse" };
@@ -119,7 +107,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   uint16_t vid, pid;
   tuh_vid_pid_get(dev_addr, &vid, &pid);
   usb_debugf("[%04x:%04x][%u] HID Interface%u, Protocol = %s",
-  	     vid, pid, dev_addr, instance, protocol_str[itf_protocol]);
+	     vid, pid, dev_addr, instance, protocol_str[itf_protocol]);
 
   // search for a free hid entry
   int idx;
@@ -140,7 +128,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
 	}
       }
     } else
-      usb_debugf("ignoring device");
+      usb_debugf("Ignoring device");
   } else
     usb_debugf("Error, no more free HID entries");
   
@@ -169,7 +157,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 
   // find matching hid report
   for(int idx=0;idx<MAX_HID_DEVICES;idx++)
-    if(hid_device[idx].dev_addr == dev_addr && hid_device[idx].instance == instance)     
+    if(hid_device[idx].dev_addr == dev_addr && hid_device[idx].instance == instance)
       hid_parse(&hid_device[idx].rep, &hid_device[idx].state, report, len);
   
   // continue to request to receive report
@@ -177,9 +165,9 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
     usb_debugf("Error: cannot request report");
 }
 
-/* ============================================================================================= */
-/* ===============                          SPI                                   ============== */
-/* ============================================================================================= */
+/* ========================================================================= */
+/* =======                          SPI                                ===== */
+/* ========================================================================= */
 #include "pico/binary_info.h"
 #include "hardware/spi.h"
 #include "queue.h"
@@ -187,7 +175,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 extern TaskHandle_t com_task_handle;
 static SemaphoreHandle_t sem;
 
-static void irq_handler(void) {
+static void irq_handler(void) {  
   // Disable interrupt. It will be re-enabled by the com task
   gpio_set_irq_enabled(SPI_IRQ_PIN, GPIO_IRQ_LEVEL_LOW, false);
 
@@ -224,7 +212,7 @@ void mcu_hw_spi_init(void) {
   // The interrupt is active low on GP22
   debugf("  IRQn = %d", SPI_IRQ_PIN);
   // set handler but not enable yet as the main task may not be ready
-  gpio_add_raw_irq_handler(SPI_IRQ_PIN, irq_handler);
+  gpio_add_raw_irq_handler(SPI_IRQ_PIN, irq_handler);  
 }
 
 void mcu_hw_irq_ack(void) {
@@ -235,6 +223,7 @@ void mcu_hw_irq_ack(void) {
     irq_set_enabled(IO_IRQ_BANK0, true);
     first = false;
   }
+  //  else debugf("re-enable IRQ");
   
   // re-enable the interrupt since it was now serviced outside the irq handler
   gpio_set_irq_enabled(SPI_IRQ_PIN, GPIO_IRQ_LEVEL_LOW, 1); 
@@ -256,47 +245,9 @@ unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
   return retval;
 }
 
-void mcu_hw_init(void) {
-  // default 125MHz is not appropreate. Sysclock should be multiple of 12MHz.
-
-#ifdef WAVESHARE_RP2040_ZERO
-  // the waveshare mini does not support SWD and we thus use a simpler (slower) UART
-  set_sys_clock_khz(240000, true);
-  stdio_init_all();    // ... so stdio can adjust its bit rate
-  uart_set_baudrate(uart0, 460800);  
-#else
-  set_sys_clock_khz(120000, true); // required for RPiPico
-  stdio_init_all();
-  uart_set_baudrate(uart0, 921600);
-#endif
-
-  printf("\r\n\r\n" LOGO "           FPGA Companion for RP2040\r\n\r\n");
-#if CFG_TUH_RPI_PIO_USB == 0
-  printf("Using native USB\r\n");
-#else
-  printf("USB D+/D- on GP%d and GP%d\r\n", PIO_USB_DP_PIN_DEFAULT, PIO_USB_DP_PIN_DEFAULT+1);
-#endif
-
-#ifdef WS2812_PIN
-  uint offset = pio_add_program(pio0, &ws2812_program);  
-  ws2812_program_init(pio0, 0, offset, WS2812_PIN, 800000, 0);
-#else
-  gpio_init(PICO_DEFAULT_LED_PIN);
-  gpio_set_dir(PICO_DEFAULT_LED_PIN, 1);
-  gpio_put(PICO_DEFAULT_LED_PIN, !PICO_DEFAULT_LED_PIN_INVERTED);
-#endif
-  
-  mcu_hw_spi_init();
-
-  tuh_init(BOARD_TUH_RHPORT);
-  
-  TaskHandle_t pio_usb_handle;
-  xTaskCreate(pio_usb_task, "usb_task", 2048, NULL, configMAX_PRIORITIES, &pio_usb_handle);
-}
-
-/* ============================================================================================= */
-/* ============                        XBOX controllers                          =============== */
-/* ============================================================================================= */
+/* ======================================================================= */
+/* ======                   XBOX controllers                     ========= */
+/* ======================================================================= */
 
 #include "xinput_host.h"
 
@@ -316,54 +267,26 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	if(xbox_state[idx].dev_addr == dev_addr && xbox_state[idx].instance == instance) {
       
 	  // build new state
-    unsigned char state =
+	  unsigned char state =
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_UP   )?0x08:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_DOWN )?0x04:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
 	    ((p->wButtons & 0xf000) >> 8);
-
-    // build extra button new state
-    unsigned char state_btn_extra =
-	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
-	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x10:0x00) | // Rumblepad 2 / Dual Action compatibility
-	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x20:0x00);
-
-	  // build analog stick x,y state
-      int16_t sThumbLX = p->sThumbLX;
-      int16_t sThumbLY = p->sThumbLY;
-      uint8_t ax = byteScaleAnalog(sThumbLX);
-      uint8_t ay = ~byteScaleAnalog(sThumbLY);
-
-    // map analog stick directions to digital
-    if(ax > (uint8_t) 0xc0) state |= 0x01;
-    if(ax < (uint8_t) 0x40) state |= 0x02;
-    if(ay > (uint8_t) 0xc0) state |= 0x04;
-    if(ay < (uint8_t) 0x40) state |= 0x08;
-
-    // submit if state has changed
-	  if((state != xbox_state[idx].state) ||
-      (state_btn_extra != xbox_state[idx].state_btn_extra) ||
-      (ax != xbox_state[idx].state_x) ||
-      (ay != xbox_state[idx].state_y)) {
-
-      xbox_state[idx].state = state;
-      xbox_state[idx].state_btn_extra = state_btn_extra;
-      xbox_state[idx].state_x = sThumbLX;
-      xbox_state[idx].state_y = sThumbLY;
-      usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox_state[idx].js_index, state, state_btn_extra, byteScaleAnalog(ax), byteScaleAnalog(ay));
-
+	  
+	  // submit if state has changed
+	  if(state != xbox_state[idx].state) {    
+	    usb_debugf("XBOX Joy%d: %02x", xbox_state[idx].js_index, state);
+	    
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
-	    mcu_hw_spi_tx_u08(ax); // gamepad analog X
-	    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
-	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
-    }
+	    
+	    xbox_state[idx].state = state;
+	  }
 	}
       }
     }
@@ -381,10 +304,7 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
     usb_debugf("Using XBOX entry %d", idx);
     xbox_state[idx].dev_addr = dev_addr;
     xbox_state[idx].instance = instance;
-    xbox_state[idx].state = 0;
-    xbox_state[idx].state_btn_extra = 0;
-    xbox_state[idx].state_x = 0;
-    xbox_state[idx].state_y = 0;
+    xbox_state[idx].state = 0xff;    
     xbox_state[idx].js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free XBOX entries");
@@ -419,67 +339,255 @@ void tuh_xinput_umount_cb(uint8_t dev_addr, uint8_t instance) {
 void mcu_hw_reset(void) {
   debugf("HW reset");
   watchdog_reboot(0, 0, 10);
-
-  // *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
-  // alternally
-  //  watchdog_enable(1, 1);
-  //  while(1);
+  while(1);
 }
 
-/* ============================================================================================= */
-/* ======                              FreeRTOS support                                   ====== */
-/* ============================================================================================= */
+/* ========================================================================= */
+/* ======                              WiFi                           ====== */
+/* ========================================================================= */
 
-void vApplicationMallocFailedHook( void ) { configASSERT( ( volatile void * ) NULL ); }
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName ) {
-  ( void ) pcTaskName;
-  ( void ) pxTask;
-  
-  /* Run time stack overflow checking is performed if
-     configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
-     function is called if a stack overflow is detected. */
-  
-  /* Force an assert. */
-  configASSERT( ( volatile void * ) NULL );
-}
-/*-----------------------------------------------------------*/
+#ifdef WAVESHARE_RP2040_ZERO
+void mcu_hw_wifi_scan(void) { }
+void mcu_hw_wifi_connect(__attribute__((unused)) char *ssid, __attribute__((unused)) char *key) { }
+void mcu_hw_tcp_connect(__attribute__((unused)) char *host, __attribute__((unused)) int port) { }
+bool mcu_hw_tcp_data(__attribute__((unused)) unsigned char byte) { return false; }
+#else  
+static bool is_pico_w = false;
+#include "pico/cyw43_arch.h"
 
-void vApplicationIdleHook( void ) {
-  volatile size_t xFreeHeapSpace;
-  
-  /* This is just a trivial example of an idle hook.  It is called on each
-     cycle of the idle task.  It must *NOT* attempt to block.  In this case the
-     idle task just queries the amount of FreeRTOS heap that remains.  See the
-     memory management section on the http://www.FreeRTOS.org web site for memory
-     management options.  If there is a lot of heap memory free then the
-     configTOTAL_HEAP_SIZE value in FreeRTOSConfig.h can be reduced to free up
-     RAM. */
-  xFreeHeapSpace = xPortGetFreeHeapSize();
-  
-  /* Remove compiler warning about xFreeHeapSpace being set but never used. */
-  ( void ) xFreeHeapSpace;
-}
-/*-----------------------------------------------------------*/
-
-void vApplicationTickHook( void ) { }
-
-#ifdef WS2812_PIN
-static void led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
+static void led_timer_w(__attribute__((unused)) TimerHandle_t pxTimer) {
   static char state = 0;
-  pio_sm_put_blocking(pio0, 0, state?0x40000000:0x00000000);  // GRBX
+  cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, state & 1);
   state = !state;
 }
-#else
+
+static void mcu_hw_wifi_init(void) {
+  debugf("Detected Pico-W");
+  
+  if(cyw43_arch_init()) {
+    debugf("WiFi failed to initialised");
+    return;
+  }
+  debugf("WiFi initialised");
+  
+  cyw43_arch_enable_sta_mode();
+  debugf("STA mode enabled");
+  
+  TimerHandle_t led_timer_handle =
+    xTimerCreate("LED timer (W)", pdMS_TO_TICKS(200), pdTRUE,
+		 NULL, led_timer_w);
+  xTimerStart(led_timer_handle, 0);
+}
+
+static const char *auth_mode_str(int authmode) {
+  static const struct { int mode; char *str; } mode_str[] = {
+    { 0, "OPEN" },
+    { 1, "WEP"  },
+    { 2, "WPA2 PSK"  },
+    { 3, "WPA WPA2 PSK"  },
+    { 4, "WPA PSK"  },
+    { 5, "ENTERPRISE"  },
+    { 6, "WPA3 PSK"  },
+    { 7, "WPA2 WPA3 PSK"  },
+    { -1, "<unknown>" }
+  };
+
+  int i;
+  for(i=0;mode_str[i].mode != -1;i++)
+    if(mode_str[i].mode == authmode || mode_str[i].mode == -1)
+      return mode_str[i].str;
+
+  return mode_str[i].str;
+}
+
+static int scan_result(__attribute__((unused)) void *env, const cyw43_ev_scan_result_t *result) {
+  if (result) {
+    char str[74];
+    
+    debugf("ssid: %s rssi: %d chan: %d sec: %u",
+	   result->ssid, result->rssi, result->channel,
+	   result->auth_mode);
+
+    snprintf(str, sizeof(str), "SSID %s, RSSI %d, CH %d, %s\r\n",
+	     result->ssid, result->rssi, result->channel,
+	     auth_mode_str(result->auth_mode));
+
+    at_wifi_puts(str);
+  }
+  return 0;
+}
+
+void mcu_hw_wifi_scan(void) {
+  debugf("Performing wifi scan");
+    
+  cyw43_wifi_scan_options_t scan_options = {0};
+  int err = cyw43_wifi_scan(&cyw43_state, &scan_options, NULL, scan_result);
+  if(err) {
+    at_wifi_puts("Scan failed\r\n");
+    return;
+  }
+
+  at_wifi_puts("Scanning...\r\n");  
+
+  while(cyw43_wifi_scan_active(&cyw43_state))
+    vTaskDelay(pdMS_TO_TICKS(10));
+}
+
+static int state = 0;
+
+void mcu_hw_wifi_connect(char *ssid, char *key) {
+  at_wifi_puts("Connecting...");
+  if(cyw43_arch_wifi_connect_timeout_ms(ssid, key, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    at_wifi_puts("\r\nConnection failed!\r\n");
+  } else {
+    at_wifi_puts("\r\nConnected\r\n");
+  }  
+}
+
+#include "lwip/dns.h"
+#include "lwip/pbuf.h"
+#include "lwip/tcp.h"
+
+static struct tcp_pcb *tcp_pcb = NULL;
+
+static err_t mcu_tcp_connected( __attribute__((unused)) void *arg, __attribute__((unused)) struct tcp_pcb *tpcb, err_t err) {
+  if (err != ERR_OK) {
+    debugf("connect failed %d\n", err);
+    return ERR_OK;
+  }
+  
+  debugf("Connected");
+  at_wifi_puts("Connected\r\n");
+  state = 2;  // connected
+  return ERR_OK;
+}
+
+static void mcu_tcp_err(__attribute__((unused)) void *arg, err_t err) {
+  if( err == ERR_RST) {
+    debugf("tcp connection reset");
+    at_wifi_puts("\r\nNO CARRIER\r\n");
+    state = 0;      
+  } else if (err == ERR_ABRT) {
+    debugf("err abort");
+    at_wifi_puts("Connection failed\r\n");
+    state = 0;    
+  } else 
+    debugf("tcp_err %d", err);
+}
+
+err_t mcu_tcp_recv(__attribute__((unused)) void *arg, struct tcp_pcb *tpcb, struct pbuf *p, __attribute__((unused)) err_t err) {
+  if (!p) {
+    debugf("No data, disconnected?");
+    at_wifi_puts("\r\nNO CARRIER\r\n");
+    state = 0;    
+    return ERR_OK;
+  }
+
+  // this method is callback from lwIP, so cyw43_arch_lwip_begin is not required, however you
+  // can use this method to cause an assertion in debug mode, if this method is called when
+  // cyw43_arch_lwip_begin IS needed
+  cyw43_arch_lwip_check();
+  if (p->tot_len > 0) {
+    // debugf("recv %d err %d", p->tot_len, err);
+
+    for (struct pbuf *q = p; q != NULL; q = q->next)
+      at_wifi_puts_n(q->payload, q->len);
+    
+    tcp_recved(tpcb, p->tot_len);
+  }
+  pbuf_free(p);
+  
+  return ERR_OK;
+}
+
+static void mcu_tcp_connect(const ip_addr_t *ipaddr, int port) {
+  debugf("Connecting to IP %s %d", ipaddr_ntoa(ipaddr), port);
+  
+  // the address was resolved and we can connect
+  tcp_pcb = tcp_new_ip_type(IP_GET_TYPE(ipaddr));
+  if (!tcp_pcb) {    
+    debugf("Unable to create pcb");
+    at_wifi_puts("Connection failed!\r\n");
+  }
+
+  tcp_recv(tcp_pcb, mcu_tcp_recv);
+  tcp_err(tcp_pcb, mcu_tcp_err);
+  
+  cyw43_arch_lwip_begin();
+  err_t err = tcp_connect(tcp_pcb, ipaddr, port, mcu_tcp_connected);
+  cyw43_arch_lwip_end();
+
+  if(err) {
+    debugf("tcp_connect() failed"); 
+    at_wifi_puts("Connection failed!\r\n");
+  } else
+    state = 1; 
+}
+
+// Call back with a DNS result
+static void dns_found(__attribute__((unused)) const char *hostname, const ip_addr_t *ipaddr, void *arg) {
+  if (ipaddr) {
+    // state->ntp_server_address = *ipaddr;
+    at_wifi_puts("Using address ");
+    at_wifi_puts(ipaddr_ntoa(ipaddr));
+    at_wifi_puts("\r\n");
+
+    mcu_tcp_connect(ipaddr, *(int*)arg);
+  } else
+    at_wifi_puts("Cannot resolve host\r\n");
+}
+
+void mcu_hw_tcp_connect(char *host, int port) {
+  static int lport;
+  static ip_addr_t address;
+
+  lport = port;
+  debugf("connecting to %s %d", host, lport);
+  
+  cyw43_arch_lwip_begin();
+  int err = dns_gethostbyname(host, &address, dns_found, &lport);
+  cyw43_arch_lwip_end();
+
+  if(err != ERR_OK && err != ERR_INPROGRESS) {
+    debugf("DNS error");
+    at_wifi_puts("Cannot resolve host\r\n");
+    return;
+  }
+
+  if(err == ERR_OK)
+    mcu_tcp_connect(&address, port);
+
+  else if(err == ERR_INPROGRESS) 
+    debugf("DNS in progress");
+}
+
+bool mcu_hw_tcp_data(unsigned char byte) {
+  if(state == 2) {
+    cyw43_arch_lwip_begin();
+    err_t err = tcp_write(tcp_pcb, &byte, 1, TCP_WRITE_FLAG_COPY);
+    cyw43_arch_lwip_end();
+    if (err != ERR_OK) debugf("Failed to write data %d", err);
+
+    return true;
+  }
+    
+  return false;  // data has not been processed (we are not connected)
+}
+#endif
+
+#ifndef WS2812_PIN
+// the LED PIN is not defined if we build for a pico-w. But we
+// detect the wireless chip and know when running on the regular pico
+#ifndef PICO_DEFAULT_LED_PIN
+#define PICO_DEFAULT_LED_PIN 25
+#endif
+
 static void led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
   gpio_xor_mask( 1u << PICO_DEFAULT_LED_PIN );
 }
 #endif
 
 void mcu_hw_main_loop(void) {
-  TimerHandle_t led_timer_handle = xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE,
-						NULL, led_timer);
-  xTimerStart(led_timer_handle, 0);
-  
   /* Start the tasks and timer running. */  
   vTaskStartScheduler();
   
@@ -492,3 +600,79 @@ void mcu_hw_main_loop(void) {
 
   for( ;; );
 }
+
+#ifndef WAVESHARE_RP2040_ZERO
+// the adc is used to determine the Pico type (W or not)
+#include "hardware/adc.h"
+
+static void wifi_task(__attribute__((unused)) void *parms) {
+  debugf("WiFi init task ...");
+
+  mcu_hw_wifi_init();
+
+  // only used for init
+  vTaskDelete(NULL);
+}
+#endif
+
+#ifdef WS2812_PIN
+static void ws_led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
+  static char state = 0;
+  pio_sm_put_blocking(pio0, 0, state?0x40000000:0x00000000);  // GRBX
+  state = !state;
+}
+#endif
+
+void mcu_hw_init(void) {
+  // default 125MHz is not appropriate for PIO USB. Sysclock should be multiple of 12MHz.
+  set_sys_clock_khz(120000, true);
+  
+  stdio_init_all();    // ... so stdio can adjust its bit rate
+#ifdef WAVESHARE_RP2040_ZERO
+  // the waveshare mini does not support SWD and we thus use a simpler (slower) UART
+  uart_set_baudrate(uart0, 460800);  
+#else
+  uart_set_baudrate(uart0, 921600);
+#endif
+  
+  printf("\r\n\r\n" LOGO "           FPGA Companion for RP2040\r\n\r\n");
+#if CFG_TUH_RPI_PIO_USB == 0
+  printf("Using native USB\r\n");
+#else
+  printf("USB D+/D- on GP%d and GP%d\r\n", PIO_USB_DP_PIN_DEFAULT, PIO_USB_DP_PIN_DEFAULT+1);
+#endif
+  
+  mcu_hw_spi_init();
+
+  tuh_init(BOARD_TUH_RHPORT);
+  
+  xTaskCreate(pio_usb_task, "usb_task", 2048, NULL, configMAX_PRIORITIES, NULL);
+
+#ifdef WS2812_PIN
+  uint offset = pio_add_program(pio0, &ws2812_program);  
+  ws2812_program_init(pio0, 0, offset, WS2812_PIN, 800000, 0);
+
+  TimerHandle_t led_timer_handle =
+    xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, ws_led_timer);
+  xTimerStart(led_timer_handle, 0);
+#endif
+  
+#ifndef WAVESHARE_RP2040_ZERO
+  adc_init();
+  adc_gpio_init(29);
+  adc_select_input(3);
+  is_pico_w = adc_read() < 0x100;
+
+  if(!is_pico_w) {
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, 1);
+    gpio_put(PICO_DEFAULT_LED_PIN, !PICO_DEFAULT_LED_PIN_INVERTED);
+
+    TimerHandle_t led_timer_handle =
+      xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, led_timer);
+    xTimerStart(led_timer_handle, 0);
+  } else
+    xTaskCreate(wifi_task, (char *)"wifi_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);  
+#endif
+}
+

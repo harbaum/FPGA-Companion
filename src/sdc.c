@@ -370,7 +370,7 @@ static int sdc_image_inserted(char drive, unsigned long size, char *ext) {
   // to guess sector/track/side information for floppy disk images, so the
   // core can translate from floppy disk to LBA
 
-  if(size) sdc_debugf("drive %d inserted. Size = %lu", drive, size);
+  if(size) sdc_debugf("drive %d inserted. Size = %lu, ext='%s'", drive, size, ext?ext:"<NONE>");
   else     sdc_debugf("drive %d ejected", drive);
   
   sdc_spi_begin();
@@ -388,7 +388,7 @@ static int sdc_image_inserted(char drive, unsigned long size, char *ext) {
     while(*ext)
       mcu_hw_spi_tx_u08(*ext++);
 
-  // send termination character, even if no image is selected
+  // send termination character, even if no image is seleted
   mcu_hw_spi_tx_u08(0);
   
   mcu_hw_spi_end();

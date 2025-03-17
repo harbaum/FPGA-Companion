@@ -15,6 +15,10 @@
 #define SPI_SYS_BUTTONS   3
 #define SPI_SYS_SETVAL    4
 #define SPI_SYS_IRQ_CTRL  5
+#define SPI_SYS_IRQ_SRC   6
+#define SPI_SYS_PORT_OUT  7
+#define SPI_SYS_PORT_IN   8
+#define SPI_SYS_READ_CFG  9
 
 #define SPI_TARGET_HID    1   // human interface devices
 #define SPI_HID_STATUS    0

@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.13)
 
 set(PROJECT fpga_companion)
 
+# This will also work for the regular Pico. The
+# firmware detects it and acts accordingly
+set(PICO_BOARD pico_w)
+
 # Pull in SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -37,6 +41,7 @@ add_executable(${PROJECT}
 	../core_vic20.c
 	../core_amiga.c
 	../core_atari2600.c
+	../at_wifi.c
 	../fatfs/source/ff.c
 	../fatfs/source/ffunicode.c
 	../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
@@ -76,8 +81,10 @@ target_include_directories(${PROJECT} PRIVATE
 
 string(APPEND CMAKE_C_FLAGS " -Os -fdata-sections -ffunction-sections -Wno-error=incompatible-pointer-types" )
 
-target_link_libraries(${PROJECT} PRIVATE pico_stdlib FreeRTOS-Kernel FreeRTOS-Kernel-Heap1)
-target_link_libraries(${PROJECT} PRIVATE pico_multicore hardware_pio hardware_dma hardware_spi)
+target_link_libraries(${PROJECT} PRIVATE pico_stdlib pico_multicore)
+target_link_libraries(${PROJECT} PRIVATE FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
+target_link_libraries(${PROJECT} PRIVATE hardware_pio hardware_dma hardware_spi hardware_adc)
+target_link_libraries(${PROJECT} PRIVATE pico_cyw43_arch_lwip_sys_freertos)
 target_link_libraries(${PROJECT} PRIVATE tinyusb_host tinyusb_board u8g2)
 
 pico_add_extra_outputs(${PROJECT})

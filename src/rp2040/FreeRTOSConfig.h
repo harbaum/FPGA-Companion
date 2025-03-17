@@ -109,11 +109,14 @@ extern "C" {
 
 /* SMP port only */
 /* https://www.freertos.org/symmetric-multiprocessing-introduction.html */
-#define configNUMBER_OF_CORES                   1   // can be 2
+
+// enabling the usage of two cores actually slows down interrupt
+// response times and can even cause missed interrupts
+#define configNUMBER_OF_CORES                   1
 #define configNUM_CORES                         configNUMBER_OF_CORES
 #define configTICK_CORE                         0
 #define configRUN_MULTIPLE_PRIORITIES           1
-#define configUSE_CORE_AFFINITY                 0   // set to 1 for cores > 1
+#define configUSE_CORE_AFFINITY                 ((configNUMBER_OF_CORES>1)?1:0)
 #define configUSE_PASSIVE_IDLE_HOOK             0
 #define portSUPPORT_SMP                         1
   

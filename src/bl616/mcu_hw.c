@@ -457,7 +457,8 @@ void usb_host(void) {
   usb_debugf("init usb hid host");
 
   usbh_initialize();
-  
+  // usbh_initialize(0, USB_BASE);
+
   // initialize all HID info entries
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {
     usb_config.hid_info[i].index = i;
@@ -648,6 +649,13 @@ static void console_init() {
   bflb_uart_set_console(uart0);
 }    
 
+#include "../at_wifi.h"
+
+#ifdef ENABLE_WIFI
+#warning "WiFi support is broken on BL616!"
+static void wifi_init(void);
+#endif
+
 // local board_init used as a replacemement for global board_init
 static void mn_board_init(void) {
     int ret = -1;
@@ -708,6 +716,10 @@ void mcu_hw_init(void) {
   mcu_hw_spi_init();
   
   usb_host();
+
+#ifdef ENABLE_WIFI
+  wifi_init();
+#endif
 }
 
 void mcu_hw_reset(void) {
@@ -715,6 +727,235 @@ void mcu_hw_reset(void) {
   
   bflb_mtimer_delay_ms(1000);
   GLB_SW_POR_Reset(); 
+}
+void mcu_hw_port_byte(unsigned char byte) {
+  debugf("port byte %d", byte);
+}
+
+#ifdef ENABLE_WIFI
+
+#include <lwip/tcpip.h>
+#include "bl_fw_api.h"
+#include "wifi_mgmr_ext.h"
+#include "wifi_mgmr.h"
+#include "rfparam_adapter.h"
+
+// #define WIFI_STACK_SIZE  (1536)
+#define WIFI_STACK_SIZE  (2048)
+#define TASK_PRIORITY_FW (16)
+
+static char *wifi_ssid = NULL;
+static char *wifi_key = NULL;
+static int s_retry_num = 0;
+
+static QueueHandle_t wifi_event_queue;
+
+// ToDo: don't do anything here. Instead emit signals
+void wifi_event_handler(uint32_t code) {
+  switch (code) {
+  case CODE_WIFI_ON_INIT_DONE: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_INIT_DONE", __func__);
+    //    unsigned char evt = 5; 
+    //    xQueueSendFromISR(wifi_event_queue, &evt, 0);
+    static wifi_conf_t conf = { .country_code = "US" };
+    wifi_mgmr_init(&conf);
+  } break;
+  case CODE_WIFI_ON_MGMR_DONE: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_MGMR_DONE", __func__);
+  } break;
+  case CODE_WIFI_ON_SCAN_DONE: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_SCAN_DONE", __func__);
+    unsigned char evt = 1; 
+    xQueueSendFromISR(wifi_event_queue, &evt, 0);
+    // wifi_mgmr_sta_scanlist();
+  } break;
+  case CODE_WIFI_ON_CONNECTED: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_CONNECTED", __func__);
+    unsigned char evt = 3; 
+    xQueueSendFromISR(wifi_event_queue, &evt, 0);
+    //    void mm_sec_keydump();
+    //    mm_sec_keydump();
+  } break;
+  case CODE_WIFI_ON_GOT_IP: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_GOT_IP", __func__);
+    unsigned char evt = 4; 
+    xQueueSendFromISR(wifi_event_queue, &evt, 0);
+    // debugf("[SYS] Memory left is %d Bytes", kfree_size());
+  } break;
+  case CODE_WIFI_ON_DISCONNECT: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_DISCONNECT", __func__);
+    unsigned char evt = 2; 
+    xQueueSendFromISR(wifi_event_queue, &evt, 0);
+  } break;
+  case CODE_WIFI_ON_AP_STARTED: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_AP_STARTED", __func__);
+  } break;
+  case CODE_WIFI_ON_AP_STOPPED: {
+    debugf("[APP] [EVT] %s, CODE_WIFI_ON_AP_STOPPED", __func__);
+  } break;
+  case CODE_WIFI_ON_AP_STA_ADD: {
+    debugf("[APP] [EVT] [AP] [ADD] %lld", xTaskGetTickCount());
+  } break;
+  case CODE_WIFI_ON_AP_STA_DEL: {
+    debugf("[APP] [EVT] [AP] [DEL] %lld", xTaskGetTickCount());
+  } break;
+  default:
+    debugf("[APP] [EVT] Unknown code %u ", code);
+  }
+}
+
+static TaskHandle_t wifi_fw_task;
+
+static void wait4event(char,char);
+
+static void wifi_init(void) {
+  wifi_event_queue = xQueueCreate(10, sizeof(char));
+
+  if (0 != rfparam_init(0, NULL, 0)) {
+    debugf("PHY RF init failed!");
+    return;
+  }
+  
+  debugf("PHY RF init success!");
+
+  // wait4event(5,5);
+  
+  tcpip_init(NULL, NULL);
+  
+  /* enable wifi clock */
+  //  GLB_PER_Clock_UnGate(GLB_AHB_CLOCK_IP_WIFI_PHY | GLB_AHB_CLOCK_IP_WIFI_MAC_PHY | GLB_AHB_CLOCK_IP_WIFI_PLATFORM);
+  //  GLB_AHB_MCU_Software_Reset(GLB_AHB_MCU_SW_WIFI);
+  
+  /* Enable wifi irq */
+  
+  extern void interrupt0_handler(void);
+  bflb_irq_attach(WIFI_IRQn, (irq_callback)interrupt0_handler, NULL);
+  bflb_irq_enable(WIFI_IRQn);
+
+  xTaskCreate(wifi_main, (char *)"fw", WIFI_STACK_SIZE, NULL, TASK_PRIORITY_FW, &wifi_fw_task);
+}
+
+static void wait4event(char code, char code2) {
+  char evt = -1;
+  while(code != evt && code2 != evt) {
+    if(xQueueReceive(wifi_event_queue, &evt, pdMS_TO_TICKS(100))) {
+      debugf("event: %d", evt);
+
+      switch(evt) {
+      case 1: // scan done
+	debugf("  -> scan done");
+	break;
+      case 2: // disconnect
+	debugf("  -> disconnect");
+	if (s_retry_num < 10) {
+	  // connect
+	  wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0);
+	  s_retry_num++;
+	  debugf("retry to connect to the AP");
+	  at_wifi_puts(".");
+	} else {
+	  at_wifi_puts("\r\nConnection failed!\r\n");
+	  debugf("finally failed");
+	}	
+	break;
+      case 3: // connected
+	debugf("  -> connect");
+	break;
+      case 4: // got ip
+	debugf("  -> got ip");
+	at_wifi_puts("\r\nConnected\r\n");
+	break;	
+      case 5: // init done
+	debugf("  -> init done");
+	// wifi_mgmr_init(&conf);
+	break;
+      }
+      
+      vTaskDelay(pdMS_TO_TICKS(100));      
+    }
+  }
+  debugf("wait done");
+}
+
+static const char *auth_mode_str(int authmode) {
+  static const struct { int mode; char *str; } mode_str[] = {
+    { WIFI_EVENT_BEACON_IND_AUTH_OPEN, "OPEN" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WEP, "WEP" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WPA_PSK, "WPA-PSK" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WPA2_PSK,"WPA2-PSK" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WPA_WPA2_PSK, "WPA-WPA2-PSK" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WPA_ENT, "ENTERPRISE" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WPA3_SAE, "WPA3-SAE" },
+    { WIFI_EVENT_BEACON_IND_AUTH_WPA2_PSK_WPA3_SAE, "WPA2-PSK-WPA3-SAE" },
+    { -1, "<unknown>" }
+  };
+
+  int i;
+  for(i=0;mode_str[i].mode != -1;i++)
+    if(mode_str[i].mode == authmode || mode_str[i].mode == -1)
+      return mode_str[i].str;
+
+  return mode_str[i].str;
+}
+
+static void wifi_scan_item_cb(void *env, void *arg, wifi_mgmr_scan_item_t *item) {
+  debugf("scan item cb %s", item->ssid);
+
+  char str[64];
+  snprintf(str, 64, "SSID %s, RSSI %d, CH %d, %s\r\n", item->ssid, item->rssi,
+	   item->channel, auth_mode_str(item->auth));
+
+  at_wifi_puts(str);
+}  
+#endif
+
+void mcu_hw_wifi_scan(void) {
+#ifdef ENABLE_WIFI
+  at_wifi_puts("Scanning...\r\n");
+
+  static wifi_mgmr_scan_params_t config;
+  memset(&config, 0, sizeof(wifi_mgmr_scan_params_t));
+  wifi_mgmr_sta_scan(&config);
+
+  wait4event(1, 1);
+
+  wifi_mgmr_scan_ap_all(NULL, NULL, wifi_scan_item_cb);
+#else
+  at_wifi_puts("WiFi not enabled\r\n");
+#endif
+}
+
+void mcu_hw_wifi_connect(char *ssid, char *key) {
+#ifdef ENABLE_WIFI
+  at_wifi_puts("Connecting");
+
+  if(wifi_ssid) free(wifi_ssid);
+  if(wifi_key) free(wifi_key);
+
+  // store ssid/key for retry
+  wifi_ssid = strdup(ssid);
+  wifi_key = strdup(key);
+  
+  s_retry_num = 0;
+  wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0);
+
+  wait4event(2, 4);
+#else
+  at_wifi_puts("WiFi not enabled\r\n");
+#endif
+}
+
+void mcu_hw_tcp_connect(char *host, int port) {
+#ifdef ENABLE_WIFI
+  at_wifi_puts("Not implemented on BL616");
+#else
+  at_wifi_puts("WiFi not enabled\r\n");
+#endif
+}
+
+bool mcu_hw_tcp_data(unsigned char byte) {
+  debugf("TX %d", byte);
+  return false;
 }
 
 void mcu_hw_main_loop(void) {

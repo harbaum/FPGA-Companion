@@ -14,12 +14,13 @@
 #include "../inifile.h"
 #include "../debug.h"
 #include "../xml.h"
+#include "../at_wifi.h"
 
 /*-----------------------------------------------------------*/
 /*---            main FPGA communication task            ----*/
 /*-----------------------------------------------------------*/
 
-TaskHandle_t com_task_handle;
+TaskHandle_t com_task_handle = NULL;
 
 static void com_task(__attribute__((unused)) void *p ) {
   debugf("Starting main communication task");
@@ -30,7 +31,7 @@ static void com_task(__attribute__((unused)) void *p ) {
 
     // initialitze SD card
     sdc_init();
-    
+
     // try to load a config .xml from sd card. If the core has identified itself,
     // then e.g. atarist.xml will be read. otherwise config.xml
     FIL fil;
@@ -38,7 +39,7 @@ static void com_task(__attribute__((unused)) void *p ) {
       config_init();
 
       UINT br; char c;
-      debugf("XML config open");
+      debugf("Loading XML config from file");
 
       // read byte by byte. Slow but that doesn't hurt ...
       FRESULT r = f_read(&fil, &c, 1, &br);
@@ -49,11 +50,24 @@ static void com_task(__attribute__((unused)) void *p ) {
       f_close(&fil);
 
       config_dump();
-    } 
+    } else {
+      // no XML on SD card, try to load from core itself
+      char *cfg_str = sys_get_config();
+      if(cfg_str) {
+	hexdump(cfg_str, 16);
+	
+	debugf("Loading XML config from core");
+	config_init();
+	char *c = cfg_str;
+	while(*c) xml_parse(*c++); 
+	config_dump();
+      } else
+	debugf("No valid config found, neither on sd card nor in core");
+    }
 
     // process any pending interrupt. Filter out irq 1 which is the
     // FPGA cold boot event which we ignore since we just booted outselves
-    sys_handle_interrupts(sys_irq_ctrl(0xff) & 0xfe);
+    sys_handle_interrupts(sys_irq_ctrl(0xff), true);
     
     // by default, DB9 interrupts are disabled. Reading
     // the DB9 state enables them. This is what hid_handle_event
@@ -72,15 +86,17 @@ static void com_task(__attribute__((unused)) void *p ) {
     // open disk images, either defaults set in sdc_init or
     // user configure ones from the ini file
     sdc_mount_defaults();
+
+    // finally prepare for wifi communication
+    at_wifi_init();
   }
 
   debugf("Entering main loop");
   
   for(;;) {
-    mcu_hw_irq_ack();  // re-enable interrupt
-    
+    mcu_hw_irq_ack();  // (re-)enable interrupt
     ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
-    sys_handle_interrupts(sys_irq_ctrl(0xff));      
+    sys_handle_interrupts(sys_irq_ctrl(0xff), false);
   }
 }
 

@@ -8,12 +8,20 @@
 #include <freertos/timers.h>
 #include <freertos/queue.h>
 
+#define ENABLE_WIFI
+
 #include "../hidparser.h"
 #include "../debug.h"
 #include "../mcu_hw.h"
 #include "../hid.h"
 #include "../config.h"
+#include "../sysctrl.h"
 
+#include "driver/uart.h"
+
+#if configTICK_RATE_HZ != 1000
+#error "Please set FreeRTOS tick rate to 1000"
+#endif
 
 //#define USB_ERROR_CHECK(a)  ESP_ERROR_CHECK(a)
 #define USB_ERROR_CHECK(a) (a)
@@ -450,6 +458,250 @@ unsigned char mcu_hw_spi_tx_u08(unsigned char b) {
   // debugf("SPI(%d)", b);
   return retval;
 }
+
+/* ========================================================================= */
+/* ========                          WiFI                           ======== */
+/* ========================================================================= */
+
+#ifdef ENABLE_WIFI
+#include "esp_wifi.h"
+#include "../at_wifi.h"
+#include "nvs_flash.h"
+#include <string.h>     // for memset
+#include <sys/socket.h>
+#include <errno.h>
+#include <netdb.h>            // struct addrinfo
+#include <arpa/inet.h>
+
+static int sock = -1;
+static int s_retry_num = 0;
+
+static void event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data) {
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    debugf("WiFi started");
+    esp_wifi_connect();
+  } else if (event_base == WIFI_EVENT &&
+	     event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    if (s_retry_num < 10) {
+      esp_wifi_connect();
+      s_retry_num++;
+      debugf("retry to connect to the AP");
+      at_wifi_puts(".");
+    } else {
+      at_wifi_puts("\r\nConnection failed!\r\n");
+      debugf("finally failed");
+    }
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+    char buf[32];
+    esp_ip4addr_ntoa(&event->ip_info.ip, buf, sizeof(buf));
+    debugf("got ip: %s", buf);
+    s_retry_num = 0;
+    debugf("Connected");
+    at_wifi_puts("\r\nConnected ");
+    at_wifi_puts(buf);
+    at_wifi_puts("\r\n");
+  }
+}
+
+void mcu_hw_wifi_init(void) {
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    debugf("Initializing NVS");
+    nvs_flash_erase();
+    ret = nvs_flash_init();
+  }
+  
+  esp_netif_init();
+  esp_event_loop_create_default();
+  esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+  assert(sta_netif);
+  
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&cfg);
+  
+  esp_wifi_set_mode(WIFI_MODE_STA);
+  esp_wifi_start();
+  
+  esp_event_handler_instance_t instance_any_id;
+  esp_event_handler_instance_t instance_got_ip;
+  esp_event_handler_instance_register(WIFI_EVENT,
+				      ESP_EVENT_ANY_ID,
+				      &event_handler,
+				      NULL,
+				      &instance_any_id);
+  esp_event_handler_instance_register(IP_EVENT,
+				      IP_EVENT_STA_GOT_IP,
+				      &event_handler,
+				      NULL,
+				      &instance_got_ip);
+}
+
+#define DEFAULT_SCAN_LIST_SIZE 32
+
+static const char *auth_mode_str(int authmode) {
+  static const struct { int mode; char *str; } mode_str[] = {
+    { WIFI_AUTH_OPEN, "OPEN" },
+    { WIFI_AUTH_OWE, "OWE"  },
+    { WIFI_AUTH_WEP, "WEP" },
+    { WIFI_AUTH_WPA_PSK, "WPA-PSK" },
+    { WIFI_AUTH_WPA2_PSK,"WPA2-PSK" },
+    { WIFI_AUTH_WPA_WPA2_PSK, "WPA-WPA2-PSK" },
+    { WIFI_AUTH_ENTERPRISE, "ENTERPRISE" },
+    { WIFI_AUTH_WPA3_PSK, "WPA3-PSK" },
+    { WIFI_AUTH_WPA2_WPA3_PSK, "WPA2-WPA3-PSK" },
+    { WIFI_AUTH_WPA3_ENT_192, "WPA3-ENT-192" },
+    { -1, "<unknown>" }
+  };
+
+  int i;
+  for(i=0;mode_str[i].mode != -1;i++)
+    if(mode_str[i].mode == authmode || mode_str[i].mode == -1)
+      return mode_str[i].str;
+
+  return mode_str[i].str;
+}
+
+uint16_t number = DEFAULT_SCAN_LIST_SIZE;
+wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
+
+void mcu_hw_wifi_scan(void) {
+  at_wifi_puts("Scanning...\r\n");
+  
+  memset(ap_info, 0, sizeof(ap_info));
+  debugf("Max AP number ap_info can hold = %u", number);
+
+  // do a blocking scan
+  esp_wifi_scan_start(NULL, true);
+
+  uint16_t ap_count = 0;
+  esp_wifi_scan_get_ap_num(&ap_count);
+  esp_wifi_scan_get_ap_records(&number, ap_info);
+
+  debugf("Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
+  for (int i = 0; i < number; i++) {
+    char str[64];
+    
+    debugf("SSID %s, RSSI %d, CH %d, %s", ap_info[i].ssid, ap_info[i].rssi,
+	   ap_info[i].primary, auth_mode_str(ap_info[i].authmode));
+
+    snprintf(str, 64, "SSID %s, RSSI %d, CH %d, %s\r\n", ap_info[i].ssid, ap_info[i].rssi,
+	    ap_info[i].primary, auth_mode_str(ap_info[i].authmode));
+
+    at_wifi_puts(str);
+  }
+}
+
+void mcu_hw_wifi_connect(char *ssid, char *key) {
+  debugf("connecting '%s' '%s'", ssid, key);
+
+  static wifi_config_t wifi_configuration;
+  strcpy((char*)wifi_configuration.sta.ssid,ssid);
+  strcpy((char*)wifi_configuration.sta.password,key);
+  esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_configuration);
+  
+  s_retry_num = 0;
+  at_wifi_puts("Connecting");
+  esp_wifi_connect(); //connect with saved ssid and pass
+}
+
+static void mcu_hw_tcp_reader_task(__attribute__((unused)) void *parms) {
+  char rx_buffer[32];
+  
+  debugf("tcp reader task running for socket %d", sock);
+
+  int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);  
+  while(len) {
+    debugf("RX %d", len);
+
+    // terminate string
+    rx_buffer[len] = '\0';
+    at_wifi_puts(rx_buffer);
+    
+    len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);  
+  }
+
+  debugf("tcp reader done");
+
+  sock = -1;
+  at_wifi_puts("\r\nNO CARRIER\r\n");
+  vTaskDelete( NULL );
+}
+  
+void mcu_hw_tcp_connect(char *ip, int port) {
+  int addr_family = 0;
+  int ip_protocol = 0;
+
+  debugf("connecting '%s' %d", ip, port);
+
+  // disconnect any existing connection
+  if(sock >= 0) {
+    debugf("disconnecting previous connection");
+    at_wifi_puts("Disconnecting existing connection\r\n");
+    closesocket(sock);
+    sock = -1;   
+  }
+  
+  struct hostent *hp;
+  hp = gethostbyname(ip);
+  if(hp == NULL) {    
+   debugf("Cannot resolve host");
+   at_wifi_puts("Cannot resolve host\r\n");
+   return;
+  }
+
+  if(hp->h_length != 4) {
+    at_wifi_puts("Unexpected address length\r\n");
+    return;
+  }
+  
+  char buf[16];
+  esp_ip4addr_ntoa((esp_ip4_addr_t*)(hp->h_addr_list[0]), buf, sizeof(buf));
+  at_wifi_puts("Using address ");
+  at_wifi_puts(buf);
+  at_wifi_puts("\r\n");
+
+  struct sockaddr_in dest_addr;
+  memcpy(&dest_addr.sin_addr, hp->h_addr_list[0], 4);
+  dest_addr.sin_family = AF_INET;
+  dest_addr.sin_port = htons(port);
+  addr_family = AF_INET;
+  ip_protocol = IPPROTO_IP;
+
+  sock = socket(addr_family, SOCK_STREAM, ip_protocol);
+  if (sock < 0) {
+    debugf("Unable to create socket: errno %d", errno);
+    at_wifi_puts("Unable to create socket\r\n");
+    return;
+  }
+  
+  debugf("Socket created, connecting to %s:%d", ip, port);
+  
+  int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+  if (err != 0) {
+    debugf("Socket unable to connect: errno %d", errno);
+    at_wifi_puts("Connection failed!\r\n");
+    return;
+  }
+  debugf("Successfully connected");
+  at_wifi_puts("Connected\r\n");
+
+  // start a reader task for incoming data
+  xTaskCreate(mcu_hw_tcp_reader_task, (char *)"tcp_reader_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);
+}
+
+bool mcu_hw_tcp_data(unsigned char byte) {
+  if(sock < 0) return false;
+
+  // send data via tcp
+  send(sock, &byte, 1, 0);
+
+  return true;
+}
+#endif
 
 void mcu_hw_reset(void) {
   debugf("RESET");
