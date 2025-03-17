@@ -5,6 +5,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "spi.h"
 #include "sysctrl.h"
@@ -139,7 +140,6 @@ static void sys_handle_event(bool ignore_coldboot) {
   mcu_hw_spi_tx_u08(0);
   unsigned char irq_src = mcu_hw_spi_tx_u08(0);
   mcu_hw_spi_end();
-  
   if(irq_src & 2) {
     // sys_debugf("Port out data request");
     
@@ -149,8 +149,10 @@ static void sys_handle_event(bool ignore_coldboot) {
       at_wifi_port_byte(byte);
   }
   
-  // no irq source given at all means coldboot of a very old core ...
-  if(irq_src & 1 || !irq_src ) {
+  // no irq source given at all means coldboot of a very old core.
+  // TODO: That does not work as intended and triggers with port
+  // IO on later cores. Disabled for now ...
+  if(irq_src & 1 /* || !irq_src */ ) {
     if(ignore_coldboot)
       sys_debugf("FPGA cold boot detected, ignoring for now");
     else {

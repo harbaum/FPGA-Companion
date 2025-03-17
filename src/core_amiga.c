@@ -66,7 +66,7 @@ const char *core_amiga_forms[] = {
     settings_form_amiga
 };
 
-menu_legacy_variable_t core_amiga_variables[] = {
+const menu_legacy_variable_t core_amiga_variables[] = {
   { 'D', { 0 }},    // default one floppy drive
   { 'S', { 1 }},    // default fast floppy
   { 'C', { 2 }},    // default ECS

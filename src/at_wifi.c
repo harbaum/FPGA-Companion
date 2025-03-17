@@ -49,7 +49,7 @@ static void port_line(char *command) {
     at_wifi_puts("Supported commands:\r\n");
     at_wifi_puts("  atscan\r\n");
     at_wifi_puts("  atssid <ssid>,<passphrase>\r\n");
-    at_wifi_puts("  atd <url>:<port>\r\n");
+    at_wifi_puts("  atd <server>:<port>\r\n");
   } else if(strcasecmp(command, "atscan") == 0) {
     mcu_hw_wifi_scan();
   } else if(strncasecmp(command, "atssid", 6) == 0) {
@@ -76,12 +76,14 @@ static void port_line(char *command) {
 // Port implements an "AT" like interface to e.g. be used
 // to control a WiFi modem
 void at_wifi_port_byte(unsigned char byte) {
-  xQueueSendToBack(rx_queue, &byte,  ( TickType_t ) 0);
+  xQueueSendToBack(rx_queue, &byte, ( TickType_t ) 10);
 }
-  
+
+#define INPUT_BUFFER_SIZE 64
+
 static void at_wifi_tx(unsigned char byte) {
-  static char cmd[64] = "";  // may include a full server name ...
-  
+  static char cmd[INPUT_BUFFER_SIZE] = "";  // may include a full server name ...
+
   // try to send via tcp. Handle it locally if it isn't accepted
   if(mcu_hw_tcp_data(byte)) return;
   
@@ -120,7 +122,7 @@ void at_wifi_init(void) {
   debugf("AT WIFI init");
 
   // start a thread to handle at/wifi io
-  rx_queue = xQueueCreate(10, sizeof( unsigned char ) );
+  rx_queue = xQueueCreate(8, sizeof( unsigned char ) );
   xTaskCreate(at_wifi_task, (char *)"at_wifi_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);
 }
 
