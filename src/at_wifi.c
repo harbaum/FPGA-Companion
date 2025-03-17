@@ -44,15 +44,12 @@ void at_wifi_puts_n(const char *str, int len) {
   while(len--) port_putc(*str++);
 }
 
-// ati - info
-// atdt google.com:80
-// at*scan - scan
-// at*ssid<name>,key
-
 static void port_line(char *command) {
   if(strcasecmp(command, "athelp") == 0) {
     at_wifi_puts("Supported commands:\r\n");
     at_wifi_puts("  atscan\r\n");
+    at_wifi_puts("  atssid <ssid>,<passphrase>\r\n");
+    at_wifi_puts("  atd <url>:<port>\r\n");
   } else if(strcasecmp(command, "atscan") == 0) {
     mcu_hw_wifi_scan();
   } else if(strncasecmp(command, "atssid", 6) == 0) {
@@ -73,7 +70,7 @@ static void port_line(char *command) {
     if(*k == ':') *k++ = '\0';          
     mcu_hw_tcp_connect(s, atoi(k));
   } else
-    at_wifi_puts("Unknown command\r\n");
+    at_wifi_puts("Unknown command, try 'athelp'\r\n");
 }
 
 // Port implements an "AT" like interface to e.g. be used
