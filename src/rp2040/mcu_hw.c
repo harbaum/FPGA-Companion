@@ -6,6 +6,7 @@
 #include <task.h>
 #include <semphr.h>
 #include <timers.h>
+#include <malloc.h>
 
 #include "pico/stdlib.h"
 
@@ -361,6 +362,14 @@ static void led_timer_w(__attribute__((unused)) TimerHandle_t pxTimer) {
   state = !state;
 }
 
+// the wifi connection state
+#define WIFI_STATE_UNKNOWN      0
+#define WIFI_STATE_DISCONNECTED 1
+#define WIFI_STATE_CONNECTING   2
+#define WIFI_STATE_CONNECTED    3
+
+static int wifi_state = WIFI_STATE_UNKNOWN;
+
 static void mcu_hw_wifi_init(void) {
   debugf("Detected Pico-W");
   
@@ -369,6 +378,7 @@ static void mcu_hw_wifi_init(void) {
     return;
   }
   debugf("WiFi initialised");
+  wifi_state = WIFI_STATE_DISCONNECTED;
   
   cyw43_arch_enable_sta_mode();
   debugf("STA mode enabled");
@@ -418,7 +428,7 @@ static int scan_result(__attribute__((unused)) void *env, const cyw43_ev_scan_re
 }
 
 void mcu_hw_wifi_scan(void) {
-  debugf("Performing wifi scan");
+  debugf("WiFi: Performing scan");
     
   cyw43_wifi_scan_options_t scan_options = {0};
   int err = cyw43_wifi_scan(&cyw43_state, &scan_options, NULL, scan_result);
@@ -433,9 +443,9 @@ void mcu_hw_wifi_scan(void) {
     vTaskDelay(pdMS_TO_TICKS(10));
 }
 
-static int state = 0;
-
 void mcu_hw_wifi_connect(char *ssid, char *key) {
+  debugf("WiFI: connect to %s/%s", ssid, key);
+  
   at_wifi_puts("Connecting...");
   if(cyw43_arch_wifi_connect_timeout_ms(ssid, key, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
     at_wifi_puts("\r\nConnection failed!\r\n");
@@ -458,7 +468,7 @@ static err_t mcu_tcp_connected( __attribute__((unused)) void *arg, __attribute__
   
   debugf("Connected");
   at_wifi_puts("Connected\r\n");
-  state = 2;  // connected
+  wifi_state = WIFI_STATE_CONNECTED;  // connected
   return ERR_OK;
 }
 
@@ -466,20 +476,21 @@ static void mcu_tcp_err(__attribute__((unused)) void *arg, err_t err) {
   if( err == ERR_RST) {
     debugf("tcp connection reset");
     at_wifi_puts("\r\nNO CARRIER\r\n");
-    state = 0;      
+    wifi_state = WIFI_STATE_DISCONNECTED;      
   } else if (err == ERR_ABRT) {
     debugf("err abort");
     at_wifi_puts("Connection failed\r\n");
-    state = 0;    
-  } else 
+    wifi_state = WIFI_STATE_DISCONNECTED;    
+  } else {
     debugf("tcp_err %d", err);
+  }
 }
 
 err_t mcu_tcp_recv(__attribute__((unused)) void *arg, struct tcp_pcb *tpcb, struct pbuf *p, __attribute__((unused)) err_t err) {
   if (!p) {
     debugf("No data, disconnected?");
     at_wifi_puts("\r\nNO CARRIER\r\n");
-    state = 0;    
+    wifi_state = WIFI_STATE_DISCONNECTED;    
     return ERR_OK;
   }
 
@@ -521,7 +532,12 @@ static void mcu_tcp_connect(const ip_addr_t *ipaddr, int port) {
     debugf("tcp_connect() failed"); 
     at_wifi_puts("Connection failed!\r\n");
   } else
-    state = 1; 
+    wifi_state = WIFI_STATE_CONNECTING;    
+}
+
+void mcu_hw_tcp_disconnect(void) {
+  if(wifi_state == WIFI_STATE_CONNECTED)
+    tcp_close(tcp_pcb);
 }
 
 // Call back with a DNS result
@@ -562,7 +578,7 @@ void mcu_hw_tcp_connect(char *host, int port) {
 }
 
 bool mcu_hw_tcp_data(unsigned char byte) {
-  if(state == 2) {
+  if(wifi_state == WIFI_STATE_CONNECTED) {
     cyw43_arch_lwip_begin();
     err_t err = tcp_write(tcp_pcb, &byte, 1, TCP_WRITE_FLAG_COPY);
     cyw43_arch_lwip_end();
@@ -623,6 +639,16 @@ static void ws_led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
 }
 #endif
 
+extern char __StackLimit, __bss_end__;   
+uint32_t getTotalHeap(void) {
+   return &__StackLimit  - &__bss_end__;
+}
+
+uint32_t getFreeHeap(void) {
+   struct mallinfo m = mallinfo();
+   return getTotalHeap() - m.uordblks;
+}
+
 void mcu_hw_init(void) {
   // default 125MHz is not appropriate for PIO USB. Sysclock should be multiple of 12MHz.
   set_sys_clock_khz(120000, true);
@@ -674,5 +700,7 @@ void mcu_hw_init(void) {
   } else
     xTaskCreate(wifi_task, (char *)"wifi_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);  
 #endif
-}
 
+  printf("Total heap: %ld\n", getTotalHeap());
+  printf("Free heap: %ld\n", getFreeHeap());
+}

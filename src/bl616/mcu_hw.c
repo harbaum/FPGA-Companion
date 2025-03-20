@@ -953,6 +953,8 @@ void mcu_hw_tcp_connect(char *host, int port) {
 #endif
 }
 
+void mcu_hw_tcp_disconnect(void) { }
+  
 bool mcu_hw_tcp_data(unsigned char byte) {
   debugf("TX %d", byte);
   return false;

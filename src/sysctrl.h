@@ -23,6 +23,13 @@
 
 extern unsigned char core_id;
 
+struct port_serial_status {
+  uint32_t bitrate :24;
+  uint8_t stopbits:2;
+  uint8_t parity:2;
+  uint8_t databits:4;
+} __attribute__((packed));
+
 int  sys_status_is_valid(void);
 void sys_set_leds(char);
 void sys_set_rgb(unsigned long);
@@ -37,6 +44,7 @@ void sys_run_action(config_action_t *);
 void sys_run_action_by_name(char *);
 const char *sys_get_config_name(void);
 
-void sys_port_put(unsigned char);
+void sys_port_write(unsigned char, const unsigned char*, int);
+bool sys_port_get_status(unsigned char);
 
 #endif // SYS_CTRL_H

@@ -693,6 +693,13 @@ void mcu_hw_tcp_connect(char *ip, int port) {
   xTaskCreate(mcu_hw_tcp_reader_task, (char *)"tcp_reader_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);
 }
 
+void mcu_hw_tcp_disconnect(void) {
+  if(sock < 0) return;
+
+  closesocket(sock);
+  sock = -1;
+}
+
 bool mcu_hw_tcp_data(unsigned char byte) {
   if(sock < 0) return false;
 

@@ -27,6 +27,7 @@ void mcu_hw_port_byte(unsigned char);
 void mcu_hw_wifi_scan(void);
 void mcu_hw_wifi_connect(char *ssid, char *key);
 void mcu_hw_tcp_connect(char *ip, int port);
+void mcu_hw_tcp_disconnect(void);
 bool mcu_hw_tcp_data(unsigned char byte);
 
 #endif // MCU_HW_H
