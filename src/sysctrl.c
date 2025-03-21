@@ -133,28 +133,29 @@ static uint8_t sys_port_tx_free(unsigned char port) {
   return tx_available;
 }
   
-// send a byte for "port" communication which is core specific
-// and may be some serial or parallel port which the MCU implements
-static void sys_port_put(unsigned char port, unsigned char byte) {
-  // wait for tx buffer space to become available. This may actually
-  // wait forever when no program running in the core actually reads
-  // port data
-  uint8_t tx_free = sys_port_tx_free(0);
-  while(!tx_free) {
-    vTaskDelay(pdMS_TO_TICKS(1));
-    tx_free = sys_port_tx_free(0);
-  }
-
-  // send as many bytes as space in buffer
-  sys_port_begin(SPI_SYS_PORT_PUT); // port command: send byte
-  mcu_hw_spi_tx_u08(port);
-  mcu_hw_spi_tx_u08(byte);
-  mcu_hw_spi_end();
-}
-
 void sys_port_write(unsigned char port, const unsigned char *ptr, int len) {
-  // todo: send longer chunks
-  while(len--) sys_port_put(port, *ptr++);
+  while(len) {
+    // wait for tx buffer space to become available. This may actually
+    // wait forever when no program running in the core actually reads
+    // port data
+    uint8_t bytes2send = sys_port_tx_free(port);
+    while(!bytes2send) {
+      vTaskDelay(pdMS_TO_TICKS(1));
+      bytes2send = sys_port_tx_free(port);
+    }
+
+    // don't send more bytes than still left to be sent
+    if(bytes2send > len) bytes2send = len;
+    
+    // send as many bytes as space in buffer
+    sys_port_begin(SPI_SYS_PORT_PUT); // port command: send byte(s)
+    mcu_hw_spi_tx_u08(port);
+    for(int i=0;i<bytes2send;i++)
+      mcu_hw_spi_tx_u08(*ptr++);
+    mcu_hw_spi_end();
+
+    len -= bytes2send;
+  }
 }
 
 bool sys_port_get_status(unsigned char port) {

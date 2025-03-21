@@ -41,8 +41,6 @@ static QueueHandle_t rx_queue = NULL;
 
 static void port_putc(unsigned char byte) {
   at_wifi_escape_tick = xTaskGetTickCount();  // reset idle counter
-  
-  // printf("PUTC %02x,%c\n", byte, (byte>=32 && byte<128)?byte:'.');
   sys_port_write(0, &byte, 1);
 }
 
@@ -154,9 +152,6 @@ static void at_wifi_tx(unsigned char byte) {
 	  }
 	}
       }
-      
-      printf("AT WIFI state = %d, escape state = %d, time %d\n", at_wifi_state,
-	     at_wifi_escape_state, at_wifi_escape_tick?(xTaskGetTickCount()-at_wifi_escape_tick):-1);
       
       // if we are still in regular online mode return now and parse nothing
       if(at_wifi_state == AT_WIFI_STATE_ONLINE)    
