@@ -381,10 +381,13 @@ char *sys_get_config(void) {
   mcu_hw_spi_tx_u08(0);
 
   char c = mcu_hw_spi_tx_u08(0);
-  int len;
-  for(len=0;len < 8191 && c >= 32 && c != 0xff;len++)
-    c = mcu_hw_spi_tx_u08(0);
-
+  // any valid XML starts with the character '<'. Older
+  // cores not supporting built-in configs won't return that
+  int len = 0;
+  if(c == '<')
+    for(len=0;len < 8191 && c;len++)
+      c = mcu_hw_spi_tx_u08(0);
+    
   mcu_hw_spi_end();  
 
   sys_debugf("core xml config size: %d", len);

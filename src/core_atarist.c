@@ -17,7 +17,7 @@ const char *core_atarist_default_images[] = {
 };
 
 static const char main_form[] =
-  "MiSTeryNano,;"                       // main form has no parent
+  "<MiSTeryNano>,;"                     // main form has no parent
   // --------
   "F,Disk A:,0|st;"                     // fileselector for Disk A:
   "S,System,1;"                         // System submenu is form 1

@@ -23,7 +23,7 @@ const char * core_amiga_default_images[] = {
 // ------------------------------------------------------------------
 
 static const char main_form_amiga[] =
-  "NanoMig,;"                           // main form has no parent
+  "<NanoMig>,;"                         // main form has no parent
   // --------
   "F,Floppy DF0:,0|adf;"                // fileselector for DF0
   "S,System,1;"                         // System submenu is #1
