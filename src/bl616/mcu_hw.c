@@ -1,6 +1,5 @@
 /*
   mcu_hw.c - bl616 hardware driver
-  sdk adjust cherry1.4.3
 */
 
 #include <FreeRTOS.h>
