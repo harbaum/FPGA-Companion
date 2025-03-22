@@ -727,9 +727,6 @@ static void mn_board_init(void) {
 
     log_start();
 
-#if (defined(CONFIG_LUA) || defined(CONFIG_BFLOG) || defined(CONFIG_FATFS))
-    rtc = bflb_device_get_by_name("rtc");
-#endif
 #ifdef CONFIG_MBEDTLS
     extern void bflb_sec_mutex_init(void);
     bflb_sec_mutex_init();
@@ -784,6 +781,19 @@ void mcu_hw_port_byte(unsigned char byte) {
 #include "wifi_mgmr_ext.h"
 #include "wifi_mgmr.h"
 #include "rfparam_adapter.h"
+
+#include "bflb_rtc.h"
+#include "bflb_acomp.h"
+#include "bflb_efuse.h"
+#include "board.h"
+#include "bl616_tzc_sec.h"
+#include "bl616_psram.h"
+#include "task.h"
+#include "timers.h"
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include "bflb_irq.h"
+
 
 // #define WIFI_STACK_SIZE  (1536)
 #define WIFI_STACK_SIZE  (2048)

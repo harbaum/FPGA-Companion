@@ -1,19 +1,48 @@
 cmake_minimum_required(VERSION 3.15)
 
+# Components
 set(CONFIG_FREERTOS 1)
 set(CONFIG_CHERRYUSB 1)
 set(CONFIG_CHERRYUSB_HOST 1)
+set(CONFIG_PSRAM 0)
 set(CONFIG_FATFS 1)
+set(CONFIG_BFLOG 0)
+set(CONFIG_SHELL 1)
+set(CONFIG_CHERRYUSB_OSAL "freertos")
+set(CONFIG_CHERRYUSB_HOST_HCD "ehci_bouffalo")
+set(CONFIG_CHERRYUSB_HOST_HID 1)
+# set(CONFIG_CHERRYMP 0)
+# set(CONFIG_CHERRYRB 0)
+set(CONFIG_VSNPRINTF_FLOAT      1)
+set(CONFIG_VSNPRINTF_FLOAT_EX   1)
+set(CONFIG_VSNPRINTF_LONG_LONG  1)
+
+#include(proj.conf)
 
 # optionally enabled wifi support
 set(ENABLE_WIFI 0) 
 
 if(ENABLE_WIFI)
-set(CONFIG_LWIP 1)
-set(CONFIG_WIFI6 1)
-set(CONFIG_RF 1)
-set(CONFIG_MBEDTLS 1)
-set(CONFIG_DHCPD 1)
+	set(CONFIG_LWIP 1)
+	set(CONFIG_WIFI6 1)
+	set(CONFIG_RF 1)
+	set(CONFIG_MBEDTLS 1)
+	set(CONFIG_DHCPD 1)
+	set(CONFIG_POSIX 1)
+	#set(CONFIG_TLSF 1)
+	set(CONFIG_PING 1)
+	# mbedtls
+	set(CONFIG_MBEDTLS_AES_USE_HW 1)
+	set(CONFIG_MBEDTLS_BIGNUM_USE_HW 1)
+	set(CONFIG_MBEDTLS_ECC_USE_HW 1)
+	set(CONFIG_MBEDTLS_SHA1_USE_HW 1)
+	set(CONFIG_MBEDTLS_SHA256_USE_HW 1)
+	set(CONFIG_MBEDTLS_SHA512_USE_HW 1)
+	# wifi
+	set(CONFIG_VIF_MAX 2)
+	set(CONFIG_STA_MAX 4)
+	set(CONFIG_MAC_TXQ_DEPTH 32)
+	set(CONFIG_MAC_RXQ_DEPTH 12)
 endif(ENABLE_WIFI)
 
 find_package(bouffalo_sdk REQUIRED HINTS $ENV{BL_SDK_BASE})
@@ -21,13 +50,13 @@ find_package(bouffalo_sdk REQUIRED HINTS $ENV{BL_SDK_BASE})
 sdk_add_include_directories(. ../u8g2/csrc)
 
 target_sources(app PRIVATE
-        mcu_hw.c
-        ../core.c
-        ../core_atarist.c
-        ../core_c64.c
-        ../core_vic20.c
-        ../core_amiga.c
-        ../core_atari2600.c
+   	mcu_hw.c
+   	../core.c
+   	../core_atarist.c
+   	../core_c64.c
+   	../core_vic20.c
+   	../core_amiga.c
+   	../core_atari2600.c
    	../hidparser.c
    	../hid.c
    	../inifile.c
@@ -37,7 +66,7 @@ target_sources(app PRIVATE
    	../sysctrl.c
    	../config.c
    	../xml.c
-        ../at_wifi.c
+    ../at_wifi.c
 )
 
 file(GLOB COMPONENT_SRCS ../u8g2/csrc/*.c  ../u8g2/sys/bitmap/common/*.c)
@@ -45,4 +74,5 @@ target_sources(app PRIVATE ${COMPONENT_SRCS})
 
 sdk_set_main_file(../main.c)
 
+sdk_set_linker_script(bl616_flash.ld)
 project(fpga_companion)
