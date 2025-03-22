@@ -1,9 +1,12 @@
 /*
   mcu_hw.c - bl616 hardware driver
+  sdk adjust cherry1.4.3
 */
 
 #include <FreeRTOS.h>
 #include "mem.h"
+#include "shell.h"
+#include "semphr.h"
 
 #include "usbh_core.h"
 #include "usbh_hid.h"
@@ -59,6 +62,8 @@ static struct bflb_device_s *gpio;
 #define XINPUT_GAMEPAD_RIGHT_SHOULDER 0x0200
 
 extern struct bflb_device_s *gpio;
+extern void shell_init_with_task(struct bflb_device_s *shell);
+
 
 void set_led(int pin, int on) {
   // only M0S dock has those leds
@@ -107,6 +112,7 @@ static struct usb_config {
   
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t hid_buffer[CONFIG_USBHOST_MAX_HID_CLASS][MAX_REPORT_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t xbox_buffer[CONFIG_USBHOST_MAX_XBOX_CLASS][XBOX_REPORT_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t report_desc[CONFIG_USBHOST_MAX_HID_CLASS][128];
 
 uint8_t byteScaleAnalog(int16_t xbox_val)
 {
@@ -136,7 +142,7 @@ static void usbh_update(struct usb_config *usb) {
     char *dev_str = "/dev/inputX";
     dev_str[10] = '0' + i;
     usb->hid_info[i].class = (struct usbh_hid *)usbh_find_class_instance(dev_str);
-    
+
     if(usb->hid_info[i].class && usb->hid_info[i].state == STATE_NONE) {
       usb_debugf("NEW HID %d", i);
 
@@ -146,11 +152,18 @@ static void usbh_update(struct usb_config *usb) {
       usb_debugf("  class %d", usb->hid_info[i].class->hport->config.intf[i].altsetting[0].intf_desc.bInterfaceClass);
       usb_debugf("  subclass %d", usb->hid_info[i].class->hport->config.intf[i].altsetting[0].intf_desc.bInterfaceSubClass);
       usb_debugf("  protocol %d", usb->hid_info[i].class->hport->config.intf[i].altsetting[0].intf_desc.bInterfaceProtocol);
-	
+      int rep_desc = usbh_hid_get_report_descriptor(usb->hid_info[i].class, report_desc[i], 128);
+      if (rep_desc < 0) {
+        usb_debugf("usbh_hid_get_report_descriptor issue");}
+      bool skip = false;
+      uint16_t vendor_id = usb->hid_info[i].class->hport->device_desc.idVendor;
+      uint16_t product_id = usb->hid_info[i].class->hport->device_desc.idProduct;
+      if (vendor_id == 0x2dc8 && product_id == 0x3107) {  // 8bitdo wireless adapter
+          skip = true;
+      }
       // parse report descriptor ...
-      usb_debugf("report descriptor: %p", usb->hid_info[i].class->report_desc);
-      
-      if(!parse_report_descriptor(usb->hid_info[i].class->report_desc, 128, &usb->hid_info[i].report, NULL)) {
+      usb_debugf("report descriptor: %p", report_desc[i]);
+      if(skip || !parse_report_descriptor(report_desc[i], 128, &usb->hid_info[i].report, NULL)) {
 	usb->hid_info[i].state = STATE_FAILED;   // parsing failed, don't use
 	return;
       }
@@ -310,27 +323,53 @@ static void usbh_hid_client_thread(void *argument) {
   }
 }
 
+// from fixcontroler.py: https://gist.github.com/adnanh/f60f069fc9185a48b73db9987b9e9108
+struct usb_setup_packet xbox_init_packets[5] = {
+  {0x80, 0x06, 0x0302, 0x0409, 2},        // get string descriptor (SN30pro needs this)
+  {0x80, 0x06, 0x0302, 0x0409, 32},       // get string descriptor
+  {0xC1, 0x01, 0x0100, 0x0000, 20},       // control transfer 1 (a lot of pads need this)
+  {0xC1, 0x01, 0x0000, 0x0000, 8},        // control transfer 2
+  /* {0xC0, 0x01, 0x0100, 0x0000, 4}*/};  // skipped as 8bitdo wireless adapter hangs on this
+
+// four data packets to EP2
+uint8_t xbox_ep2_packets[4][3] = {{0x01, 0x03, 0x02}, {0x02, 0x08, 0x03}, 
+                                  {0x01, 0x03, 0x02}, {0x01, 0x03, 0x06}};
+
+static void xbox_init(struct xbox_info_S *xbox) {
+  for (int i = 0; i < 4; i++) {
+      usbh_bulk_urb_fill(&xbox->class->intout_urb,
+          xbox->class->hport,
+          xbox->class->intout,
+          xbox_ep2_packets[i], 3,
+          0, usbh_xbox_callback, xbox);
+      int ret = usbh_submit_urb(&xbox->class->intout_urb);
+      if (ret < 0)
+      usb_debugf("XBOX FATAL: submit EP2 failed %d", ret);
+      else
+          xSemaphoreTake(xbox->sem, 0xffffffffUL);    // wait for callback to finish
+  }
+}
+
 // ... and XBOX clients as well
 static void usbh_xbox_client_thread(void *argument) {
   struct xbox_info_S *xbox = (struct xbox_info_S *)argument;
-  uint8_t xbox360_wired_led[] = {0x01, 0x03, 0x00};
+  int ret = 0;
 
   usb_debugf("XBOX client #%d: thread started", xbox->index);
 
-	usbh_bulk_urb_fill(&xbox->class->intout_urb,
-    xbox->class->hport,
-    xbox->class->intout,
-    xbox360_wired_led,
-    sizeof(xbox360_wired_led),
-    0xfffffff, 
-    NULL,
-    NULL);
+    // Send initialization packets
+    for (int i = 0; i < CONFIG_USBHOST_MAX_XBOX_CLASS; i++) {
+      if ((ret = usbh_control_transfer(xbox->class->hport, &xbox_init_packets[i], xbox->buffer)) < 0) {
+        usb_debugf("XBOX: init packet %d failed: %d", i, ret);
+      }
+  }
+  xbox_init(xbox);
+  usb_debugf("XBOX client #%d: all init packets sent, entering main loop.\n", xbox->index);
 
-  int ret = usbh_submit_urb(&xbox->class->intout_urb);
-  if (ret < 0)
-    usb_debugf("xbox set_led failed\r\n");
-  else
-    usb_debugf("xbox set_led sucess\r\n");
+    // setup urb
+    usbh_int_urb_fill(&xbox->class->intin_urb, xbox->class->hport, 
+      xbox->class->intin, xbox->buffer, XBOX_REPORT_SIZE,
+      50, usbh_xbox_callback, xbox);
 
   while(1) {
     int ret = usbh_submit_urb(&xbox->class->intin_urb);
@@ -456,9 +495,9 @@ void usb_host(void) {
 
   usb_debugf("init usb hid host");
 
-  usbh_initialize();
-  // usbh_initialize(0, USB_BASE);
-
+//  usbh_initialize();
+  usbh_initialize(0, USB_BASE);
+  
   // initialize all HID info entries
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {
     usb_config.hid_info[i].index = i;
@@ -620,7 +659,6 @@ static void peripheral_clock_init(void) {
   GLB_Set_CAM_CLK(ENABLE, GLB_CAM_CLK_WIFIPLL_96M, 3);
   
   GLB_Set_PKA_CLK_Sel(GLB_PKA_CLK_MCU_MUXPLL_160M);
-  
   GLB_Set_USB_CLK_From_WIFIPLL(1);
   GLB_Swap_MCU_SPI_0_MOSI_With_MISO(0);
 }
@@ -690,8 +728,11 @@ static void mn_board_init(void) {
     log_start();
 
 #if (defined(CONFIG_LUA) || defined(CONFIG_BFLOG) || defined(CONFIG_FATFS))
-    // we use FATFS ... so the RTC should be set ...    
-    // rtc = bflb_device_get_by_name("rtc");
+    rtc = bflb_device_get_by_name("rtc");
+#endif
+#ifdef CONFIG_MBEDTLS
+    extern void bflb_sec_mutex_init(void);
+    bflb_sec_mutex_init();
 #endif
     bflb_irq_restore(flag);
 }
@@ -714,7 +755,10 @@ void mcu_hw_init(void) {
   bflb_gpio_init(gpio, GPIO_PIN_2, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_0);
  
   mcu_hw_spi_init();
-  
+
+  uart0 = bflb_device_get_by_name("uart0");
+  shell_init_with_task(uart0);
+
   usb_host();
 
 #ifdef ENABLE_WIFI
@@ -728,6 +772,7 @@ void mcu_hw_reset(void) {
   bflb_mtimer_delay_ms(1000);
   GLB_SW_POR_Reset(); 
 }
+
 void mcu_hw_port_byte(unsigned char byte) {
   debugf("port byte %d", byte);
 }
@@ -973,3 +1018,6 @@ void mcu_hw_main_loop(void) {
   
   for( ;; );
 }
+
+SHELL_CMD_EXPORT_ALIAS(lsusb, lsusb, ls usb);
+
