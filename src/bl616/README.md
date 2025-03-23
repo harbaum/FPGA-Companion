@@ -5,7 +5,6 @@ for the BL616 MCU (M0S Dock).
 
 > [!IMPORTANT]
 > * Updated SDK have to be installed!  
-> * SDK Repository location changed
 
 ## Example wiring
 
@@ -21,11 +20,10 @@ git clone https://github.com/bouffalolab/toolchain_gcc_t-head_linux.git
 
 And the Bouffalo SDK:  
 
-Install Bouffalo SDK with latest CherryUSB stack V1.42 that is maintained by [CherryUSB](https://github.com/cherry-embedded/CherryUSB/blob/master/README.md).  
-In addition it's enhanced with a xbox gamepad driver from [Till Harbaum](https://github.com/harbaum/):
+Install Bouffalo SDK fork with latest CherryUSB stack V1.43.  
 
 ```bash
-git clone --recurse-submodules https://github.com/vossstef/bouffalo_sdk.git
+git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
 ```
 
 Compile the firmware:
@@ -106,12 +104,11 @@ git clone https://github.com/bouffalolab/toolchain_gcc_t-head_windows.git
 
 And the Bouffalo SDK:  
 
-Install Bouffalo SDK with latest CherryUSB stack V1.42 that is maintained by [CherryUSB](https://github.com/cherry-embedded/CherryUSB/blob/master/README.md).  
-In addition it's enhanced with a xbox gamepad driver from [Till Harbaum](https://github.com/harbaum/):
+Install Bouffalo SDK fork with latest CherryUSB stack V1.43.  
 
 ```shell
 cd %HOMEPATH%
-git clone --recurse-submodules https://github.com/vossstef/bouffalo_sdk.git
+git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
 ```
 
 Set Windows SDK Environment Variable:  
