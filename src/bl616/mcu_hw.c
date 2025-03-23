@@ -31,6 +31,22 @@ extern uint32_t __HeapLimit;
 #include "bflb_clock.h"
 #include "bflb_flash.h"
 #include "bflb_clock.h"
+#include <lwip/tcpip.h>
+#include "bl_fw_api.h"
+#include "wifi_mgmr_ext.h"
+#include "wifi_mgmr.h"
+#include "rfparam_adapter.h"
+#include "bflb_rtc.h"
+#include "bflb_acomp.h"
+#include "bflb_efuse.h"
+#include "board.h"
+#include "bl616_tzc_sec.h"
+#include "bl616_psram.h"
+#include "task.h"
+#include "timers.h"
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include "bflb_irq.h"
 
 static struct bflb_device_s *gpio;
 
@@ -62,7 +78,6 @@ static struct bflb_device_s *gpio;
 
 extern struct bflb_device_s *gpio;
 extern void shell_init_with_task(struct bflb_device_s *shell);
-
 
 void set_led(int pin, int on) {
   // only M0S dock has those leds
@@ -141,7 +156,7 @@ static void usbh_update(struct usb_config *usb) {
     char *dev_str = "/dev/inputX";
     dev_str[10] = '0' + i;
     usb->hid_info[i].class = (struct usbh_hid *)usbh_find_class_instance(dev_str);
-
+    
     if(usb->hid_info[i].class && usb->hid_info[i].state == STATE_NONE) {
       usb_debugf("NEW HID %d", i);
 
@@ -496,7 +511,7 @@ void usb_host(void) {
 
 //  usbh_initialize();
   usbh_initialize(0, USB_BASE);
-  
+
   // initialize all HID info entries
   for(int i=0;i<CONFIG_USBHOST_MAX_HID_CLASS;i++) {
     usb_config.hid_info[i].index = i;
@@ -658,6 +673,7 @@ static void peripheral_clock_init(void) {
   GLB_Set_CAM_CLK(ENABLE, GLB_CAM_CLK_WIFIPLL_96M, 3);
   
   GLB_Set_PKA_CLK_Sel(GLB_PKA_CLK_MCU_MUXPLL_160M);
+  
   GLB_Set_USB_CLK_From_WIFIPLL(1);
   GLB_Swap_MCU_SPI_0_MOSI_With_MISO(0);
 }
@@ -688,10 +704,7 @@ static void console_init() {
 
 #include "../at_wifi.h"
 
-#ifdef ENABLE_WIFI
-#warning "WiFi support is broken on BL616!"
 static void wifi_init(void);
-#endif
 
 // local board_init used as a replacemement for global board_init
 static void mn_board_init(void) {
@@ -757,9 +770,7 @@ void mcu_hw_init(void) {
 
   usb_host();
 
-#ifdef ENABLE_WIFI
   wifi_init();
-#endif
 }
 
 void mcu_hw_reset(void) {
@@ -772,27 +783,6 @@ void mcu_hw_reset(void) {
 void mcu_hw_port_byte(unsigned char byte) {
   debugf("port byte %d", byte);
 }
-
-#ifdef ENABLE_WIFI
-
-#include <lwip/tcpip.h>
-#include "bl_fw_api.h"
-#include "wifi_mgmr_ext.h"
-#include "wifi_mgmr.h"
-#include "rfparam_adapter.h"
-
-#include "bflb_rtc.h"
-#include "bflb_acomp.h"
-#include "bflb_efuse.h"
-#include "board.h"
-#include "bl616_tzc_sec.h"
-#include "bl616_psram.h"
-#include "task.h"
-#include "timers.h"
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
-#include "bflb_irq.h"
-
 
 // #define WIFI_STACK_SIZE  (1536)
 #define WIFI_STACK_SIZE  (2048)
@@ -961,10 +951,8 @@ static void wifi_scan_item_cb(void *env, void *arg, wifi_mgmr_scan_item_t *item)
 
   at_wifi_puts(str);
 }  
-#endif
 
 void mcu_hw_wifi_scan(void) {
-#ifdef ENABLE_WIFI
   at_wifi_puts("Scanning...\r\n");
 
   static wifi_mgmr_scan_params_t config;
@@ -974,13 +962,9 @@ void mcu_hw_wifi_scan(void) {
   wait4event(1, 1);
 
   wifi_mgmr_scan_ap_all(NULL, NULL, wifi_scan_item_cb);
-#else
-  at_wifi_puts("WiFi not enabled\r\n");
-#endif
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
-#ifdef ENABLE_WIFI
   at_wifi_puts("Connecting");
 
   if(wifi_ssid) free(wifi_ssid);
@@ -994,17 +978,10 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0);
 
   wait4event(2, 4);
-#else
-  at_wifi_puts("WiFi not enabled\r\n");
-#endif
 }
 
 void mcu_hw_tcp_connect(char *host, int port) {
-#ifdef ENABLE_WIFI
   at_wifi_puts("Not implemented on BL616");
-#else
-  at_wifi_puts("WiFi not enabled\r\n");
-#endif
 }
 
 void mcu_hw_tcp_disconnect(void) { }
