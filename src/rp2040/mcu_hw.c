@@ -11,7 +11,7 @@
 #include "pico/stdlib.h"
 
 #include <stdio.h>
-#include "pio_usb.h"
+#include "tusb.h"
 #include "pico/multicore.h"
 #include "hardware/clocks.h"
 
@@ -84,6 +84,9 @@ static struct {
   uint8_t instance;
   uint8_t js_index;
   uint8_t state;
+  int16_t state_x;
+  int16_t state_y;
+  uint8_t state_btn_extra;
 } xbox_state[MAX_XBOX_DEVICES];
   
 static void pio_usb_task(__attribute__((unused)) void *parms) {
@@ -98,6 +101,15 @@ static void pio_usb_task(__attribute__((unused)) void *parms) {
     tuh_task();
     vTaskDelay(pdMS_TO_TICKS(1));
   }
+}
+
+uint8_t byteScaleAnalog(int16_t xbox_val)
+{
+  // Scale the xbox value from [-32768, 32767] to [1, 255]
+  // Offset by 32768 to get in range [0, 65536], then divide by 256 to get in range [1, 255]
+  uint8_t scale_val = (xbox_val + 32768) / 256;
+  if (scale_val == 0) return 1;
+  return scale_val;
 }
 
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
@@ -274,20 +286,48 @@ void tuh_xinput_report_received_cb(uint8_t dev_addr, uint8_t instance, xinputh_i
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_LEFT )?0x02:0x00) |
 	    ((p->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?0x01:0x00) |
 	    ((p->wButtons & 0xf000) >> 8);
-	  
-	  // submit if state has changed
-	  if(state != xbox_state[idx].state) {    
-	    usb_debugf("XBOX Joy%d: %02x", xbox_state[idx].js_index, state);
-	    
+
+    // build extra button new state
+    unsigned char state_btn_extra =
+	    ((p->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER  )?0x01:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER )?0x02:0x00) |
+	    ((p->wButtons & XINPUT_GAMEPAD_BACK           )?0x10:0x00) | // Rumblepad 2 / Dual Action compatibility
+	    ((p->wButtons & XINPUT_GAMEPAD_START          )?0x20:0x00);
+
+	  // build analog stick x,y state
+      int16_t sThumbLX = p->sThumbLX;
+      int16_t sThumbLY = p->sThumbLY;
+      uint8_t ax = byteScaleAnalog(sThumbLX);
+      uint8_t ay = ~byteScaleAnalog(sThumbLY);
+
+    // map analog stick directions to digital
+    if(ax > (uint8_t) 0xc0) state |= 0x01;
+    if(ax < (uint8_t) 0x40) state |= 0x02;
+    if(ay > (uint8_t) 0xc0) state |= 0x04;
+    if(ay < (uint8_t) 0x40) state |= 0x08;
+
+    // submit if state has changed
+	  if((state != xbox_state[idx].state) ||
+      (state_btn_extra != xbox_state[idx].state_btn_extra) ||
+      (ax != xbox_state[idx].state_x) ||
+      (ay != xbox_state[idx].state_y)) {
+
+      xbox_state[idx].state = state;
+      xbox_state[idx].state_btn_extra = state_btn_extra;
+      xbox_state[idx].state_x = sThumbLX;
+      xbox_state[idx].state_y = sThumbLY;
+      usb_debugf("XBOX Joy%d: B %02x EB %02x X %02x Y %02x", xbox_state[idx].js_index, state, state_btn_extra, byteScaleAnalog(ax), byteScaleAnalog(ay));
+
 	    mcu_hw_spi_begin();
 	    mcu_hw_spi_tx_u08(SPI_TARGET_HID);
 	    mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
 	    mcu_hw_spi_tx_u08(xbox_state[idx].js_index);
 	    mcu_hw_spi_tx_u08(state);
+	    mcu_hw_spi_tx_u08(ax); // gamepad analog X
+	    mcu_hw_spi_tx_u08(ay); // gamepad analog Y
+	    mcu_hw_spi_tx_u08(state_btn_extra); // gamepad extra buttons
 	    mcu_hw_spi_end();
-	    
-	    xbox_state[idx].state = state;
-	  }
+    }
 	}
       }
     }
@@ -305,7 +345,10 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
     usb_debugf("Using XBOX entry %d", idx);
     xbox_state[idx].dev_addr = dev_addr;
     xbox_state[idx].instance = instance;
-    xbox_state[idx].state = 0xff;    
+    xbox_state[idx].state = 0;
+    xbox_state[idx].state_btn_extra = 0;
+    xbox_state[idx].state_x = 0;
+    xbox_state[idx].state_y = 0;
     xbox_state[idx].js_index = hid_allocate_joystick();
   } else
     usb_debugf("Error, no more free XBOX entries");
