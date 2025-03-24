@@ -416,7 +416,7 @@ static int wifi_state = WIFI_STATE_UNKNOWN;
 static void mcu_hw_wifi_init(void) {
   debugf("Detected Pico-W");
   
-  if(cyw43_arch_init()) {
+  if(cyw43_arch_init_with_country(CYW43_COUNTRY_GERMANY)) {
     debugf("WiFi failed to initialised");
     return;
   }
@@ -425,6 +425,8 @@ static void mcu_hw_wifi_init(void) {
   
   cyw43_arch_enable_sta_mode();
   debugf("STA mode enabled");
+
+  cyw43_wifi_pm(&cyw43_state, CYW43_PERFORMANCE_PM);
   
   TimerHandle_t led_timer_handle =
     xTimerCreate("LED timer (W)", pdMS_TO_TICKS(200), pdTRUE,

@@ -19,6 +19,10 @@
 #include "mcu_hw.h"
 #include "at_wifi.h"
 
+// we are using "puff" to decompress a gzip'd FPGA config as this is a slow, yet
+// very small and memory efficient implementation of the deflate de-compression
+#include "puff.h"
+
 unsigned char core_id = 0;
 
 static const char *core_names[] = {
@@ -181,20 +185,20 @@ bool sys_port_get_status(unsigned char port) {
 
   mcu_hw_spi_end();
 
-  printf("Number of ports: %d\n", ports);
+  debugf("Number of ports: %d", ports);
 
   // return -1 if there's no such port
   if(!ports || type != 0)
     return false;
 
-  printf("Port 0: Type = %d, rx_available = %d, tx_available = %d\n", type, rx_available, tx_available);
+  debugf("Port 0: Type = %d, rx_available = %d, tx_available = %d", type, rx_available, tx_available);
   
   if(type == 0) {
-    printf("  Serial status:\n");
-    printf("  Bitrate:  %d\n", serial_status.bitrate);
-    printf("  Databits: %d\n", serial_status.databits);
-    printf("  Partity:  %s\n", parity_str[serial_status.parity]);
-    printf("  Stopbits: %s\n", stop_str[serial_status.stopbits]);
+    debugf("  Serial status:");
+    debugf("  Bitrate:  %d", serial_status.bitrate);
+    debugf("  Databits: %d", serial_status.databits);
+    debugf("  Partity:  %s", parity_str[serial_status.parity]);
+    debugf("  Stopbits: %s", stop_str[serial_status.stopbits]);
   }
   
   return true;
@@ -369,6 +373,11 @@ void sys_run_action_by_name(char *name) {
   if(action) sys_run_action(action);
 }
 
+// this modfied version of puff takes an input function top read data
+static unsigned char puff_get_byte(void) {
+  return mcu_hw_spi_tx_u08(0);
+}
+
 char *sys_get_config(void) {
   char *ret = NULL;
   // (try to) read xml directly from core
@@ -378,34 +387,90 @@ char *sys_get_config(void) {
   
   sys_begin(SPI_SYS_READ_CFG);
   mcu_hw_spi_tx_u08(0);
-  mcu_hw_spi_tx_u08(0);
 
   char c = mcu_hw_spi_tx_u08(0);
   // any valid XML starts with the character '<'. Older
   // cores not supporting built-in configs won't return that
-  int len = 0;
-  if(c == '<')
+  unsigned int len = 0;  
+  if(c == '<') {
     for(len=0;len < 8191 && c;len++)
       c = mcu_hw_spi_tx_u08(0);
+
+    mcu_hw_spi_end();  
+
+    sys_debugf("core xml config size: %d", len);
+    if(len < 100) return NULL;
     
-  mcu_hw_spi_end();  
+    // allocate enough space
+    ret = malloc(len+1);
+    
+    // and read the data into the buffer
+    sys_begin(SPI_SYS_READ_CFG);
+    mcu_hw_spi_tx_u08(0);
+    mcu_hw_spi_tx_u08(0);
+    
+    unsigned int i;
+    for(i=0;i<len;i++) ret[i] = mcu_hw_spi_tx_u08(0);
+    ret[i] = '\0';
+    
+    mcu_hw_spi_end();
 
-  sys_debugf("core xml config size: %d", len);
-  if(len < 100) return NULL;
+    return ret;
+  }
   
-  // allocate enough space
-  ret = malloc(len+1);
+  else if(c == 0x1f) {
+    // skip over gzip header
+    int id1 = mcu_hw_spi_tx_u08(0);    // second id byte
+    int method = mcu_hw_spi_tx_u08(0); // compression method
+    int flags  = mcu_hw_spi_tx_u08(0); // file flags
 
-  // and read the data into the buffer
-  sys_begin(SPI_SYS_READ_CFG);
-  mcu_hw_spi_tx_u08(0);
-  mcu_hw_spi_tx_u08(0);
+    // check a few more header fields. We only accept flag 8 which
+    // is "filename"
+    if((id1 != 0x8b)||(method != 8)||(flags & ~8)) {
+      sys_debugf("Unexpected GZIP header %02x/%02x/%02x", id1, method, flags);
+      mcu_hw_spi_end();
+      return NULL;
+    }
+
+    // skip remaining six gzip header fields
+    for(int i=0;i<6;i++) mcu_hw_spi_tx_u08(0);
+
+    // skip filename if present
+    if(flags & 8) while(mcu_hw_spi_tx_u08(0));
+    
+    // first run to determine uncompressed size
+    unsigned long dstlen = 0, srclen = 65536;
+    int ret = puff(NULL, &dstlen, puff_get_byte, &srclen);
+    mcu_hw_spi_end();
+
+    if(ret) {
+      sys_debugf("Config gzip puff failed");
+      return NULL;
+    }
+
+    // second run to actually read and uncompress
+    sys_debugf("Malloc %ld bytes config memory", dstlen+1);
+    unsigned char *dst = malloc(dstlen+1);  // plus one byte for string termination
+
+    sys_begin(SPI_SYS_READ_CFG);
+    mcu_hw_spi_tx_u08(0);
+
+    // again, skip header (this time we already know the flags)
+    for(int i=0;i<10;i++) mcu_hw_spi_tx_u08(0);
+
+    // and again, skip filename if present
+    if(flags & 8) while(mcu_hw_spi_tx_u08(0));
+    
+    // first run to determine uncompressed size
+    srclen = 65536;
+    ret = puff(dst, &dstlen, puff_get_byte, &srclen);
+    mcu_hw_spi_end();
+
+    // terminate the config string
+    dst[dstlen-1] = '\0';
+    
+    return (char*)dst;
+  }
   
-  int i;
-  for(i=0;i<len;i++) ret[i] = mcu_hw_spi_tx_u08(0);
-  ret[i] = '\0';
-  
-  mcu_hw_spi_end();  
-  
-  return ret;
+  return NULL;
 }

@@ -19,6 +19,7 @@ idf_component_register(SRCS
         "../../at_wifi.c"
 	"../../xml.c"
 	"../mcu_hw.c"
+	"../../puff.c"
 	${U8G2_SRC}	
 	../../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
 

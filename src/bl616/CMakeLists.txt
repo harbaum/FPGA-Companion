@@ -63,6 +63,7 @@ target_sources(app PRIVATE
    	../config.c
    	../xml.c
     ../at_wifi.c
+    ../puff.c
 )
 
 file(GLOB COMPONENT_SRCS ../u8g2/csrc/*.c  ../u8g2/sys/bitmap/common/*.c)

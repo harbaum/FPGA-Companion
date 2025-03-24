@@ -42,6 +42,7 @@ add_executable(${PROJECT}
 	../core_amiga.c
 	../core_atari2600.c
 	../at_wifi.c
+	../puff.c
 	../fatfs/source/ff.c
 	../fatfs/source/ffunicode.c
 	../u8g2/sys/bitmap/common/u8x8_d_bitmap.c
@@ -64,13 +65,6 @@ if(WS2040_ZERO)
 else(WS2040_ZERO)
         add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico or Pico-W.")
 endif(WS2040_ZERO)
-
-target_include_directories(${PROJECT} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}
-      ${CMAKE_CURRENT_LIST_DIR}/../fatfs/source
-      ${CMAKE_CURRENT_LIST_DIR}/../u8g2/csrc
-      ${CMAKE_CURRENT_LIST_DIR}/../tusb_xinput
-)
 
 target_include_directories(${PROJECT} PRIVATE
       ${CMAKE_CURRENT_LIST_DIR}
