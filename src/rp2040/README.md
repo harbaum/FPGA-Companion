@@ -148,6 +148,17 @@ To use this you need a micro-USB to USB-A-OTG adapter.
 
 ![Tang Nano 20k with Raspberry Pi Pico](pico_tn20k.png)
 
+## Using the Raspberry Pi Pico2 or Pico2(W)
+
+The PICO2 and Pico2(W) can be selected like so:
+
+```bash
+cmake -DPICO2=ON ..
+```
+
+This has only been tested on a Pico2(W) and is currently _not_ fully working which is
+e.g. indicated by the on-board LED stopping to blink.
+
 ## Using the Waveshare RP2040-Zero
 
 The Raspberry Pi Pico is rather big and only comes with a Micro USB

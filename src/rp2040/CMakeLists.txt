@@ -1,13 +1,22 @@
 # to build for waveshare rp2040-zero do
 # cmake -DWS2040_ZERO=ON ..
+# to build for Pico2 or Pico2-W do
+# cmake -DPICO2=ON ..
+# You might need to delete CMakeCache.txt when changing these
 
 cmake_minimum_required(VERSION 3.13)
 
 set(PROJECT fpga_companion)
 
+option(PICO2 "Build for Pico2 and Pico2-W" OFF) # Regular Pico-W by default
+
 # This will also work for the regular Pico. The
 # firmware detects it and acts accordingly
+if(PICO2)
+set(PICO_BOARD pico2_w)
+else(PICO2)
 set(PICO_BOARD pico_w)
+endif(PICO2)
 
 # Pull in SDK (must be before project)
 include(pico_sdk_import.cmake)
@@ -63,7 +72,11 @@ if(WS2040_ZERO)
         add_compile_definitions(${PROJECT} PRIVATE WAVESHARE_RP2040_ZERO=1)
         add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Waveshare RP2040-Zero.")
 else(WS2040_ZERO)
+	if(PICO2)
+        add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico2 or Pico2-W.")
+	else(PICO2)
         add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico or Pico-W.")
+	endif(PICO2)
 endif(WS2040_ZERO)
 
 target_include_directories(${PROJECT} PRIVATE

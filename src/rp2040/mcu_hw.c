@@ -36,7 +36,11 @@
 #define SPI_BUS  spi0
 #define WS2812_PIN    16
 #else
+#ifdef PICO2
+#warning "Building for Pi Pico2 and Pico2(W)"
+#else
 #warning "Building for Pi Pico and Pico(W)"
+#endif
 
 // the regular pi pico uses spi0 by default
 #define SPI_RX_PIN   PICO_DEFAULT_SPI_RX_PIN
@@ -414,7 +418,11 @@ static void led_timer_w(__attribute__((unused)) TimerHandle_t pxTimer) {
 static int wifi_state = WIFI_STATE_UNKNOWN;
 
 static void mcu_hw_wifi_init(void) {
+#ifdef PICO2
+  debugf("Detected Pico2-W");
+#else
   debugf("Detected Pico-W");
+#endif
   
   if(cyw43_arch_init_with_country(CYW43_COUNTRY_GERMANY)) {
     debugf("WiFi failed to initialised");
