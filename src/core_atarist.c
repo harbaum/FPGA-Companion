@@ -8,6 +8,7 @@
 #include "sdc.h"
 #include "debug.h"
 
+#ifdef ENABLE_LEGACY_ATARIST
 const char *core_atarist_default_images[] = {
   CARD_MOUNTPOINT "/disk_a.st",
   CARD_MOUNTPOINT "/disk_b.st",
@@ -212,3 +213,4 @@ const unsigned char core_atarist_modifier[] = {
   MISS,
   MISS
 };
+#endif

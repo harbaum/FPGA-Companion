@@ -260,6 +260,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
       // also set this in the core
       sys_set_val(id, val);
 
+#ifdef ENABLE_LEGACY_ATARIST
       if(core_id == CORE_ID_ATARI_ST) {      
 	// trigger cold reset if memory, chipset or TOS have been changed a
 	// video change will also trigger a reset, but that's handled by
@@ -269,6 +270,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
 	  sys_set_val('R', 0);
 	}
       }
+#endif
       if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20){
 	// c64 core, trigger core reset if Video mode / PLL changes
 	if(id == 'E') {
@@ -285,6 +287,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
     sys_set_val('R', 3);
     sys_set_val('R', 0); }
   }
+#ifdef ENABLE_LEGACY_AMIGA
       if(core_id == CORE_ID_AMIGA) {      
 	// trigger reset if memory or chipset settings changed
 	if((id == 'Y') || (id == 'X') || (id == 'C')) {
@@ -292,6 +295,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
 	  sys_set_val('R', 0);
 	}
       }
+#endif
     }
   }
 }
