@@ -14,8 +14,10 @@ option(PICO2 "Build for Pico2 and Pico2-W" OFF) # Regular Pico-W by default
 # firmware detects it and acts accordingly
 if(PICO2)
 set(PICO_BOARD pico2_w)
+set(TARGET rp2350)
 else(PICO2)
 set(PICO_BOARD pico_w)
+set(TARGET rp2040)
 endif(PICO2)
 
 # Pull in SDK (must be before project)
@@ -100,7 +102,7 @@ pico_enable_stdio_uart(${PROJECT} 1)
 
 add_custom_target(flash
     COMMAND echo "Flashing ${PROJECT} ..."
-    COMMAND openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program ${PROJECT}.elf verify reset exit"
+    COMMAND openocd -f interface/cmsis-dap.cfg -f target/${TARGET}.cfg -c "adapter speed 5000" -c "program ${PROJECT}.elf verify reset exit"
     DEPENDS "${PROJECT}"
     COMMENT "Flash target using openocd"
 )
@@ -110,7 +112,7 @@ target_compile_options(${PROJECT} PRIVATE -Wall -Wextra)
 
 add_custom_target(reset
     COMMAND echo "Reseting ${PROJECT} ..."
-    COMMAND openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c init -c reset -c exit
+    COMMAND openocd -f interface/cmsis-dap.cfg -f target/${TARGET}.cfg -c init -c reset -c exit
     COMMENT "Reset target using openocd"
 )
 
