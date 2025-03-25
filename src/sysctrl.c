@@ -407,7 +407,6 @@ char *sys_get_config(void) {
     // and read the data into the buffer
     sys_begin(SPI_SYS_READ_CFG);
     mcu_hw_spi_tx_u08(0);
-    mcu_hw_spi_tx_u08(0);
     
     unsigned int i;
     for(i=0;i<len;i++) ret[i] = mcu_hw_spi_tx_u08(0);

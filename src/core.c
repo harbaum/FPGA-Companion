@@ -15,9 +15,12 @@ void core_set_default_images(void) {
   debugf("Setting core specific defaults");
   const char **images = NULL;
   
+#ifdef ENABLE_LEGACY_ATARIST
   if(core_id == CORE_ID_ATARI_ST)
     images = core_atarist_default_images;
-  else if(core_id == CORE_ID_C64)
+  else
+#endif
+    if(core_id == CORE_ID_C64)
     images = core_c64_default_images;
   else if(core_id == CORE_ID_VIC20)
     images = core_vic20_default_images;
@@ -34,8 +37,10 @@ void core_set_default_images(void) {
 }
 
 uint8_t core_map_key(uint8_t code) {
+#ifdef ENABLE_LEGACY_ATARIST
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_keymap[code];
+#endif
   if(core_id == CORE_ID_C64)
     return core_c64_keymap[code];
   if(core_id == CORE_ID_VIC20)
@@ -45,13 +50,14 @@ uint8_t core_map_key(uint8_t code) {
   if(core_id == CORE_ID_ATARI_2600)
     return core_atari2600_keymap[code];
 
-  debugf("%s: unsupported core %d", __func__, core_id);
-  return 0;
+  return code;
 }
 
 uint8_t core_map_modifier_key(uint8_t code) {
+#ifdef ENABLE_LEGACY_ATARIST
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_modifier[code];
+#endif
   if(core_id == CORE_ID_C64)
     return core_c64_modifier[code];
   if(core_id == CORE_ID_VIC20)
@@ -61,13 +67,16 @@ uint8_t core_map_modifier_key(uint8_t code) {
   if(core_id == CORE_ID_ATARI_2600)
     return core_atari2600_modifier[code];
 
-  debugf("%s: unsupported core %d", __func__, core_id);
-  return 0;
+  // generic modfier mapping maps the USB modfier keys
+  // onto key codes 0x68-0x6f
+  return 0x68+code;
 }
 
 const char **core_get_forms(void) {
+#ifdef ENABLE_LEGACY_ATARIST
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_forms;
+#endif
   if(core_id == CORE_ID_C64)
     return core_c64_forms;
   if(core_id == CORE_ID_VIC20)
@@ -82,8 +91,10 @@ const char **core_get_forms(void) {
 }
 
 menu_legacy_variable_t *core_get_variables(void) {
+#ifdef ENABLE_LEGACY_ATARIST
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_variables;
+#endif
   if(core_id == CORE_ID_C64)
     return core_c64_variables;
   if(core_id == CORE_ID_VIC20)
