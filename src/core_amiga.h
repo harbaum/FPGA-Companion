@@ -6,6 +6,7 @@
 #define CORE_AMIGA_H
 
 #include <stdint.h>
+#include "core.h"
 #include "menu.h"
 
 #ifdef ENABLE_LEGACY_AMIGA
