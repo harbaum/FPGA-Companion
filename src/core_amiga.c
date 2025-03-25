@@ -8,6 +8,7 @@
 #include "sdc.h"
 #include "debug.h"
 
+#ifdef ENABLE_LEGACY_AMIGA
 const char * core_amiga_default_images[] = {
   CARD_MOUNTPOINT "/df0.adf",
   CARD_MOUNTPOINT "/df1.adf",
@@ -217,3 +218,4 @@ const unsigned char core_amiga_modifier[] = {
   0x67  // Menu
 };
   
+#endif

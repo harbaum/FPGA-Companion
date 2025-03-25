@@ -389,6 +389,8 @@ char *sys_get_config(void) {
   mcu_hw_spi_tx_u08(0);
 
   char c = mcu_hw_spi_tx_u08(0);
+  debugf("config[0] = %02x", c&0xff);
+  
   // any valid XML starts with the character '<'. Older
   // cores not supporting built-in configs won't return that
   unsigned int len = 0;  

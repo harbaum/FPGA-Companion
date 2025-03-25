@@ -287,6 +287,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
     sys_set_val('R', 3);
     sys_set_val('R', 0); }
   }
+#ifdef ENABLE_LEGACY_AMIGA
       if(core_id == CORE_ID_AMIGA) {      
 	// trigger reset if memory or chipset settings changed
 	if((id == 'Y') || (id == 'X') || (id == 'C')) {
@@ -294,6 +295,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
 	  sys_set_val('R', 0);
 	}
       }
+#endif
     }
   }
 }
