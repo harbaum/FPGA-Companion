@@ -29,8 +29,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-# Pull in FreeRTOS 
+# Pull in FreeRTOS
+if(PICO2)
+include(./FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2350_ARM_NTZ/FreeRTOS_Kernel_import.cmake)
+else(PICO2)
 include(../FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
+endif(PICO2)
 
 # u8g2
 file(GLOB U8G2_SRC ../u8g2/csrc/*.c)

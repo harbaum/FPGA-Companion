@@ -714,7 +714,7 @@ void mcu_hw_init(void) {
   uart_set_baudrate(uart0, 921600);
 #endif
   
-  printf("\r\n\r\n" LOGO "           FPGA Companion for RP2040\r\n\r\n");
+  printf("\r\n\r\n" LOGO "        FPGA Companion for RP2040/RP2350\r\n\r\n");
 #if CFG_TUH_RPI_PIO_USB == 0
   printf("Using native USB\r\n");
 #else

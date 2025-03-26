@@ -77,6 +77,15 @@ extern "C" {
 #define configENABLE_BACKWARD_COMPATIBILITY     0
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 5
 
+#ifdef PICO_RP2350
+#define configENABLE_FPU                        1
+#define configENABLE_MPU                        0
+#define configENABLE_TRUSTZONE                  0
+#define configRUN_FREERTIOS_SECURE_ONLY         1
+#define configCPU_CLOCK_HZ                      120000000
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY    16U
+#endif
+  
 /* System */
 #define configSTACK_DEPTH_TYPE                  uint32_t
 #define configMESSAGE_BUFFER_LENGTH_TYPE        size_t

@@ -150,14 +150,22 @@ To use this you need a micro-USB to USB-A-OTG adapter.
 
 ## Using the Raspberry Pi Pico2 or Pico2(W)
 
-The PICO2 and Pico2(W) can be selected like so:
+Clone the official Pico port of FreeRTOS into the rp2040
+directory:
+
+```bash
+cd src/rp2040
+git clone https://github.com/raspberrypi/FreeRTOS-Kernel
+```
+
+and select the PICO2 and Pico2(W):
 
 ```bash
 cmake -DPICO2=ON ..
 ```
 
-This has only been tested on a Pico2(W) and is currently _not_ fully working which is
-e.g. indicated by the on-board LED stopping to blink.
+This is currently not working at all and the FreeRTOS scheduler doesn't seem
+to start at all.
 
 ## Using the Waveshare RP2040-Zero
 
