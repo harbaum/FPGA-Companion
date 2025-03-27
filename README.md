@@ -72,3 +72,13 @@ disadvantages.
     - Very limited USB host support
       - Only one device (no hub)
       - USB stack complex to use
+
+## Related projects
+
+You might also want to check out the following related projects:
+
+  - [MiSTeryNano](https://github.com/harbaum/MiSTeryNano) HDL implementation of the Atari ST home computer
+  - [NanoMIG](https://github.com/harbaum/NanoMIG) HDL implementation of the Commodore Amiga home computer
+  - [C64 Nano](https://github.com/vossstef/tang_nano_20k_c64) HDL implementationm of the Commodore C64 home computer
+  - [VIC20 Nano](https://github.com/vossstef/VIC20Nano) HDL implementation of the Commodore VIC20 home computer
+  - [A2600 Nano](https://github.com/vossstef/A2600Nano) HDL implementation of the Atari 2600 game console
