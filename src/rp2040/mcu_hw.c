@@ -49,6 +49,15 @@
 #define SPI_CSN_PIN  PICO_DEFAULT_SPI_CSN_PIN
 #define SPI_IRQ_PIN  22
 #define SPI_BUS  spi_default
+
+// the resular pi pico uses GPIO4, 5 and 6 for status
+// indicator leds. These are e.g. present on the
+// PiPico shield
+
+#define LED_MOUSE_PIN    4
+#define LED_KEYBOARD_PIN 5
+#define LED_JOYSTICK_PIN 6
+
 #endif
 
 #ifdef WS2812_PIN
@@ -116,6 +125,51 @@ uint8_t byteScaleAnalog(int16_t xbox_val)
   return scale_val;
 }
 
+// check for presence of usb devices and drive leds accordingly
+static void usb_check_devices(void) {
+#ifdef LED_MOUSE_PIN
+  int mice = 0;
+#endif
+#ifdef LED_KEYBOARD_PIN
+  int keyboards = 0;
+#endif
+#ifdef LED_JOYSTICK_PIN
+  int joysticks = 0;
+#endif
+  
+  for(int idx=0;idx<MAX_HID_DEVICES;idx++) {
+    if(hid_device[idx].dev_addr != 0xff) {    
+#ifdef LED_MOUSE_PIN
+      if(hid_device[idx].rep.type == REPORT_TYPE_MOUSE)    mice++;
+#endif
+#ifdef LED_KEYBOARD_PIN
+      if(hid_device[idx].rep.type == REPORT_TYPE_KEYBOARD) keyboards++;
+#endif
+#ifdef LED_JOYSTICK_PIN
+      if(hid_device[idx].rep.type == REPORT_TYPE_JOYSTICK) joysticks++;
+#endif
+    }
+  }
+    
+#ifdef LED_JOYSTICK_PIN
+  for(int idx=0;idx<MAX_XBOX_DEVICES;idx++)
+    if(xbox_state[idx].dev_addr != 0xff)
+      joysticks++;
+#endif
+  
+#ifdef LED_MOUSE_PIN
+  gpio_put(LED_MOUSE_PIN, mice);
+#endif
+  
+#ifdef LED_KEYBOARD_PIN
+  gpio_put(LED_KEYBOARD_PIN, keyboards);
+#endif
+  
+#ifdef LED_JOYSTICK_PIN
+  gpio_put(LED_JOYSTICK_PIN, joysticks);
+#endif  
+}
+
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
   // Interface protocol (hid_interface_protocol_enum_t)
   const char* protocol_str[] = { "None", "Keyboard", "Mouse" };
@@ -152,6 +206,8 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   // tuh_hid_report_received_cb() will be invoked when report is available
   if ( !tuh_hid_receive_report(dev_addr, instance) ) 
     usb_debugf("Error: cannot request report");
+
+  usb_check_devices();
 }
 
 // Invoked when device with hid interface is un-mounted
@@ -167,6 +223,7 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
 	hid_release_joystick(hid_device[idx].state.joystick.js_index);
     }
   }
+  usb_check_devices();
 }
 
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len) {
@@ -367,6 +424,8 @@ void tuh_xinput_mount_cb(uint8_t dev_addr, uint8_t instance, const xinputh_inter
   tuh_xinput_set_led(dev_addr, instance, 1, true);
   tuh_xinput_set_rumble(dev_addr, instance, 0, 0, true);
   tuh_xinput_receive_report(dev_addr, instance);
+
+  usb_check_devices();
 }
 
 void tuh_xinput_umount_cb(uint8_t dev_addr, uint8_t instance) {
@@ -380,6 +439,7 @@ void tuh_xinput_umount_cb(uint8_t dev_addr, uint8_t instance) {
       hid_release_joystick(xbox_state[idx].js_index);
     }
   }
+  usb_check_devices();
 }
 
 #include "hardware/watchdog.h"
@@ -723,6 +783,26 @@ void mcu_hw_init(void) {
   
   mcu_hw_spi_init();
 
+  // initialize the LED gpios
+#ifdef LED_MOUSE_PIN
+  debugf("LED MOUSE =    GP%d", LED_MOUSE_PIN);
+  gpio_init(LED_MOUSE_PIN);
+  gpio_set_dir(LED_MOUSE_PIN, GPIO_OUT);
+  gpio_put(LED_MOUSE_PIN, 0);
+#endif
+#ifdef LED_KEYBOARD_PIN
+  debugf("LED KEYBOARD = GP%d", LED_KEYBOARD_PIN);
+  gpio_init(LED_KEYBOARD_PIN);
+  gpio_set_dir(LED_KEYBOARD_PIN, GPIO_OUT);
+  gpio_put(LED_KEYBOARD_PIN, 0);
+#endif
+#ifdef LED_JOYSTICK_PIN
+  debugf("LED JOYSTICK = GP%d", LED_JOYSTICK_PIN);
+  gpio_init(LED_JOYSTICK_PIN);
+  gpio_set_dir(LED_JOYSTICK_PIN, GPIO_OUT);
+  gpio_put(LED_JOYSTICK_PIN, 0);
+#endif
+  
   tuh_init(BOARD_TUH_RHPORT);
   
   xTaskCreate(pio_usb_task, "usb_task", 2048, NULL, configMAX_PRIORITIES, NULL);

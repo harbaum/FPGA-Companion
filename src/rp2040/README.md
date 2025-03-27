@@ -114,11 +114,16 @@ For a *Waveshare RP2040-Zero* build select ```Switch Board``` and choose wavesha
 
 ## Pin usage
 
+On the regular Pico, the FPGA Companion uses the following pins:
+
 | Pin | Signal | Description |
 |---|---|---|
 | GP0  | UART_TX  | Serial debug output |
 | GP2  | USB D+ | USB PIO host D+ |
-| GP3  | USB D- | USB PIO host D-   |
+| GP3  | USB D- | USB PIO host D- |
+| GP4  | LED 1 | indicator mouse |
+| GP5  | LED 2 | indicator keyboard |
+| GP6  | LED 3 | indicator joystick |
 | GP16 | MISO | SPI data from FPGA |
 | GP17 | CSn | SPI chip select to FPGA |
 | GP18 | SCK | SPI clock to FPGA |
@@ -147,6 +152,9 @@ To use this you need a micro-USB to USB-A-OTG adapter.
 ## Example wiring
 
 ![Tang Nano 20k with Raspberry Pi Pico](pico_tn20k.png)
+
+The FPGA Companion for the Raspberry Pi Pico can also be used
+on the [MiSTeryShield20k RPiPico](https://github.com/vossstef/tang_nano_20k_c64/tree/main/board/misteryshield20k_rpipico).
 
 ## Using the Raspberry Pi Pico2 or Pico2(W)
 
