@@ -8,6 +8,7 @@
 #include "sdc.h"
 #include "debug.h"
 
+#ifdef ENABLE_LEGACY_C64
 const char * core_c64_default_images[] = {
   CARD_MOUNTPOINT "/disk8.d64",
   CARD_MOUNTPOINT "/c64crt.crt",
@@ -246,3 +247,4 @@ const unsigned char core_c64_modifier[] = {
   MATRIX( 5,7), // ralt as CBM
   MATRIX( 7,1)  // lshift  // rgui
 };
+#endif

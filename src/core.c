@@ -6,7 +6,9 @@
 #ifdef ENABLE_LEGACY_ATARIST
 #include "core_atarist.h"
 #endif
+#ifdef ENABLE_LEGACY_C64
 #include "core_c64.h"
+#endif
 #include "core_vic20.h"
 #ifdef ENABLE_LEGACY_AMIGA
 #include "core_amiga.h"
@@ -24,9 +26,12 @@ void core_set_default_images(void) {
     images = core_atarist_default_images;
   else
 #endif
-    if(core_id == CORE_ID_C64)
+#ifdef ENABLE_LEGACY_C64
+  if(core_id == CORE_ID_C64)
     images = core_c64_default_images;
-  else if(core_id == CORE_ID_VIC20)
+  else 
+#endif
+  if(core_id == CORE_ID_VIC20)
     images = core_vic20_default_images;
 #ifdef ENABLE_LEGACY_AMIGA
   else if(core_id == CORE_ID_AMIGA)
@@ -47,8 +52,10 @@ uint8_t core_map_key(uint8_t code) {
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_keymap[code];
 #endif
+#ifdef ENABLE_LEGACY_C64
   if(core_id == CORE_ID_C64)
     return core_c64_keymap[code];
+#endif
   if(core_id == CORE_ID_VIC20)
     return core_vic20_keymap[code];
 #ifdef ENABLE_LEGACY_AMIGA
@@ -66,8 +73,10 @@ uint8_t core_map_modifier_key(uint8_t code) {
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_modifier[code];
 #endif
+#ifdef ENABLE_LEGACY_C64
   if(core_id == CORE_ID_C64)
     return core_c64_modifier[code];
+#endif
   if(core_id == CORE_ID_VIC20)
     return core_vic20_modifier[code];
 #ifdef ENABLE_LEGACY_AMIGA
@@ -87,9 +96,11 @@ const char **core_get_forms(void) {
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_forms;
 #endif
+#ifdef ENABLE_LEGACY_C64
   if(core_id == CORE_ID_C64)
     return core_c64_forms;
-  if(core_id == CORE_ID_VIC20)
+#endif
+    if(core_id == CORE_ID_VIC20)
     return core_vic20_forms;
 #ifdef ENABLE_LEGACY_AMIGA
   if(core_id == CORE_ID_AMIGA)
@@ -107,8 +118,10 @@ menu_legacy_variable_t *core_get_variables(void) {
   if(core_id == CORE_ID_ATARI_ST)
     return core_atarist_variables;
 #endif
+#ifdef ENABLE_LEGACY_C64
   if(core_id == CORE_ID_C64)
     return core_c64_variables;
+#endif
   if(core_id == CORE_ID_VIC20)
     return core_vic20_variables;
 #ifdef ENABLE_LEGACY_AMIGA

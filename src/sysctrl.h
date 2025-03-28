@@ -18,7 +18,9 @@
 #ifdef ENABLE_LEGACY_ATARIST
 #define CORE_ID_ATARI_ST 0x01
 #endif
+#ifdef ENABLE_LEGACY_C64
 #define CORE_ID_C64      0x02
+#endif
 #define CORE_ID_VIC20    0x03
 #ifdef ENABLE_LEGACY_AMIGA
 #define CORE_ID_AMIGA    0x04
