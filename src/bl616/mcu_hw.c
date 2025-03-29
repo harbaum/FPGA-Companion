@@ -801,7 +801,7 @@ void wifi_event_handler(uint32_t code) {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_INIT_DONE", __func__);
     //    unsigned char evt = 5; 
     //    xQueueSendFromISR(wifi_event_queue, &evt, 0);
-    static wifi_conf_t conf = { .country_code = "US" };
+    static wifi_conf_t conf = { .country_code = "DE" };
     wifi_mgmr_init(&conf);
   } break;
   case CODE_WIFI_ON_MGMR_DONE: {
