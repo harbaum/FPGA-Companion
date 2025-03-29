@@ -6,6 +6,7 @@
 #define CORE_C64_H
 
 #include <stdint.h>
+#include "core.h"
 #include "menu.h"
 
 #ifdef ENABLE_LEGACY_C64
