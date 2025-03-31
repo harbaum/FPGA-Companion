@@ -1374,12 +1374,17 @@ void menu_init(void) {
     sys_set_val('R', 3);
     sys_set_val('R', 0);
 #ifdef ENABLE_LEGACY_C64
-    if(core_id == CORE_ID_C64||core_id == CORE_ID_VIC20) {  // c1541 reset at power-up
+    if(core_id == CORE_ID_C64) {  // c1541 reset at power-up
       sys_set_val('F', 0);
       sys_set_val('Z', 1);
       sys_set_val('Z', 0);
     }
-#endif    
+#endif
+    if(core_id == CORE_ID_VIC20) {  // c1541 reset at power-up
+      sys_set_val('F', 0);
+      sys_set_val('Z', 1);
+      sys_set_val('Z', 0);
+    }
     menu_do(0);
   } else {
     // a config was loaded, use that

@@ -791,6 +791,7 @@ void mcu_hw_port_byte(unsigned char byte) {
 static char *wifi_ssid = NULL;
 static char *wifi_key = NULL;
 static int s_retry_num = 0;
+static int sock = -1;
 
 static QueueHandle_t wifi_event_queue;
 
@@ -965,6 +966,7 @@ void mcu_hw_wifi_scan(void) {
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
+  debugf("WiFI: connect to %s/%s", ssid, key);
   at_wifi_puts("Connecting");
 
   if(wifi_ssid) free(wifi_ssid);
@@ -980,15 +982,97 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   wait4event(2, 4);
 }
 
-void mcu_hw_tcp_connect(char *host, int port) {
-  at_wifi_puts("Not implemented on BL616");
+static void mcu_hw_tcp_reader_task(__attribute__((unused)) void *parms) {
+  char rx_buffer[32];
+  
+  debugf("tcp reader task running for socket %d", sock);
+
+  int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);  
+  while(len) {
+    // terminate string
+    rx_buffer[len] = '\0';
+    at_wifi_puts(rx_buffer);
+    
+    len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);  
+  }
+
+  debugf("tcp reader done");
+
+  sock = -1;
+  at_wifi_puts("\r\nNO CARRIER\r\n");
+  vTaskDelete( NULL );
 }
 
-void mcu_hw_tcp_disconnect(void) { }
-  
+void mcu_hw_tcp_connect(char *host, int port) {
+
+  debugf("connecting to %s %d", host, port);
+
+  // disconnect any existing connection
+  if(sock >= 0) {
+    debugf("disconnecting previous connection");
+    at_wifi_puts("Disconnecting existing connection\r\n");
+    closesocket(sock);
+    sock = -1;   
+  }
+
+  struct hostent *hp;
+  hp = gethostbyname(host);
+  if(hp == NULL) {    
+   debugf("Cannot resolve host");
+   at_wifi_puts("Cannot resolve host\r\n");
+   return;
+  }
+
+  if(hp->h_length != 4) {
+    at_wifi_puts("Unexpected address length\r\n");
+    return;
+  }
+
+  char buf[16];
+  ip4addr_ntoa_r((ip4_addr_t*)(hp->h_addr_list[0]), buf, sizeof(buf));
+
+  at_wifi_puts("Using address ");
+  at_wifi_puts(buf);
+  at_wifi_puts("\r\n");
+
+  struct sockaddr_in dest_addr;
+  memcpy(&dest_addr.sin_addr, hp->h_addr_list[0], 4);
+  dest_addr.sin_family = AF_INET;
+  dest_addr.sin_port = htons(port);
+
+  sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+  if (sock < 0) {
+    debugf("Unable to create socket: errno %d", errno);
+    at_wifi_puts("Unable to create socket\r\n");
+    return;
+  }
+  debugf("Socket created, connecting to %s:%d", host, port);
+
+  int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+  if (err != 0) {
+    debugf("Socket unable to connect: errno %d", errno);
+    at_wifi_puts("Connection failed!\r\n");
+    return;
+  }
+  debugf("Successfully connected");
+  at_wifi_puts("Connected\r\n");
+
+  // start a reader task for incoming data
+  xTaskCreate(mcu_hw_tcp_reader_task, (char *)"tcp_reader_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);
+}
+
+void mcu_hw_tcp_disconnect(void) {
+  if(sock < 0) return;
+  closesocket(sock);
+  sock = -1;
+}
+
 bool mcu_hw_tcp_data(unsigned char byte) {
-  debugf("TX %d", byte);
-  return false;
+  if(sock < 0) return false;
+  // send data via tcp
+  write(sock, &byte, 1);
+
+  return true;
 }
 
 void mcu_hw_main_loop(void) {
