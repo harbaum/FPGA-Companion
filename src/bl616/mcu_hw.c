@@ -989,8 +989,6 @@ static void mcu_hw_tcp_reader_task(__attribute__((unused)) void *parms) {
 
   int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);  
   while(len) {
-    debugf("RX %d", len);
-
     // terminate string
     rx_buffer[len] = '\0';
     at_wifi_puts(rx_buffer);
@@ -1006,8 +1004,6 @@ static void mcu_hw_tcp_reader_task(__attribute__((unused)) void *parms) {
 }
 
 void mcu_hw_tcp_connect(char *host, int port) {
-  int addr_family = 0;
-  int ip_protocol = 0;
 
   debugf("connecting to %s %d", host, port);
 
@@ -1027,10 +1023,6 @@ void mcu_hw_tcp_connect(char *host, int port) {
    return;
   }
 
-//  ip4_addr_t dns_ip;
-//  netconn_gethostbyname(host, &dns_ip);
-//  addr = ip_ntoa(&dns_ip);
-
   if(hp->h_length != 4) {
     at_wifi_puts("Unexpected address length\r\n");
     return;
@@ -1047,10 +1039,8 @@ void mcu_hw_tcp_connect(char *host, int port) {
   memcpy(&dest_addr.sin_addr, hp->h_addr_list[0], 4);
   dest_addr.sin_family = AF_INET;
   dest_addr.sin_port = htons(port);
-  addr_family = AF_INET;
-  ip_protocol = IPPROTO_IP;
 
-  sock = socket(addr_family, SOCK_STREAM, ip_protocol);
+  sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
   if (sock < 0) {
     debugf("Unable to create socket: errno %d", errno);
     at_wifi_puts("Unable to create socket\r\n");
@@ -1078,11 +1068,10 @@ void mcu_hw_tcp_disconnect(void) {
 }
 
 bool mcu_hw_tcp_data(unsigned char byte) {
-  //debugf("TX %d", byte);
-  if (write(sock, &byte, 1) < 0) {
-    debugf("write failed!\r\n");
-    return false;
-}
+  if(sock < 0) return false;
+  // send data via tcp
+  write(sock, &byte, 1);
+
   return true;
 }
 
