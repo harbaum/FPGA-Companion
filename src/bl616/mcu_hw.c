@@ -966,6 +966,7 @@ void mcu_hw_wifi_scan(void) {
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
+  debugf("WiFI: connect to %s/%s", ssid, key);
   at_wifi_puts("Connecting");
 
   if(wifi_ssid) free(wifi_ssid);
@@ -1004,11 +1005,11 @@ static void mcu_hw_tcp_reader_task(__attribute__((unused)) void *parms) {
   vTaskDelete( NULL );
 }
 
-void mcu_hw_tcp_connect(char *ip, int port) {
+void mcu_hw_tcp_connect(char *host, int port) {
   int addr_family = 0;
   int ip_protocol = 0;
 
-  debugf("connecting '%s' %d", ip, port);
+  debugf("connecting to %s %d", host, port);
 
   // disconnect any existing connection
   if(sock >= 0) {
@@ -1019,12 +1020,16 @@ void mcu_hw_tcp_connect(char *ip, int port) {
   }
 
   struct hostent *hp;
-  hp = gethostbyname(ip);
+  hp = gethostbyname(host);
   if(hp == NULL) {    
    debugf("Cannot resolve host");
    at_wifi_puts("Cannot resolve host\r\n");
    return;
   }
+
+//  ip4_addr_t dns_ip;
+//  netconn_gethostbyname(host, &dns_ip);
+//  addr = ip_ntoa(&dns_ip);
 
   if(hp->h_length != 4) {
     at_wifi_puts("Unexpected address length\r\n");
@@ -1051,7 +1056,7 @@ void mcu_hw_tcp_connect(char *ip, int port) {
     at_wifi_puts("Unable to create socket\r\n");
     return;
   }
-  debugf("Socket created, connecting to %s:%d", ip, port);
+  debugf("Socket created, connecting to %s:%d", host, port);
 
   int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
   if (err != 0) {
