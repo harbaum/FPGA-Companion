@@ -32,7 +32,8 @@ extern uint32_t __HeapLimit;
 #include "bflb_flash.h"
 #include "bflb_clock.h"
 #include <lwip/tcpip.h>
-#include "bl_fw_api.h"
+//#include "bl_fw_api.h"
+#include "export/bl_fw_api.h" // SDK 2.01 needed
 #include "wifi_mgmr_ext.h"
 #include "wifi_mgmr.h"
 #include "rfparam_adapter.h"
@@ -972,6 +973,15 @@ void mcu_hw_wifi_scan(void) {
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
+  int len = strlen(ssid);
+  for (int i = 0; i < len; i++) {
+      ssid[i] = tolower(ssid[i]);
+  }
+
+  len = strlen(key);
+  for (int i = 0; i < len; i++) {
+      key[i] = tolower(key[i]);
+  }
   debugf("WiFI: connect to %s/%s", ssid, key);
   
   at_wifi_puts("Connecting...");
@@ -1084,6 +1094,12 @@ static void dns_found(__attribute__((unused)) const char *hostname, const ip_add
 void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
+
+  int len = strlen(host);
+  for (int i = 0; i < len; i++) {
+      host[i] = tolower(host[i]);
+  }
+  debugf("connecting to %s %d", host, port);
 
   lport = port;
   debugf("connecting to %s %d", host, lport);
