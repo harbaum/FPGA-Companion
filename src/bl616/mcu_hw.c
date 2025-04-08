@@ -32,8 +32,8 @@ extern uint32_t __HeapLimit;
 #include "bflb_flash.h"
 #include "bflb_clock.h"
 #include <lwip/tcpip.h>
-//#include "bl_fw_api.h"
-#include "export/bl_fw_api.h" // SDK 2.01 needed
+//#include "bl_fw_api.h"  // old SDK 2.0
+#include "export/bl_fw_api.h" // SDK 2.01 working
 #include "wifi_mgmr_ext.h"
 #include "wifi_mgmr.h"
 #include "rfparam_adapter.h"
@@ -48,8 +48,13 @@ extern uint32_t __HeapLimit;
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include "bflb_irq.h"
+#include "lwip/dns.h"
+#include "lwip/pbuf.h"
+#include "lwip/tcp.h"
+#include "../at_wifi.h"
 
 static struct bflb_device_s *gpio;
+static struct tcp_pcb *tcp_pcb = NULL;
 
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
@@ -703,8 +708,6 @@ static void console_init() {
   bflb_uart_set_console(uart0);
 }    
 
-#include "../at_wifi.h"
-
 static void wifi_init(void);
 
 // local board_init used as a replacemement for global board_init
@@ -895,32 +898,32 @@ static void wait4event(char code, char code2) {
 
       switch(evt) {
       case 1: // scan done
-	debugf("  -> scan done");
-	break;
+        debugf("  -> scan done");
+        break;
       case 2: // disconnect
-	debugf("  -> disconnect");
-	if (s_retry_num < 10) {
-	  // connect
-	  wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0);
-	  s_retry_num++;
-	  debugf("retry to connect to the AP");
-	  at_wifi_puts(".");
-	} else {
-	  at_wifi_puts("\r\nConnection failed!\r\n");
-	  debugf("finally failed");
-	}	
-	break;
+        debugf("  -> disconnect");
+        if (s_retry_num < 10) {
+          // connect
+          wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0);
+          s_retry_num++;
+          debugf("retry to connect to the AP");
+          at_wifi_puts(".");
+        } else {
+          at_wifi_puts("\r\nConnection failed!\r\n");
+          debugf("finally failed");
+        }	
+        break;
       case 3: // connected
-	debugf("  -> connect");
-	break;
+        debugf("  -> connect");
+        break;
       case 4: // got ip
-	debugf("  -> got ip");
-	at_wifi_puts("\r\nConnected\r\n");
-	break;	
+        debugf("  -> got ip");
+        at_wifi_puts("\r\nConnected\r\n");
+        break;	
       case 5: // init done
-	debugf("  -> init done");
-	// wifi_mgmr_init(&conf);
-	break;
+        debugf("  -> init done");
+        // wifi_mgmr_init(&conf);
+	      break;
       }
       
       vTaskDelay(pdMS_TO_TICKS(100));      
@@ -973,6 +976,7 @@ void mcu_hw_wifi_scan(void) {
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
+/*
   int len = strlen(ssid);
   for (int i = 0; i < len; i++) {
       ssid[i] = tolower(ssid[i]);
@@ -982,6 +986,7 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   for (int i = 0; i < len; i++) {
       key[i] = tolower(key[i]);
   }
+*/
   debugf("WiFI: connect to %s/%s", ssid, key);
   
   at_wifi_puts("Connecting...");
@@ -997,12 +1002,6 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
 
   wait4event(2, 4);
 }
-
-#include "lwip/dns.h"
-#include "lwip/pbuf.h"
-#include "lwip/tcp.h"
-
-static struct tcp_pcb *tcp_pcb = NULL;
 
 static err_t mcu_tcp_connected( __attribute__((unused)) void *arg, __attribute__((unused)) struct tcp_pcb *tpcb, err_t err) {
   if (err != ERR_OK) {
@@ -1094,11 +1093,12 @@ static void dns_found(__attribute__((unused)) const char *hostname, const ip_add
 void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
-
+/*
   int len = strlen(host);
   for (int i = 0; i < len; i++) {
       host[i] = tolower(host[i]);
   }
+*/
   debugf("connecting to %s %d", host, port);
 
   lport = port;
