@@ -458,6 +458,7 @@ void mcu_hw_reset(void) {
 void mcu_hw_wifi_scan(void) { }
 void mcu_hw_wifi_connect(__attribute__((unused)) char *ssid, __attribute__((unused)) char *key) { }
 void mcu_hw_tcp_connect(__attribute__((unused)) char *host, __attribute__((unused)) int port) { }
+void mcu_hw_tcp_disconnect(void) { }
 bool mcu_hw_tcp_data(__attribute__((unused)) unsigned char byte) { return false; }
 #else  
 static bool is_pico_w = false;
