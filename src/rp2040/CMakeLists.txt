@@ -120,6 +120,8 @@ add_custom_target(reset
     COMMENT "Reset target using openocd"
 )
 
-add_custom_target(term
-    COMMAND term.sh /dev/ttyACM0 921600
-)
+if(WS2040_ZERO)
+add_custom_target(term COMMAND term.sh /dev/ttyACM0 460800)
+else(WS2040_ZERO)
+add_custom_target(term COMMAND term.sh /dev/ttyACM0 921600)
+endif(WS2040_ZERO)
