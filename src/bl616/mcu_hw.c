@@ -32,8 +32,11 @@ extern uint32_t __HeapLimit;
 #include "bflb_flash.h"
 #include "bflb_clock.h"
 #include <lwip/tcpip.h>
-//#include "bl_fw_api.h"  // old SDK 2.0, buggy and not working
-#include "export/bl_fw_api.h" // SDK 2.01 working
+#if __has_include("bl_fw_api.h")
+#include "bl_fw_api.h"        // old SDK 2.0, buggy and WIFI not working
+#else
+#include "export/bl_fw_api.h" // SDK 2.0.1 WIFI working fine
+#endif
 #include "wifi_mgmr_ext.h"
 #include "wifi_mgmr.h"
 #include "rfparam_adapter.h"
@@ -974,7 +977,7 @@ void mcu_hw_wifi_scan(void) {
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
-
+/* C64 PETSC2 topic
   int len = strlen(ssid);
   for (int i = 0; i < len; i++) {
       ssid[i] = tolower(ssid[i]);
@@ -983,7 +986,7 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   len = strlen(key);
   for (int i = 0; i < len; i++) {
       key[i] = tolower(key[i]);
-  }
+  }*/
   debugf("WiFI: connect to %s/%s", ssid, key);
   
   at_wifi_puts("WiFI: Connecting...");
@@ -1099,13 +1102,13 @@ void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
 
+/* C64 PETSC2 topic
   int len = strlen(host);
   for (int i = 0; i < len; i++) {
       host[i] = tolower(host[i]);
-  }
-
+  } */
   debugf("connecting to %s %d", host, port);
-  at_wifi_puts("connecting to host:port");
+  at_wifi_puts("connecting to host:port\r\n");
 
   lport = port;
   debugf("connecting to %s %d", host, lport);
