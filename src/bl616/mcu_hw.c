@@ -32,7 +32,7 @@ extern uint32_t __HeapLimit;
 #include "bflb_flash.h"
 #include "bflb_clock.h"
 #include <lwip/tcpip.h>
-//#include "bl_fw_api.h"  // old SDK 2.0
+//#include "bl_fw_api.h"  // old SDK 2.0, buggy and not working
 #include "export/bl_fw_api.h" // SDK 2.01 working
 #include "wifi_mgmr_ext.h"
 #include "wifi_mgmr.h"
@@ -49,12 +49,11 @@ extern uint32_t __HeapLimit;
 #include <lwip/netdb.h>
 #include "bflb_irq.h"
 #include "lwip/dns.h"
-#include "lwip/pbuf.h"
-#include "lwip/tcp.h"
 #include "../at_wifi.h"
+#include "bflb_mtd.h"
+#include "easyflash.h"
 
 static struct bflb_device_s *gpio;
-static struct tcp_pcb *tcp_pcb = NULL;
 
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
@@ -752,6 +751,12 @@ static void mn_board_init(void) {
 
 void mcu_hw_init(void) {
   mn_board_init();
+  bflb_mtd_init();
+
+//#if defined (CONFIG_EASYFLASH4)
+//  easyflash_init();
+//#endif
+
   gpio = bflb_device_get_by_name("gpio");
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for BL616\r\n\r\n");
@@ -772,9 +777,9 @@ void mcu_hw_init(void) {
   uart0 = bflb_device_get_by_name("uart0");
   shell_init_with_task(uart0);
 
+  wifi_init();
   usb_host();
 
-  wifi_init();
 }
 
 void mcu_hw_reset(void) {
@@ -788,8 +793,7 @@ void mcu_hw_port_byte(unsigned char byte) {
   debugf("port byte %d", byte);
 }
 
-// #define WIFI_STACK_SIZE  (1536)
-#define WIFI_STACK_SIZE  (2048)
+#define WIFI_STACK_SIZE  (1536)
 #define TASK_PRIORITY_FW (16)
 
 // the wifi connection state
@@ -802,17 +806,13 @@ static int wifi_state = WIFI_STATE_UNKNOWN;
 static char *wifi_ssid = NULL;
 static char *wifi_key = NULL;
 static int s_retry_num = 0;
-
+static wifi_conf_t conf = { .country_code = "DE" };
 static QueueHandle_t wifi_event_queue;
 
-// ToDo: don't do anything here. Instead emit signals
 void wifi_event_handler(uint32_t code) {
   switch (code) {
   case CODE_WIFI_ON_INIT_DONE: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_INIT_DONE", __func__);
-    //    unsigned char evt = 5; 
-    //    xQueueSendFromISR(wifi_event_queue, &evt, 0);
-    static wifi_conf_t conf = { .country_code = "DE" };
     wifi_mgmr_init(&conf);
   } break;
   case CODE_WIFI_ON_MGMR_DONE: {
@@ -822,20 +822,16 @@ void wifi_event_handler(uint32_t code) {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_SCAN_DONE", __func__);
     unsigned char evt = 1; 
     xQueueSendFromISR(wifi_event_queue, &evt, 0);
-    // wifi_mgmr_sta_scanlist();
   } break;
   case CODE_WIFI_ON_CONNECTED: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_CONNECTED", __func__);
     unsigned char evt = 3; 
     xQueueSendFromISR(wifi_event_queue, &evt, 0);
-    //    void mm_sec_keydump();
-    //    mm_sec_keydump();
   } break;
   case CODE_WIFI_ON_GOT_IP: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_GOT_IP", __func__);
     unsigned char evt = 4; 
     xQueueSendFromISR(wifi_event_queue, &evt, 0);
-    // debugf("[SYS] Memory left is %d Bytes", kfree_size());
   } break;
   case CODE_WIFI_ON_DISCONNECT: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_DISCONNECT", __func__);
@@ -861,8 +857,6 @@ void wifi_event_handler(uint32_t code) {
 
 static TaskHandle_t wifi_fw_task;
 
-static void wait4event(char,char);
-
 static void wifi_init(void) {
   wifi_event_queue = xQueueCreate(10, sizeof(char));
 
@@ -873,16 +867,13 @@ static void wifi_init(void) {
   
   debugf("PHY RF init success!");
 
-  // wait4event(5,5);
-  
   tcpip_init(NULL, NULL);
   
   /* enable wifi clock */
-  //  GLB_PER_Clock_UnGate(GLB_AHB_CLOCK_IP_WIFI_PHY | GLB_AHB_CLOCK_IP_WIFI_MAC_PHY | GLB_AHB_CLOCK_IP_WIFI_PLATFORM);
-  //  GLB_AHB_MCU_Software_Reset(GLB_AHB_MCU_SW_WIFI);
-  
+  GLB_PER_Clock_UnGate(GLB_AHB_CLOCK_IP_WIFI_PHY | GLB_AHB_CLOCK_IP_WIFI_MAC_PHY | GLB_AHB_CLOCK_IP_WIFI_PLATFORM);
+  GLB_AHB_MCU_Software_Reset(GLB_AHB_MCU_SW_WIFI);
+
   /* Enable wifi irq */
-  
   extern void interrupt0_handler(void);
   bflb_irq_attach(WIFI_IRQn, (irq_callback)interrupt0_handler, NULL);
   bflb_irq_enable(WIFI_IRQn);
@@ -897,10 +888,10 @@ static void wait4event(char code, char code2) {
       debugf("event: %d", evt);
 
       switch(evt) {
-      case 1: // scan done
+      case 1:
         debugf("  -> scan done");
         break;
-      case 2: // disconnect
+      case 2:
         debugf("  -> disconnect");
         if (s_retry_num < 10) {
           // connect
@@ -913,20 +904,18 @@ static void wait4event(char code, char code2) {
           debugf("finally failed");
         }	
         break;
-      case 3: // connected
+      case 3:
         debugf("  -> connect");
         break;
-      case 4: // got ip
+      case 4:
         debugf("  -> got ip");
         at_wifi_puts("\r\nConnected\r\n");
         break;	
-      case 5: // init done
+      case 5:
         debugf("  -> init done");
-        // wifi_mgmr_init(&conf);
 	      break;
       }
-      
-      vTaskDelay(pdMS_TO_TICKS(100));      
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
   }
   debugf("wait done");
@@ -967,16 +956,25 @@ void mcu_hw_wifi_scan(void) {
   debugf("WiFi: Performing scan");
 
   static wifi_mgmr_scan_params_t config;
-  memset(&config, 0, sizeof(wifi_mgmr_scan_params_t));
-  wifi_mgmr_sta_scan(&config);
+  /* duration in microseconds for which channel is scanned, default 220000 */
+  config.duration = 220000;
 
+  memset(&config, 0, sizeof(wifi_mgmr_scan_params_t));
+  if (0 != wifi_mgmr_sta_scan(&config)) {
+    at_wifi_puts("Scan failed\r\n");
+    return;
+  }
+
+  at_wifi_puts("Scanning...\r\n"); 
   wait4event(1, 1);
 
-  wifi_mgmr_scan_ap_all(NULL, NULL, wifi_scan_item_cb);
+  if (0 != wifi_mgmr_scan_ap_all(NULL, NULL, wifi_scan_item_cb)) {
+    at_wifi_puts("Scan all failed\r\n");
+  };
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
-/*
+
   int len = strlen(ssid);
   for (int i = 0; i < len; i++) {
       ssid[i] = tolower(ssid[i]);
@@ -986,10 +984,9 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   for (int i = 0; i < len; i++) {
       key[i] = tolower(key[i]);
   }
-*/
   debugf("WiFI: connect to %s/%s", ssid, key);
   
-  at_wifi_puts("Connecting...");
+  at_wifi_puts("WiFI: Connecting...");
   if(wifi_ssid) free(wifi_ssid);
   if(wifi_key) free(wifi_key);
 
@@ -998,10 +995,20 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   wifi_key = strdup(key);
   
   s_retry_num = 0;
-  wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0);
-
-  wait4event(2, 4);
+  if (0 != wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0)) {
+    debugf("\r\nWiFI: Connection failed!\r\n");
+    at_wifi_puts("\r\nWiFI: Connection failed!\r\n");
+  } else {
+      wait4event(2, 4);
+      at_wifi_puts("\r\nWiFI: Connected\r\n");
+    }
 }
+
+#include "lwip/dns.h"
+#include "lwip/pbuf.h"
+#include "lwip/tcp.h"
+
+static struct tcp_pcb *tcp_pcb = NULL;
 
 static err_t mcu_tcp_connected( __attribute__((unused)) void *arg, __attribute__((unused)) struct tcp_pcb *tpcb, err_t err) {
   if (err != ERR_OK) {
@@ -1038,8 +1045,6 @@ err_t mcu_tcp_recv(__attribute__((unused)) void *arg, struct tcp_pcb *tpcb, stru
   }
 
   if (p->tot_len > 0) {
-    // debugf("recv %d err %d", p->tot_len, err);
-
     for (struct pbuf *q = p; q != NULL; q = q->next)
       at_wifi_puts_n(q->payload, q->len);
     
@@ -1093,13 +1098,14 @@ static void dns_found(__attribute__((unused)) const char *hostname, const ip_add
 void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
-/*
+
   int len = strlen(host);
   for (int i = 0; i < len; i++) {
       host[i] = tolower(host[i]);
   }
-*/
+
   debugf("connecting to %s %d", host, port);
+  at_wifi_puts("connecting to host:port");
 
   lport = port;
   debugf("connecting to %s %d", host, lport);
