@@ -9,11 +9,15 @@
 #ifdef ENABLE_LEGACY_C64
 #include "core_c64.h"
 #endif
+#ifdef ENABLE_LEGACY_VIC20
 #include "core_vic20.h"
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
 #include "core_amiga.h"
 #endif
+#ifdef ENABLE_LEGACY_ATARI_2600
 #include "core_atari2600.h"
+#endif
 #include "sysctrl.h"    // for core_id
 #include "debug.h"
 
@@ -31,15 +35,19 @@ void core_set_default_images(void) {
     images = core_c64_default_images;
   else 
 #endif
+#ifdef ENABLE_LEGACY_VIC20
   if(core_id == CORE_ID_VIC20)
-    images = core_vic20_default_images;
+      images = core_vic20_default_images;
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
   else if(core_id == CORE_ID_AMIGA)
     images = core_amiga_default_images;
 #endif
-  else if(core_id == CORE_ID_ATARI_2600)
+#ifdef ENABLE_LEGACY_ATARI_2600
+else if(core_id == CORE_ID_ATARI_2600)
     images = core_atari2600_default_images;
-  else
+#endif
+   else
     debugf("%s: unsupported core %d", __func__, core_id);
 
   if(images)
@@ -56,16 +64,20 @@ uint8_t core_map_key(uint8_t code) {
   if(core_id == CORE_ID_C64)
     return core_c64_keymap[code];
 #endif
+#ifdef ENABLE_LEGACY_VIC20
   if(core_id == CORE_ID_VIC20)
     return core_vic20_keymap[code];
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_keymap[code];
 #endif
+#ifdef ENABLE_LEGACY_ATARI_2600
   if(core_id == CORE_ID_ATARI_2600)
     return core_atari2600_keymap[code];
+#endif
 
-  return code;
+return code;
 }
 
 uint8_t core_map_modifier_key(uint8_t code) {
@@ -77,16 +89,20 @@ uint8_t core_map_modifier_key(uint8_t code) {
   if(core_id == CORE_ID_C64)
     return core_c64_modifier[code];
 #endif
+#ifdef ENABLE_LEGACY_VIC20
   if(core_id == CORE_ID_VIC20)
     return core_vic20_modifier[code];
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_modifier[code];
 #endif
+#ifdef ENABLE_LEGACY_ATARI_2600
   if(core_id == CORE_ID_ATARI_2600)
     return core_atari2600_modifier[code];
+#endif
 
-  // generic modfier mapping maps the USB modfier keys
+    // generic modfier mapping maps the USB modfier keys
   // onto key codes 0x68-0x6f
   return 0x68+code;
 }
@@ -100,16 +116,20 @@ const char **core_get_forms(void) {
   if(core_id == CORE_ID_C64)
     return core_c64_forms;
 #endif
-    if(core_id == CORE_ID_VIC20)
+#ifdef ENABLE_LEGACY_VIC20
+  if(core_id == CORE_ID_VIC20)
     return core_vic20_forms;
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_forms;
 #endif
+#ifdef ENABLE_LEGACY_ATARI_2600
   if(core_id == CORE_ID_ATARI_2600)
     return core_atari2600_forms;
+#endif
 
-  debugf("%s: unsupported core %d", __func__, core_id);
+debugf("%s: unsupported core %d", __func__, core_id);
   return NULL;
 }
 
@@ -122,14 +142,18 @@ menu_legacy_variable_t *core_get_variables(void) {
   if(core_id == CORE_ID_C64)
     return core_c64_variables;
 #endif
+#ifdef ENABLE_LEGACY_VIC20
   if(core_id == CORE_ID_VIC20)
     return core_vic20_variables;
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
   if(core_id == CORE_ID_AMIGA)
     return core_amiga_variables;
 #endif
-  if(core_id == CORE_ID_ATARI_2600)
+#ifdef ENABLE_LEGACY_ATARI_2600
+if(core_id == CORE_ID_ATARI_2600)
     return core_atari2600_variables;
+#endif
 
   debugf("%s: unsupported core %d", __func__, core_id);
   return NULL;

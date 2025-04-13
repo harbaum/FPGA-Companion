@@ -283,7 +283,8 @@ static void menu_legacy_variable_set(const char *s, int val) {
         sys_set_val('Z', 0); }
           }
 #endif
-    if(core_id == CORE_ID_VIC20){
+#ifdef ENABLE_LEGACY_VIC20
+  if(core_id == CORE_ID_VIC20){
       // c64 core, trigger core reset if Video mode / PLL changes
       if(id == 'E') {
         sys_set_val('R', 3);
@@ -299,6 +300,7 @@ static void menu_legacy_variable_set(const char *s, int val) {
     sys_set_val('R', 3);
     sys_set_val('R', 0); }
   }
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
       if(core_id == CORE_ID_AMIGA) {      
 	// trigger reset if memory or chipset settings changed
@@ -749,7 +751,8 @@ static void menu_legacy_select(void) {
       }
     }
 #endif
-    if(core_id == CORE_ID_VIC20) {
+#ifdef ENABLE_LEGACY_VIC20
+  if(core_id == CORE_ID_VIC20) {
       // c64 and vic20 core, c1541 reset
       if(id == 'Z') {
         sys_set_val('Z', 1);
@@ -764,6 +767,7 @@ static void menu_legacy_select(void) {
         osd_enable(OSD_INVISIBLE);  // hide OSD
       }
     }
+#endif
   } break;
 	
   default:
@@ -1380,11 +1384,13 @@ void menu_init(void) {
       sys_set_val('Z', 0);
     }
 #endif
+#ifdef ENABLE_LEGACY_VIC20
     if(core_id == CORE_ID_VIC20) {  // c1541 reset at power-up
       sys_set_val('F', 0);
       sys_set_val('Z', 1);
       sys_set_val('Z', 0);
     }
+#endif
     menu_do(0);
   } else {
     // a config was loaded, use that

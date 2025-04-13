@@ -21,11 +21,15 @@
 #ifdef ENABLE_LEGACY_C64
 #define CORE_ID_C64      0x02
 #endif
+#ifdef ENABLE_LEGACY_VIC20
 #define CORE_ID_VIC20    0x03
+#endif
 #ifdef ENABLE_LEGACY_AMIGA
 #define CORE_ID_AMIGA    0x04
 #endif
+#ifdef ENABLE_LEGACY_ATARI_2600
 #define CORE_ID_ATARI_2600    0x05
+#endif
 
 extern unsigned char core_id;
 

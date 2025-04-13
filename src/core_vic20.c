@@ -8,6 +8,7 @@
 #include "sdc.h"
 #include "debug.h"
 
+#ifdef ENABLE_LEGACY_VIC20
 const char * core_vic20_default_images[] = {
   CARD_MOUNTPOINT "/disk8.d64",
   CARD_MOUNTPOINT "/vic20crt.crt",
@@ -231,4 +232,4 @@ const unsigned char core_vic20_modifier[] = {
   MATRIX( 5,0), // ralt as CBM
   MATRIX( 3,1) // lshift         // rgui
 };
-  
+#endif

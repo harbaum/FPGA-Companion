@@ -9,6 +9,8 @@
 #define ENABLE_LEGACY_ATARIST
 #define ENABLE_LEGACY_AMIGA
 #define ENABLE_LEGACY_C64
+#define ENABLE_LEGACY_VIC20
+#define ENABLE_LEGACY_ATARI_2600
 
 void core_set_default_images(void);
 uint8_t core_map_key(uint8_t);
