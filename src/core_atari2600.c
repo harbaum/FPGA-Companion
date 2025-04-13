@@ -8,6 +8,7 @@
 #include "sdc.h"
 #include "debug.h"
 
+#ifdef ENABLE_LEGACY_ATARI_2600
 const char * core_atari2600_default_images[] = {
   CARD_MOUNTPOINT "/a2600crt.bin",
   NULL
@@ -213,3 +214,4 @@ const unsigned char core_atari2600_modifier[] = {
   MATRIX( 5,7), // ralt as CBM
   MATRIX( 7,1)  // lshift  // rgui
 };
+#endif
