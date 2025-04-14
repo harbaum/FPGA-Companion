@@ -64,6 +64,8 @@ static void port_line(char *command) {
     at_wifi_puts("  ato                        - re-enter online mode\r\n");
     at_wifi_puts("  ath                        - hang-up / disconnect from server\r\n");
     at_wifi_puts("  <1sec>+++<1sec>            - escape to offline mode\r\n");
+    at_wifi_puts("  atpetsii                   - petscii input\r\n");
+    at_wifi_puts("  atascii                    - ascii input\r\n");
   } else if(strcasecmp(command, "atscan") == 0) {
     mcu_hw_wifi_scan();
   } else if(strncasecmp(command, "atssid", 6) == 0) {
@@ -88,6 +90,12 @@ static void port_line(char *command) {
       at_wifi_puts("OK\r\n");
       at_wifi_state = AT_WIFI_STATE_ONLINE;
     }
+  } else if(strncasecmp(command, "atpetsii", 8) == 0) {
+      petsc2 = 1;
+      at_wifi_puts("petsc-2\r\n");
+  } else if(strncasecmp(command, "atascii", 7) == 0) {
+      petsc2 = 0;
+      at_wifi_puts("asc-2\r\n");
   } else if(strncasecmp(command, "ath", 3) == 0) {
     at_wifi_puts("OK\r\n");
     mcu_hw_tcp_disconnect();

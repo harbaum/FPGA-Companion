@@ -823,6 +823,7 @@ void wifi_event_handler(uint32_t code) {
   } break;
   case CODE_WIFI_ON_SCAN_DONE: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_SCAN_DONE", __func__);
+    //wifi_mgmr_sta_scanlist();
     unsigned char evt = 1; 
     xQueueSendFromISR(wifi_event_queue, &evt, 0);
   } break;
@@ -875,6 +876,8 @@ static void wifi_init(void) {
   /* enable wifi clock */
   GLB_PER_Clock_UnGate(GLB_AHB_CLOCK_IP_WIFI_PHY | GLB_AHB_CLOCK_IP_WIFI_MAC_PHY | GLB_AHB_CLOCK_IP_WIFI_PLATFORM);
   GLB_AHB_MCU_Software_Reset(GLB_AHB_MCU_SW_WIFI);
+
+  petsc2 = 0;  // default ASC-2 mode
 
   /* Enable wifi irq */
   extern void interrupt0_handler(void);
@@ -977,16 +980,20 @@ void mcu_hw_wifi_scan(void) {
 }
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
-/* C64 PETSC2 topic
-  int len = strlen(ssid);
-  for (int i = 0; i < len; i++) {
-      ssid[i] = tolower(ssid[i]);
-  }
 
-  len = strlen(key);
-  for (int i = 0; i < len; i++) {
-      key[i] = tolower(key[i]);
-  }*/
+//  PETSCII character is A-Z, make it a-z (PETSCII 97-122, subtract 32)
+//  PETSCII character is a-z, make it A-Z (PETSCII 65-90, add 32)
+//  PETSCII character is 192-223, subtract 96. Then subtract 32 if the resultant value is 97-122.
+  if (petsc2 == 1) {
+    int len = strlen(ssid);
+    for (int i = 0; i < len; i++) {
+        ssid[i] = tolower(ssid[i]);
+    }
+    len = strlen(key);
+    for (int i = 0; i < len; i++) {
+        key[i] = tolower(key[i]);
+    }
+  }
   debugf("WiFI: connect to %s/%s", ssid, key);
   
   at_wifi_puts("WiFI: Connecting...");
@@ -1102,13 +1109,15 @@ void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
 
-/* C64 PETSC2 topic
-  int len = strlen(host);
-  for (int i = 0; i < len; i++) {
-      host[i] = tolower(host[i]);
-  } */
-  debugf("connecting to %s %d", host, port);
-  at_wifi_puts("connecting to host:port\r\n");
+  if (petsc2 == 1) {
+    int len = strlen(host);
+    for (int i = 0; i < len; i++) {
+        host[i] = tolower(host[i]);
+    }
+  }
+  char str[64];
+  snprintf(str, 64, "\r\nconnecting to host: %s, port: %d \r\n", host, port);
+  at_wifi_puts(str);
 
   lport = port;
   debugf("connecting to %s %d", host, lport);
