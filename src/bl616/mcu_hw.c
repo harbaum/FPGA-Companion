@@ -57,6 +57,7 @@ extern uint32_t __HeapLimit;
 #include "easyflash.h"
 
 static struct bflb_device_s *gpio;
+unsigned int petsc2;
 
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
@@ -823,7 +824,7 @@ void wifi_event_handler(uint32_t code) {
   } break;
   case CODE_WIFI_ON_SCAN_DONE: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_SCAN_DONE", __func__);
-    //wifi_mgmr_sta_scanlist();
+    wifi_mgmr_sta_scanlist();
     unsigned char evt = 1; 
     xQueueSendFromISR(wifi_event_queue, &evt, 0);
   } break;
@@ -1116,7 +1117,7 @@ void mcu_hw_tcp_connect(char *host, int port) {
     }
   }
   char str[64];
-  snprintf(str, 64, "\r\nconnecting to host: %s, port: %d \r\n", host, port);
+  snprintf(str, 64, "\r\nconnecting to host: %s port: %d \r\n", host, port);
   at_wifi_puts(str);
 
   lport = port;
