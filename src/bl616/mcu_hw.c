@@ -57,6 +57,7 @@ extern uint32_t __HeapLimit;
 #include "easyflash.h"
 
 static struct bflb_device_s *gpio;
+unsigned int petsc2;
 
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
@@ -823,6 +824,7 @@ void wifi_event_handler(uint32_t code) {
   } break;
   case CODE_WIFI_ON_SCAN_DONE: {
     debugf("[APP] [EVT] %s, CODE_WIFI_ON_SCAN_DONE", __func__);
+    wifi_mgmr_sta_scanlist();
     unsigned char evt = 1; 
     xQueueSendFromISR(wifi_event_queue, &evt, 0);
   } break;
@@ -875,6 +877,8 @@ static void wifi_init(void) {
   /* enable wifi clock */
   GLB_PER_Clock_UnGate(GLB_AHB_CLOCK_IP_WIFI_PHY | GLB_AHB_CLOCK_IP_WIFI_MAC_PHY | GLB_AHB_CLOCK_IP_WIFI_PLATFORM);
   GLB_AHB_MCU_Software_Reset(GLB_AHB_MCU_SW_WIFI);
+
+  petsc2 = 0;  // default ASC-2 mode
 
   /* Enable wifi irq */
   extern void interrupt0_handler(void);
@@ -976,17 +980,48 @@ void mcu_hw_wifi_scan(void) {
   };
 }
 
-void mcu_hw_wifi_connect(char *ssid, char *key) {
-/* C64 PETSC2 topic
-  int len = strlen(ssid);
-  for (int i = 0; i < len; i++) {
-      ssid[i] = tolower(ssid[i]);
+static void wifi_info()
+{
+    ip4_addr_t ip, gw, mask, dns;
+    char str[64];
+    char str_tmp[20];
+
+    wifi_sta_ip4_addr_get(&ip.addr, &mask.addr, &gw.addr, &dns.addr);
+
+    ip4addr_ntoa_r((ip4_addr_t *) &ip.addr, str_tmp, sizeof(str_tmp));
+    debugf("IP  :%s \r\n", str_tmp);
+    snprintf(str, 64, "IP  :%s \r\n", str_tmp);
+    at_wifi_puts(str);
+
+    ip4addr_ntoa_r((ip4_addr_t *) &mask.addr, str_tmp, sizeof(str_tmp));
+    debugf("MASK:%s \r\n", str_tmp);
+    snprintf(str, 64, "MASK:%s \r\n", str_tmp);
+    at_wifi_puts(str);
+    
+    ip4addr_ntoa_r((ip4_addr_t *) &gw.addr, str_tmp, sizeof(str_tmp));
+    debugf("GW  :%s \r\n", str_tmp);
+    snprintf(str, 64, "GW  :%s \r\n", str_tmp);
+    at_wifi_puts(str);
+
+    ip4addr_ntoa_r((ip4_addr_t *) &dns.addr, str_tmp, sizeof(str_tmp));
+    debugf("DNS  :%s \r\n", str_tmp);
+    snprintf(str, 64, "DNS :%s \r\n", str_tmp);
+    at_wifi_puts(str);
+
   }
 
-  len = strlen(key);
-  for (int i = 0; i < len; i++) {
-      key[i] = tolower(key[i]);
-  }*/
+void mcu_hw_wifi_connect(char *ssid, char *key) {
+  if (petsc2 == 1) {
+    int len = strlen(ssid);
+    for (int i = 0; i < len; i++) {
+        ssid[i] = pet2asc(ssid[i]);
+    }
+    len = strlen(key);
+    for (int i = 0; i < len; i++) {
+        key[i] = pet2asc(key[i]);
+    }
+  }
+
   debugf("WiFI: connect to %s/%s", ssid, key);
   
   at_wifi_puts("WiFI: Connecting...");
@@ -1002,8 +1037,9 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
     debugf("\r\nWiFI: Connection failed!\r\n");
     at_wifi_puts("\r\nWiFI: Connection failed!\r\n");
   } else {
-      wait4event(2, 4);
+    //wait4event(2, 4);
       at_wifi_puts("\r\nWiFI: Connected\r\n");
+      wifi_info();
     }
 }
 
@@ -1102,13 +1138,15 @@ void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
 
-/* C64 PETSC2 topic
-  int len = strlen(host);
-  for (int i = 0; i < len; i++) {
-      host[i] = tolower(host[i]);
-  } */
-  debugf("connecting to %s %d", host, port);
-  at_wifi_puts("connecting to host:port\r\n");
+  if (petsc2 == 1) {
+    int len = strlen(host);
+    for (int i = 0; i < len; i++) {
+        host[i] = pet2asc(host[i]);
+    }
+  }
+  char str[64];
+  snprintf(str, 64, "\r\nconnecting to host: %s port: %d \r\n", host, port);
+  at_wifi_puts(str);
 
   lport = port;
   debugf("connecting to %s %d", host, lport);
