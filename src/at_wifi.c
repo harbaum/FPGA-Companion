@@ -213,3 +213,15 @@ void at_wifi_init(void) {
   xTaskCreate(at_wifi_task, (char *)"at_wifi_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);
 }
 
+uint8_t pet2asc(uint8_t c) {
+    if ('A' <=  c && c <= 'Z')
+      c += 'a' - 'A';
+    else if ('a' <=  c && c <= 'z')
+      c -= 'a' - 'A';
+    else if (192 <= c && c <= 223) 
+      c -= 96;
+    else if (224 <= c && c <= 254)
+      c -= 64;
+  
+    return c;
+  }
