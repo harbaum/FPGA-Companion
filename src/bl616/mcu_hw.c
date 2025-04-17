@@ -1028,18 +1028,26 @@ void mcu_hw_wifi_connect(char *ssid, char *key) {
   if(wifi_ssid) free(wifi_ssid);
   if(wifi_key) free(wifi_key);
 
+  if (wifi_mgmr_sta_state_get() == 1) {
+    wifi_sta_disconnect();
+  }
+
   // store ssid/key for retry
   wifi_ssid = strdup(ssid);
   wifi_key = strdup(key);
   
   s_retry_num = 0;
   if (0 != wifi_mgmr_sta_quickconnect(wifi_ssid, wifi_key, 0, 0)) {
-    debugf("\r\nWiFI: Connection failed!\r\n");
-    at_wifi_puts("\r\nWiFI: Connection failed!\r\n");
+    debugf("\r\nWiFI: STA failed!\r\n");
   } else {
-    //wait4event(2, 4);
+    vTaskDelay(7000);
+    if (wifi_mgmr_sta_state_get() == 1 ) {
       at_wifi_puts("\r\nWiFI: Connected\r\n");
       wifi_info();
+    } else {
+      debugf("\r\nWiFI: Connection failed!\r\n");
+      at_wifi_puts("\r\nWiFI: Connection failed!\r\n");
+      }
     }
 }
 
