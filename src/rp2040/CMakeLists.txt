@@ -115,7 +115,7 @@ target_link_options(${PROJECT} PRIVATE -Xlinker --print-memory-usage)
 target_compile_options(${PROJECT} PRIVATE -Wall -Wextra)
 
 add_custom_target(reset
-    COMMAND echo "Reseting ${PROJECT} ..."
+    COMMAND echo "Reseting ${PROJECT} for ${TARGET} ..."
     COMMAND openocd -f interface/cmsis-dap.cfg -f target/${TARGET}.cfg -c init -c reset -c exit
     COMMENT "Reset target using openocd"
 )

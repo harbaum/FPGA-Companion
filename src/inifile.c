@@ -40,7 +40,7 @@ int inifile_read(char *name) {
     strcat(filename, name);
   }
   
-  ini_debugf("Reading settings from '%s'", settings_file[core_id]);
+  ini_debugf("Reading settings from '%s'", filename);
 
   sdc_lock();  // get exclusive access to the file system
 
@@ -110,8 +110,8 @@ int inifile_read(char *name) {
     }
     f_close(&fil);
   } else {
-    if(name) free(filename);
     ini_debugf("Error opening file %s", filename);
+    if(name) free(filename);
     sdc_unlock();
     return -1;
   }
