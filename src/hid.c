@@ -113,8 +113,12 @@ void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kb
   kbd_num2joy(1, buffer[2+i]);
     if(buffer[2+i] != state->last_report[2+i]) {
       // key released?
-      if(state->last_report[2+i] && !osd_is_visible() )
-	kbd_tx(0x80 | core_map_key(state->last_report[2+i]));
+      if(state->last_report[2+i]) {
+	if(!osd_is_visible() )
+	  kbd_tx(0x80 | core_map_key(state->last_report[2+i]));
+	else
+	  menu_notify(MENU_EVENT_KEY_RELEASE);
+      }
       
       // key pressed?
       if(buffer[2+i])  {
@@ -128,8 +132,10 @@ void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kb
 	// Caution: Since the OSD closes on the press event, the following
 	// release event will be sent into the core. The core should thus
 	// cope with release events that did not have a press event before
-	if(buffer[2+i] == 0x45 || (osd_is_visible() && buffer[2+i] == 0x29) )
+	if(buffer[2+i] == 0x45)
 	  msg = osd_is_visible()?MENU_EVENT_HIDE:MENU_EVENT_SHOW;
+	else if(osd_is_visible() && buffer[2+i] == 0x29)
+	  msg = MENU_EVENT_BACK;	  
 	else {
 	  if(!osd_is_visible())
 	    kbd_tx(core_map_key(buffer[2+i]));
