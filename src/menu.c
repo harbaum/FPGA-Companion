@@ -846,36 +846,6 @@ static void menu_push(void) {
   }
 }
 
-// a menu has been closed (which sure wasn't the root menu as that
-// cannot be close). So remove the lowest state stack entry and move
-// all other entries in step down
-static void menu_pop(void) {
-  // this should never happen ...
-  if(!menu_state) return;
-
-  // neither should this as we never really close the
-  // root menu
-  if(menu_state->menu == cfg->menu) {
-    free(menu_state);
-    menu_state = NULL;
-    return;
-  }
-    
-  // count number of entries
-  int i=1; while(menu_state[i-1].menu != cfg->menu) i++;
-  menu_debugf("pop stack depth %d", i);
-
-  if(i>10) exit(0);
-  
-  // move all existing entries down one
-  for(int j=0;j<i-1;j++) {
-    debugf("move state %d to %d", j+1, j);
-    menu_state[j] = menu_state[j+1];
-  }  
-
-  menu_state = reallocarray(menu_state, i-1, sizeof(menu_state_t));
-}
-
 static int menu_count_entries(void) {
   int entries = 0;
 
@@ -1021,7 +991,7 @@ static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) 
   if(entry->type == CONFIG_MENU_ENTRY_MENU)
     u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);
   if(entry->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
-    // icon depends if floppy is inserted xyz
+    // icon depends if floppy is inserted
     u8g2_DrawXBM(&u8g2, hl_w-MENU_ENTRY_BASE, ypos-8, 8, 8,
 	 sdc_get_image_name(entry->fsel->index)?icn_floppy_bits:icn_empty_bits);
   }
@@ -1166,8 +1136,35 @@ static void menu_file_selector_open(config_menu_entry_t *entry) {
 	}
       }
     }
+  }  
+}
+
+// all other entries in step down
+static void menu_pop(void) {
+  // this should never happen ...
+  if(!menu_state) return;
+
+  // neither should this as we never really close the
+  // root menu
+  if(menu_state->menu == cfg->menu) {
+    free(menu_state);
+    menu_state = NULL;
+    return;
   }
+    
+  // count number of entries
+  int i=1; while(menu_state[i-1].menu != cfg->menu) i++;
+  menu_debugf("pop stack depth %d", i);
+
+  if(i>10) exit(0);
   
+  // move all existing entries down one
+  for(int j=0;j<i-1;j++) {
+    debugf("move state %d to %d", j+1, j);
+    menu_state[j] = menu_state[j+1];
+  }  
+
+  menu_state = reallocarray(menu_state, i-1, sizeof(menu_state_t));
 }
 
 static void menu_fileselector_select(sdc_dir_entry_t *entry) {
@@ -1233,8 +1230,17 @@ static void menu_back(void) {
   // are we in the root menu?
   if(menu_state->menu == cfg->menu)
     osd_enable(OSD_INVISIBLE);
-  else
-    menu_pop();
+  else {
+    // search for ".." in current dir
+    sdc_dir_entry_t *entry = NULL;
+    for(int i=0;i<menu_state->dir->len;i++)
+      if(!strcmp(menu_state->dir->files[i].name, ".."))
+	entry = &(menu_state->dir->files[i]);
+
+    // if there was one, go up. Else quit the file selector
+    if(entry) menu_fileselector_select(entry);
+    else      menu_pop();
+  }
 }
 
 // user has selected a menu entry
@@ -1344,19 +1350,22 @@ void menu_do(int event) {
     }
 
     // a key release event just stops any repeat timer
-    if(event == MENU_EVENT_KEY_RELEASE) menu_stop_repeat();
+    if(event == MENU_EVENT_KEY_RELEASE) {
+      menu_stop_repeat();
+      return;
+    }
 
-      // UP/DOWN PGUP and PGDOWN have a repeat
-      if(event == MENU_EVENT_UP || event == MENU_EVENT_DOWN ||
-	 event == MENU_EVENT_PGUP || event == MENU_EVENT_PGDOWN) {
-
-	if(menu_key_repeat_timer) {
-	  menu_key_last_event = event;
-	  xTimerChangePeriod( menu_key_repeat_timer, pdMS_TO_TICKS(500), 0);
-	  xTimerStart( menu_key_repeat_timer, 0 );
-	}
-      }
+    // UP/DOWN PGUP and PGDOWN have a repeat
+    if(event == MENU_EVENT_UP || event == MENU_EVENT_DOWN ||
+       event == MENU_EVENT_PGUP || event == MENU_EVENT_PGDOWN) {
       
+      if(menu_key_repeat_timer) {
+	menu_key_last_event = event;
+	xTimerChangePeriod( menu_key_repeat_timer, pdMS_TO_TICKS(500), 0);
+	xTimerStart( menu_key_repeat_timer, 0 );
+      }
+    }
+    
     if(!cfg) {    
       if(event == MENU_EVENT_UP)     menu_legacy_entry_go(-1);
       if(event == MENU_EVENT_DOWN)   menu_legacy_entry_go( 1);
