@@ -2,7 +2,7 @@
   menu.c - MiSTeryNano menu based in u8g2
 
   This version includes the old static MiSTeryNano type of menu
-  as we as the new config driven one.
+  as well as the new config driven one.
 
 */
   
@@ -1226,20 +1226,24 @@ static void menu_fileselector_select(sdc_dir_entry_t *entry) {
 static void menu_back(void) {
   // stop doing the scroll timer
   menu_timer_enable(false);
-      
+
   // are we in the root menu?
   if(menu_state->menu == cfg->menu)
     osd_enable(OSD_INVISIBLE);
   else {
-    // search for ".." in current dir
-    sdc_dir_entry_t *entry = NULL;
-    for(int i=0;i<menu_state->dir->len;i++)
-      if(!strcmp(menu_state->dir->files[i].name, ".."))
-	entry = &(menu_state->dir->files[i]);
-
-    // if there was one, go up. Else quit the file selector
-    if(entry) menu_fileselector_select(entry);
-    else      menu_pop();
+    // are we in fileselector?
+    if(menu_state->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
+      // search for ".." in current dir
+      sdc_dir_entry_t *entry = NULL;
+      for(int i=0;i<menu_state->dir->len;i++)
+	if(!strcmp(menu_state->dir->files[i].name, ".."))
+	  entry = &(menu_state->dir->files[i]);
+      
+      // if there was one, go up. Else quit the file selector
+      if(entry) menu_fileselector_select(entry);
+      else      menu_pop();
+    } else
+      menu_pop();
   }
 }
 
