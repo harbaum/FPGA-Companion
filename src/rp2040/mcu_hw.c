@@ -20,6 +20,7 @@
 #include "../spi.h"
 #include "../sysctrl.h"
 #include "../at_wifi.h"
+#include "../inifile.h"
 
 #include "../mcu_hw.h"
 
@@ -497,11 +498,21 @@ static void mcu_hw_wifi_init(void) {
   debugf("STA mode enabled");
 
   cyw43_wifi_pm(&cyw43_state, CYW43_PERFORMANCE_PM);
-  
-  TimerHandle_t led_timer_handle =
-    xTimerCreate("LED timer (W)", pdMS_TO_TICKS(200), pdTRUE,
-		 NULL, led_timer_w);
-  xTimerStart(led_timer_handle, 0);
+
+  switch(inifile_option_get(INIFILE_OPTION_LED)) {
+  case 0: { // blink
+    TimerHandle_t led_timer_handle =
+      xTimerCreate("LED timer (W)", pdMS_TO_TICKS(200), pdTRUE,
+		   NULL, led_timer_w);
+    xTimerStart(led_timer_handle, 0);
+  } break;
+  case 1:  // on
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+    break;
+  case 2:  // off
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+    break;    
+  }
 }
 
 static const char *auth_mode_str(int authmode) {
@@ -766,9 +777,11 @@ static void wifi_task(__attribute__((unused)) void *parms) {
 #endif
 
 #ifdef WS2812_PIN
+#define WS2812_COLOR 0x40000000  // GRBX: 25% green
+
 static void ws_led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
   static char state = 0;
-  pio_sm_put_blocking(pio0, 0, state?0x40000000:0x00000000);  // GRBX
+  pio_sm_put_blocking(pio0, 0, state?WS2812_COLOR:0);
   state = !state;
 }
 #endif
@@ -832,9 +845,19 @@ void mcu_hw_init(void) {
   uint offset = pio_add_program(pio0, &ws2812_program);  
   ws2812_program_init(pio0, 0, offset, WS2812_PIN, 800000, 0);
 
-  TimerHandle_t led_timer_handle =
-    xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, ws_led_timer);
-  xTimerStart(led_timer_handle, 0);
+  switch(inifile_option_get(INIFILE_OPTION_LED)) {
+  case 0: { // blink
+    TimerHandle_t led_timer_handle =
+      xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, ws_led_timer);
+    xTimerStart(led_timer_handle, 0);
+  } break;
+  case 1:  // on
+    pio_sm_put_blocking(pio0, 0, WS2812_COLOR);
+    break;
+  case 2:  // off
+    pio_sm_put_blocking(pio0, 0, 0);
+    break;    
+  }
 #endif
   
 #ifndef WAVESHARE_RP2040_ZERO
@@ -848,9 +871,19 @@ void mcu_hw_init(void) {
     gpio_set_dir(PICO_DEFAULT_LED_PIN, 1);
     gpio_put(PICO_DEFAULT_LED_PIN, !PICO_DEFAULT_LED_PIN_INVERTED);
 
-    TimerHandle_t led_timer_handle =
-      xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, led_timer);
-    xTimerStart(led_timer_handle, 0);
+    switch(inifile_option_get(INIFILE_OPTION_LED)) {
+    case 0: { // blink
+      TimerHandle_t led_timer_handle =
+	xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, led_timer);
+      xTimerStart(led_timer_handle, 0);
+    } break;
+    case 1:  // on
+      gpio_set_mask( 1u << PICO_DEFAULT_LED_PIN );      
+      break;
+    case 2:  // off
+      gpio_clr_mask( 1u << PICO_DEFAULT_LED_PIN );      
+      break;    
+    }
   } else
     xTaskCreate(wifi_task, (char *)"wifi_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);  
 #endif
