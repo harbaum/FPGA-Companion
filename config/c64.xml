@@ -205,6 +205,11 @@
  <listentry label="External" value="1"/>
  <listentry label="reserved" value="2"/>
       </list>
+      <list label="Key modifier:" id="$" default="0">
+ <listentry label="L+R Shift" value="0"/>
+ <listentry label="L Shift" value="1"/>
+ <listentry label="R Shift" value="2"/>
+      </list>
  <button label="C1541 Reset" action="c1541_reset_hide"/>
  <button label="Cold Boot" action="cold_reset_hide"/>
     </menu>
