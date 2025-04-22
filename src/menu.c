@@ -2,7 +2,7 @@
   menu.c - MiSTeryNano menu based in u8g2
 
   This version includes the old static MiSTeryNano type of menu
-  as we as the new config driven one.
+  as well as the new config driven one.
 
 */
   
@@ -581,7 +581,6 @@ static void menu_fileselector(int event) {
     for(int i=0;i<((dir->len<4)?dir->len:4);i++)
       menu_fs_draw_entry(i, &(dir->files[i+menu.offset]));
   } else if(event == FSEL_SELECT) {
-
     if(!menu.entry)
       menu_goto_form(parent, 1);
     else {
@@ -847,36 +846,6 @@ static void menu_push(void) {
   }
 }
 
-// a menu has been closed (which sure wasn't the root menu as that
-// cannot be close). So remove the lowest state stack entry and move
-// all other entries in step down
-static void menu_pop(void) {
-  // this should never happen ...
-  if(!menu_state) return;
-
-  // neither should this as we never really close the
-  // root menu
-  if(menu_state->menu == cfg->menu) {
-    free(menu_state);
-    menu_state = NULL;
-    return;
-  }
-    
-  // count number of entries
-  int i=1; while(menu_state[i-1].menu != cfg->menu) i++;
-  menu_debugf("pop stack depth %d", i);
-
-  if(i>10) exit(0);
-  
-  // move all existing entries down one
-  for(int j=0;j<i-1;j++) {
-    debugf("move state %d to %d", j+1, j);
-    menu_state[j] = menu_state[j+1];
-  }  
-
-  menu_state = reallocarray(menu_state, i-1, sizeof(menu_state_t));
-}
-
 static int menu_count_entries(void) {
   int entries = 0;
 
@@ -1022,7 +991,7 @@ static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) 
   if(entry->type == CONFIG_MENU_ENTRY_MENU)
     u8g2_DrawXBM(&u8g2, hl_w-8, ypos-8, 8, 8, icn_right_bits);
   if(entry->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
-    // icon depends if floppy is inserted xyz
+    // icon depends if floppy is inserted
     u8g2_DrawXBM(&u8g2, hl_w-MENU_ENTRY_BASE, ypos-8, 8, 8,
 	 sdc_get_image_name(entry->fsel->index)?icn_floppy_bits:icn_empty_bits);
   }
@@ -1167,13 +1136,43 @@ static void menu_file_selector_open(config_menu_entry_t *entry) {
 	}
       }
     }
+  }  
+}
+
+// all other entries in step down
+static void menu_pop(void) {
+  // this should never happen ...
+  if(!menu_state) return;
+
+  // neither should this as we never really close the
+  // root menu
+  if(menu_state->menu == cfg->menu) {
+    free(menu_state);
+    menu_state = NULL;
+    return;
   }
+    
+  // count number of entries
+  int i=1; while(menu_state[i-1].menu != cfg->menu) i++;
+  menu_debugf("pop stack depth %d", i);
+
+  if(i>10) exit(0);
   
+  // move all existing entries down one
+  for(int j=0;j<i-1;j++) {
+    debugf("move state %d to %d", j+1, j);
+    menu_state[j] = menu_state[j+1];
+  }  
+
+  menu_state = reallocarray(menu_state, i-1, sizeof(menu_state_t));
 }
 
 static void menu_fileselector_select(sdc_dir_entry_t *entry) {
   int drive = menu_state->fsel->index;
   debugf("drive %d, file selected '%s'", drive, entry->name);
+    
+  // stop any scroll timer that might be running
+  menu_timer_enable(false);
     
   if(entry->is_dir) {
     if(entry->name[0] == '/') {
@@ -1223,6 +1222,32 @@ static void menu_fileselector_select(sdc_dir_entry_t *entry) {
   }
 }
 
+// user has pressed esc to go back one level
+static void menu_back(void) {
+  // stop doing the scroll timer
+  menu_timer_enable(false);
+
+  // are we in the root menu?
+  if(menu_state->menu == cfg->menu)
+    osd_enable(OSD_INVISIBLE);
+  else {
+    // are we in fileselector?
+    if(menu_state->type == CONFIG_MENU_ENTRY_FILESELECTOR) {
+      // search for ".." in current dir
+      sdc_dir_entry_t *entry = NULL;
+      for(int i=0;i<menu_state->dir->len;i++)
+	if(!strcmp(menu_state->dir->files[i].name, ".."))
+	  entry = &(menu_state->dir->files[i]);
+      
+      // if there was one, go up. Else quit the file selector
+      if(entry) menu_fileselector_select(entry);
+      else      menu_pop();
+    } else
+      menu_pop();
+  }
+}
+
+// user has selected a menu entry
 static void menu_select(void) {
   // if the title was selected, then goto parent form
   if(menu_state->selected == 0) {
@@ -1274,6 +1299,32 @@ static void menu_select(void) {
   }
 }
 
+// timer implementing key repeat
+static TimerHandle_t menu_key_repeat_timer = NULL;  
+static int menu_key_last_event = -1;
+
+static void menu_key_repeat(__attribute__((unused)) TimerHandle_t arg) { 
+  if(menu_key_last_event >= 0) {
+  
+    if(menu_key_last_event == MENU_EVENT_UP)     menu_entry_go(-1);
+    if(menu_key_last_event == MENU_EVENT_DOWN)   menu_entry_go( 1);
+
+    if(menu_key_last_event == MENU_EVENT_PGUP)   menu_entry_go(-4);
+    if(menu_key_last_event == MENU_EVENT_PGDOWN) menu_entry_go( 4);
+
+    if(!cfg) menu_draw_form(menu.forms[menu.form]);
+    else     menu_draw();
+  
+    xTimerChangePeriod( menu_key_repeat_timer, pdMS_TO_TICKS(100), 0);
+    xTimerStart( menu_key_repeat_timer, 0 );
+  }
+}
+  
+void menu_stop_repeat(void) {
+  xTimerStop(menu_key_repeat_timer, 0);
+  menu_key_last_event = -1;
+}
+
 void menu_do(int event) {
   // -1 is a timer event used to scroll the current file name if it's to long
   // for the OSD
@@ -1293,9 +1344,32 @@ void menu_do(int event) {
   menu_debugf("do %d", event);
   
   if(event)  {
-    if(event == MENU_EVENT_SHOW)   osd_enable(OSD_VISIBLE);
-    if(event == MENU_EVENT_HIDE)   osd_enable(OSD_INVISIBLE);
+    if(event == MENU_EVENT_SHOW)
+      osd_enable(OSD_VISIBLE);
+      
+    if(event == MENU_EVENT_HIDE) {
+      menu_timer_enable(false);
+      osd_enable(OSD_INVISIBLE);
+      return;  // return now to prevent OSD from being drawn, again
+    }
 
+    // a key release event just stops any repeat timer
+    if(event == MENU_EVENT_KEY_RELEASE) {
+      menu_stop_repeat();
+      return;
+    }
+
+    // UP/DOWN PGUP and PGDOWN have a repeat
+    if(event == MENU_EVENT_UP || event == MENU_EVENT_DOWN ||
+       event == MENU_EVENT_PGUP || event == MENU_EVENT_PGDOWN) {
+      
+      if(menu_key_repeat_timer) {
+	menu_key_last_event = event;
+	xTimerChangePeriod( menu_key_repeat_timer, pdMS_TO_TICKS(500), 0);
+	xTimerStart( menu_key_repeat_timer, 0 );
+      }
+    }
+    
     if(!cfg) {    
       if(event == MENU_EVENT_UP)     menu_legacy_entry_go(-1);
       if(event == MENU_EVENT_DOWN)   menu_legacy_entry_go( 1);
@@ -1312,6 +1386,7 @@ void menu_do(int event) {
       if(event == MENU_EVENT_PGDOWN) menu_entry_go( 4);
 
       if(event == MENU_EVENT_SELECT) menu_select();
+      if(event == MENU_EVENT_BACK)   menu_back();
     }
   }
   if(!cfg) menu_draw_form(menu.forms[menu.form]);
@@ -1406,6 +1481,10 @@ void menu_init(void) {
 
     // ready to run core
     sys_run_action_by_name("ready");
+
+    // create a one shot timer for key repeat
+    menu_key_repeat_timer = xTimerCreate( "Key repeat timer", pdMS_TO_TICKS(500), pdFALSE,
+					  NULL, menu_key_repeat);
   }
     
   // switch MCU controlled leds off
@@ -1413,7 +1492,7 @@ void menu_init(void) {
     
   // create a 25 Hz timer that frequently wakes the OSD thread
   // allowing for animations
-  menu_timer_handle = xTimerCreate("Menu timer", pdMS_TO_TICKS(40), pdTRUE,
+  menu_timer_handle = xTimerCreate("Menu scroll timer", pdMS_TO_TICKS(40), pdTRUE,
 				   NULL, menu_timer);
   
   // message queue from USB to OSD

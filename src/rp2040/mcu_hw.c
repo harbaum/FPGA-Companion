@@ -20,6 +20,7 @@
 #include "../spi.h"
 #include "../sysctrl.h"
 #include "../at_wifi.h"
+#include "../inifile.h"
 
 #include "../mcu_hw.h"
 
@@ -466,7 +467,18 @@ static bool is_pico_w = false;
 
 static void led_timer_w(__attribute__((unused)) TimerHandle_t pxTimer) {
   static char state = 0;
-  cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, state & 1);
+  switch(inifile_option_get(INIFILE_OPTION_LED)) {
+  case 0:    
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, state & 1);
+    break;
+  case 1:    
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+    break;
+  case 2:    
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+    break;
+  }
+    
   state = !state;
 }
 
@@ -497,7 +509,7 @@ static void mcu_hw_wifi_init(void) {
   debugf("STA mode enabled");
 
   cyw43_wifi_pm(&cyw43_state, CYW43_PERFORMANCE_PM);
-  
+
   TimerHandle_t led_timer_handle =
     xTimerCreate("LED timer (W)", pdMS_TO_TICKS(200), pdTRUE,
 		 NULL, led_timer_w);
@@ -732,7 +744,17 @@ bool mcu_hw_tcp_data(unsigned char byte) {
 #endif
 
 static void led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
-  gpio_xor_mask( 1u << PICO_DEFAULT_LED_PIN );
+  switch(inifile_option_get(INIFILE_OPTION_LED)) {
+  case 0:    
+    gpio_xor_mask( 1u << PICO_DEFAULT_LED_PIN );
+    break;
+  case 1:    
+    gpio_set_mask( 1u << PICO_DEFAULT_LED_PIN );
+    break;
+  case 2:    
+    gpio_clr_mask( 1u << PICO_DEFAULT_LED_PIN );
+    break;
+  }
 }
 #endif
 
@@ -766,9 +788,21 @@ static void wifi_task(__attribute__((unused)) void *parms) {
 #endif
 
 #ifdef WS2812_PIN
+#define WS2812_COLOR 0x40000000  // GRBX: 25% green
+
 static void ws_led_timer(__attribute__((unused)) TimerHandle_t pxTimer) {
   static char state = 0;
-  pio_sm_put_blocking(pio0, 0, state?0x40000000:0x00000000);  // GRBX
+  switch(inifile_option_get(INIFILE_OPTION_LED)) {
+  case 0:    
+    pio_sm_put_blocking(pio0, 0, state?WS2812_COLOR:0);
+    break;
+  case 1:    
+    pio_sm_put_blocking(pio0, 0, WS2812_COLOR);
+    break;
+  case 2:    
+    pio_sm_put_blocking(pio0, 0, 0);
+    break;
+  }    
   state = !state;
 }
 #endif

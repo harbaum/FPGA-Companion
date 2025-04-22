@@ -25,7 +25,28 @@ static const char *settings_file[] = {
 static int iswhite(char c) {
   return c == ' ' || c == '\r' || c == '\n' || c == '\t';
 }
-  
+
+static const struct option_S { char *name; char *info; int index; } option_ids[] = {
+  {"hotkey", "; HID key code of OSD/menu hotkey\n",  INIFILE_OPTION_HOTKEY },
+  {"led",    "; led state (0=blink, 1=on, 2=off)\n", INIFILE_OPTION_LED },
+  {NULL,     NULL,                                   -1 }
+};
+
+static int options[2] = { 0x45, 0 };  // default options: hotkey=F12, led=blink
+static void inifile_parse_option(char *id, char *value) {
+  for(const struct option_S *oid = option_ids;oid->name;oid++) {
+    if(!strcasecmp(oid->name, id)) {
+      options[oid->index] = atoi(value);
+      ini_debugf("option %s: %d", id, options[oid->index]);
+    }
+  }
+}
+
+int inifile_option_get(int id) {
+  if((id < 0) || (id > 1)) return -1;
+  return options[id];
+}
+
 int inifile_read(char *name) {
   if(!core_id && !name) {
     ini_debugf("Unable to load core specific setting as no core has been identified");
@@ -40,7 +61,7 @@ int inifile_read(char *name) {
     strcat(filename, name);
   }
   
-  ini_debugf("Reading settings from '%s'", settings_file[core_id]);
+  ini_debugf("Reading settings from '%s'", filename);
 
   sdc_lock();  // get exclusive access to the file system
 
@@ -81,7 +102,7 @@ int inifile_read(char *name) {
 	}
       }
 
-      // check for variables
+      // check for variables 
       if(strncasecmp(buffer, "var ", 4) == 0) {
 	
 	// --- parse 'var x=0` style lines ---
@@ -91,7 +112,7 @@ int inifile_read(char *name) {
 	while(*p && iswhite(*p)) p++;
 	if(*p) {	  
 	  char id = *p++;
-	    // skip until '='
+	  // skip until '='
 	  while(*p && *p != '=') p++;
 	  p++;  // skip =
 	  if(*p) {
@@ -107,11 +128,39 @@ int inifile_read(char *name) {
 	  }
 	}
       }
+
+      // check for firmware options
+      if(strncasecmp(buffer, "option ", 7) == 0) {
+	// skip "option"
+	char *p = buffer+7;
+	// skip to first char
+	while(*p && iswhite(*p)) p++;
+	if(*p) {	  
+	  char *id = p;
+	  // skip to end of if
+	  while(*p && !iswhite(*p) && *p != '=') p++;
+	  if(p && *p == '=') {
+	    *p++ = '\0'; // terminate id (overwrites the '=')
+	  } else {
+	    *p++ = '\0'; // terminate id
+	    // skip until '='
+	    while(*p && *p != '=') p++;
+	    p++;  // skip =
+	  }
+	    
+	  if(*p) {
+	    // skip all whites
+	    while(*p && iswhite(*p)) p++;
+	    if(*p)
+	      inifile_parse_option(id, p);
+	  }
+	}
+      }      
     }
     f_close(&fil);
   } else {
-    if(name) free(filename);
     ini_debugf("Error opening file %s", filename);
+    if(name) free(filename);
     sdc_unlock();
     return -1;
   }
@@ -157,6 +206,15 @@ void inifile_write(char *name) {
       }
     }
 
+    // write options
+    f_puts("\n; firmware options\n", &file);
+    for(const struct option_S *oid = option_ids;oid->name;oid++) {
+      char str[32];
+      f_puts(oid->info, &file);
+      sprintf(str, "option %s=%d\n", oid->name, options[oid->index]);
+      f_puts(str, &file);
+    }
+    
     // write image file names
     f_puts("\n; image files\n", &file);
 
