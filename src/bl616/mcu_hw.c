@@ -36,6 +36,9 @@ extern uint32_t __HeapLimit;
 #include "bl_fw_api.h"        // old SDK 2.0, buggy and WIFI not working
 #else
 #include "export/bl_fw_api.h" // SDK 2.0.1 WIFI working fine
+#undef __INLINE
+#undef __PACKED
+#include <fhost.h>
 #endif
 #include "wifi_mgmr_ext.h"
 #include "wifi_mgmr.h"
@@ -53,8 +56,6 @@ extern uint32_t __HeapLimit;
 #include "bflb_irq.h"
 #include "lwip/dns.h"
 #include "../at_wifi.h"
-#include "bflb_mtd.h"
-#include "easyflash.h"
 
 static struct bflb_device_s *gpio;
 unsigned int petsc2;
@@ -755,11 +756,6 @@ static void mn_board_init(void) {
 
 void mcu_hw_init(void) {
   mn_board_init();
-  bflb_mtd_init();
-
-//#if defined (CONFIG_EASYFLASH4)
-//  easyflash_init();
-//#endif
 
   gpio = bflb_device_get_by_name("gpio");
 
@@ -810,7 +806,7 @@ static int wifi_state = WIFI_STATE_UNKNOWN;
 static char *wifi_ssid = NULL;
 static char *wifi_key = NULL;
 static int s_retry_num = 0;
-static wifi_conf_t conf = { .country_code = "DE" };
+static wifi_conf_t conf = { .country_code = "CN" }; // "CN","US","JP","EU"
 static QueueHandle_t wifi_event_queue;
 
 void wifi_event_handler(uint32_t code) {
