@@ -18,12 +18,26 @@ Download the Bouffalo toolchain:
 git clone https://github.com/bouffalolab/toolchain_gcc_t-head_linux.git
 ```
 
-And the Bouffalo SDK:  
+and the Bouffalo SDK:  
 
-Install Bouffalo SDK fork with latest CherryUSB stack V1.43.  
+Install Bouffalo SDK 2.0.0 fork with latest CherryUSB stack V1.43 included (**no WIFI function**).  
 
 ```bash
 git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
+```
+
+For a full **functional WIFI** SDK 2.0.1 and a CherryUSB patch need to be installed.  
+No fork can be provided and an update need to be done on your own.
+
+```bash
+# In case of a previous install remove it by 
+rm -rf bouffalo_sdk
+git clone --recurse-submodules https://github.com/bouffalolab/bouffalo_sdk.git
+git fetch origin 0444691f1299ba846324effb347ac083e803eaee  
+git checkout 0444691f1299ba846324effb347ac083e803eaee 
+# message shows something like: Release version 2.0.1 + 2 
+# copy CherryUSB update into the repo from https://github.com/harbaum/bouffalo_sdk/releases
+git apply cherryusb143.patch``
 ```
 
 Compile the firmware:
