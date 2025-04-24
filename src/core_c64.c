@@ -52,6 +52,7 @@ static const char system_form_c64[] =
   "L,GeoRAM:,Off|On,#;"
   "L,Tape Sound:,Off|On,I;"
 	"L,RS232 port:,Tang USB-C|External|reserved,*;"
+	"L,Key modifier:,L+R Shift|L Shift|R Shift,$;"
   "B,C1541 Reset,Z;"
   "B,Cold Boot,B;"; 
 
@@ -107,6 +108,7 @@ menu_legacy_variable_t core_c64_variables[] = {
   { '<', { 0 }},    // default RS232 mode = standard
   { '*', { 0 }},    // default RS232 connection = Tang USB-C
   { '&', { 0 }},    // default Joystick swap = Off
+  { '$', { 0 }},    // default Key modifier = L+R
   { '\0',{ 0 }}
 };
 
