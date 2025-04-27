@@ -111,8 +111,8 @@ Additional debug output is sent via UART at 115200 bit/s
 | Pin | Signal | Description |
 |---|---|---|
 | TX | UART_TX  | Serial debug output |
-| GPIO20  | USB D+ | USB PIO host D+ |
-| GPIO19  | USB D- | USB PIO host D-   |
+| GPIO20  | USB D+ | USB host D+ |
+| GPIO19  | USB D- | USB host D-   |
 | GPIO14 | IRQn | SPI interrupt from FPGA |
 | GPIO13 | MISO | SPI data from FPGA |
 | GPIO12 | SCK | SPI clock to FPGA |
