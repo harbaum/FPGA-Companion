@@ -71,7 +71,6 @@ idf.py set-target esp32s3
 Then in ```esp-idf/components/fatfs/src/ffconf.h``` you need to
 manually set
 ```
-#define FF_USE_STRFUNC 1
 #define FF_FS_EXFAT    1
 ```
 
