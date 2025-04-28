@@ -48,7 +48,7 @@ necessary to remove/bridge diodes.
 Get the esp-idf as explained [here](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/linux-macos-setup.html) and install the toolchain:
 
 ```
-git clone -b v5.2.2 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v5.4.1 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s2,esp32s3
 . ./export.sh
@@ -87,6 +87,8 @@ and change a few settings:
   - Activate the ```Enable fast seek algorithm ...``` option
   - Set the ```Sector Size``` to 512
   - Set ```Long filename support``` to ```Long filename buffer in heap```
+  - Set ```Enable String functions``` to ```1: Enable without LR-CRLF conversion```
+  - Enable ```Use FATFS volume label```
 - Navigate to ```Component Config``` and then to ```Wear Leveling```
   - Set ```Wear Levelling library sector size``` to 512
 - Navigate to ```Component Config``` and then to ```FreeRTOS``` and ```Kernel```
