@@ -33,6 +33,7 @@
 #define AT_WIFI_STATE_USER_OFFLINE 2
 
 static int at_wifi_state = AT_WIFI_STATE_OFFLINE;
+static unsigned int petsc2 = 0;  // default ASC-2 mode
 
 static int at_wifi_escape_state = 0;
 static TickType_t at_wifi_escape_tick = 0;
@@ -76,7 +77,20 @@ static void port_line(char *command) {
     char *k = s;
     while(*k && *k != ',') k++;
     if(*k == ',') *k++ = '\0';
+
+    // do petsci translation if requested
+    if (petsc2 == 1) {
+      int len = strlen(s);
+      for (int i = 0; i < len; i++) {
+        s[i] = pet2asc(s[i]);
+      }
+      len = strlen(k);
+      for (int i = 0; i < len; i++) {
+        k[i] = pet2asc(k[i]);
+      }
+    }
     mcu_hw_wifi_connect(s, k);
+    
   } else if(strncasecmp(command, "atd", 3) == 0) {
     char *s = command+3;
     while(*s == ' ') s++;
@@ -84,6 +98,14 @@ static void port_line(char *command) {
     char *k = s;
     while(*k && *k != ':') k++;    // skip to port
     if(*k == ':') *k++ = '\0';
+
+    // do petsci ascii translation if requested
+    if (petsc2 == 1) {
+      int len = strlen(s);
+      for (int i = 0; i < len; i++)
+        s[i] = pet2asc(s[i]);
+    }
+    
     mcu_hw_tcp_connect(s, atoi(k));
   } else if(strncasecmp(command, "ato", 3) == 0) {
     if(at_wifi_state == AT_WIFI_STATE_USER_OFFLINE) {

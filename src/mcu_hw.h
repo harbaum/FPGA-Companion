@@ -29,6 +29,5 @@ void mcu_hw_wifi_connect(char *ssid, char *key);
 void mcu_hw_tcp_connect(char *ip, int port);
 void mcu_hw_tcp_disconnect(void);
 bool mcu_hw_tcp_data(unsigned char byte);
-extern unsigned int petsc2;
 
 #endif // MCU_HW_H

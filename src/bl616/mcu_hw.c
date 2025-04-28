@@ -58,7 +58,6 @@ extern uint32_t __HeapLimit;
 #include "../at_wifi.h"
 
 static struct bflb_device_s *gpio;
-unsigned int petsc2;
 
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
@@ -874,8 +873,6 @@ static void wifi_init(void) {
   GLB_PER_Clock_UnGate(GLB_AHB_CLOCK_IP_WIFI_PHY | GLB_AHB_CLOCK_IP_WIFI_MAC_PHY | GLB_AHB_CLOCK_IP_WIFI_PLATFORM);
   GLB_AHB_MCU_Software_Reset(GLB_AHB_MCU_SW_WIFI);
 
-  petsc2 = 0;  // default ASC-2 mode
-
   /* Enable wifi irq */
   extern void interrupt0_handler(void);
   bflb_irq_attach(WIFI_IRQn, (irq_callback)interrupt0_handler, NULL);
@@ -1004,20 +1001,9 @@ static void wifi_info()
     snprintf(str, 64, "DNS :%s \r\n", str_tmp);
     at_wifi_puts(str);
 
-  }
+}
 
 void mcu_hw_wifi_connect(char *ssid, char *key) {
-  if (petsc2 == 1) {
-    int len = strlen(ssid);
-    for (int i = 0; i < len; i++) {
-        ssid[i] = pet2asc(ssid[i]);
-    }
-    len = strlen(key);
-    for (int i = 0; i < len; i++) {
-        key[i] = pet2asc(key[i]);
-    }
-  }
-
   debugf("WiFI: connect to %s/%s", ssid, key);
   
   at_wifi_puts("WiFI: Connecting...");
@@ -1142,12 +1128,6 @@ void mcu_hw_tcp_connect(char *host, int port) {
   static int lport;
   static ip_addr_t address;
 
-  if (petsc2 == 1) {
-    int len = strlen(host);
-    for (int i = 0; i < len; i++) {
-        host[i] = pet2asc(host[i]);
-    }
-  }
   char str[64];
   snprintf(str, 64, "\r\nconnecting to host: %s port: %d \r\n", host, port);
   at_wifi_puts(str);
