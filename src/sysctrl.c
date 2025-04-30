@@ -258,6 +258,18 @@ static void sys_handle_event(bool ignore_coldboot) {
     }
   }
   
+  if(irq_src & 4) {
+    // read the button state. This will also re-enable
+    // button interrupts. buttons[0] usually is
+    // the reset button, buttons[1] is unused by
+    // the core
+    unsigned char buttons = sys_get_buttons();
+    sys_debugf("Buttons: %02x", buttons);
+
+    if(buttons & 2)
+      menu_notify(osd_is_visible()?MENU_EVENT_HIDE:MENU_EVENT_SHOW);    
+  }
+  
   // no irq source given at all means coldboot of a very old core.
   // TODO: That does not work as intended and triggers with port
   // IO on later cores. Disabled for now ...
