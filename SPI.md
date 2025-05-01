@@ -134,9 +134,11 @@ The ```SPI_SYS_RGB``` command can be used to send a 24 bit (three bytes)
 RGB (red/green/blue) value into the core which it can e.g. use to drive
 the on-board ws2812 led.
 
-The ```SPI_SYS_BTN``` command will return the state of the two S0 and S1
-buttons on the Tang Nano 20k. This can e.g. be used to control the MCU
-via those buttons.
+The ```SPI_SYS_BTN``` command will return the state of the two S0 and
+S1 buttons on the Tang Nano 20k. This can e.g. be used to control the
+MCU via those buttons. Bit 0 typically reports the reset button and
+bit 1 reports a user button if preset which may e.g. used to open the
+on-sreen-display.
 
 The ```SPI_SYS_SET``` command has two data bytes. The first byte is
 the ASCII ID's of a variable to be set and the second byte is a 8 bit
@@ -157,7 +159,9 @@ byte. Currently supported are bit 0 which indicates a FPGA cold boot
 detection and bit 1 which indicates the port data is available. This
 is currently being used whenever data has been received via the "AT
 Wifi" emulation which allows to simulate a RS232 port over TCP/Telnet
-on MCUs that support WiFi.
+on MCUs that support WiFi. But 2 is set if a FPGA button change has
+been detected which could then be read (and acknowledged) using the
+```SPI_SYS_BTN``` command.
 
 The ```SPI_SYS_PORT``` command handles port redirection for RS232
 implementation or the like. The first payload bytes specifies a
