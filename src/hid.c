@@ -37,56 +37,6 @@ static void kbd_tx(uint8_t byte) {
   mcu_hw_spi_end();
 }
 
-// the c64 core can use the numerical pad on the keyboard to
-// emulate a joystick
-static void kbd_num2joy(char state, unsigned char code) {
-  static unsigned char kbd_joy_state = 0;
-  static unsigned char kbd_joy_state_last = 0;
-  
-  // mapping:
-  // keycode 5a = KP 2 = down
-  // keycode 5c = KP 4 = left
-  // keycode 5e = KP 6 = right
-  // keycode 60 = KP 8 = up
-  // keycode 62 = KP 0 = fire
-  // keycode 63 = KP . and delete = 2nd trigger button
-  // keycode 44 = F11 = Restore Key
-  // keycode 4b = Page Up = Tape Play Key
-  
-  if(state == 0)
-    // start parsing a new set of keys
-    kbd_joy_state = 0;
-  else if(state == 1) {
-    // collect key/btn states
-    if(code == 0x5e) kbd_joy_state |= 0x01;
-    if(code == 0x5c) kbd_joy_state |= 0x02;
-    if(code == 0x5a) kbd_joy_state |= 0x04;
-    if(code == 0x60) kbd_joy_state |= 0x08;
-    if(code == 0x62) kbd_joy_state |= 0x10;
-    if(code == 0x63) kbd_joy_state |= 0x20;
-    if(code == 0x44) kbd_joy_state |= 0x40;
-    if(code == 0x4b) kbd_joy_state |= 0x80;
-  } else if(state == 2) {
-    // submit if state has changed
-    if(kbd_joy_state != kbd_joy_state_last) {
-      
-      usb_debugf("KP Joy: %02x\r\n", kbd_joy_state);
-  
-      mcu_hw_spi_begin();
-      mcu_hw_spi_tx_u08(SPI_TARGET_HID);
-      mcu_hw_spi_tx_u08(SPI_HID_JOYSTICK);
-      mcu_hw_spi_tx_u08(0x80);  // report this as joystick 0x80 as js0-x are USB joysticks
-      mcu_hw_spi_tx_u08(kbd_joy_state);
-      mcu_hw_spi_tx_u08(0);  // analog X
-      mcu_hw_spi_tx_u08(0);  // analog Y
-      mcu_hw_spi_tx_u08(0);  // extra buttons
-      mcu_hw_spi_end();
-      
-      kbd_joy_state_last = kbd_joy_state;
-    }
-  }
-}
-  
 void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kbd_state_S *state,
 	       const unsigned char *buffer, int nbytes) {
   // we expect boot mode packets which are exactly 8 bytes long
@@ -106,13 +56,8 @@ void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kb
     }
   } 
   
-  // prepare for parsing numpad joystick
-  kbd_num2joy(0, 0);
   // check if regular keys have changed
   for(int i=0;i<6;i++) {
-    // C64 uses some keys for joystick emulation
-    kbd_num2joy(1, buffer[2+i]);
-    
     if(buffer[2+i] != state->last_report[2+i]) {
       // key released?
       if(state->last_report[2+i]) {
@@ -161,9 +106,6 @@ void kbd_parse(__attribute__((unused)) const hid_report_t *report, struct hid_kb
     }
   }
   memcpy(state->last_report, buffer, 8);
-
-  // check if numpad joystick has changed state and send message if so
-  kbd_num2joy(2, 0);
 }
 
 // collect bits from byte stream and assemble them into a signed word
