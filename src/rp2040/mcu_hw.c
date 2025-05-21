@@ -49,12 +49,6 @@
 #endif
 #endif
 
-#ifdef ENABLE_WIFI
-#warning "WiFi support enabled"
-#else
-#warning "WiFi support disabled"
-#endif
-
 // the regular pi pico uses spi0 by default
 #define SPI_RX_PIN   PICO_DEFAULT_SPI_RX_PIN
 #define SPI_SCK_PIN  PICO_DEFAULT_SPI_SCK_PIN
@@ -71,6 +65,12 @@
 #define LED_KEYBOARD_PIN 5
 #define LED_JOYSTICK_PIN 6
 
+#endif
+
+#ifdef ENABLE_WIFI
+#warning "WiFi support enabled"
+#else
+#warning "WiFi support disabled"
 #endif
 
 #ifdef WS2812_PIN
