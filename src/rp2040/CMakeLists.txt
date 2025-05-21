@@ -10,6 +10,8 @@ set(PROJECT fpga_companion)
 
 option(PICO2 "Build for Pico2 and Pico2-W" OFF) # Regular Pico-W by default
 
+option(SH20KLITE "Build for MiSTeryShield20k Lite" OFF)
+
 # This will also work for the regular Pico. The
 # firmware detects it and acts accordingly
 if(PICO2)
@@ -73,6 +75,10 @@ target_compile_definitions(${PROJECT} PRIVATE
         PIO_USB_DP_PIN_DEFAULT=2
         )
 	
+if(SH20KLITE)
+  add_compile_definitions(${PROJECT} PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64 SH20KLITE=1)
+endif(SH20KLITE)
+	
 option(WS2040_ZERO "Build for Waveshare RP2040-Zero" OFF) # Regular Pico by default
 if(WS2040_ZERO)
         add_compile_definitions(${PROJECT} PRIVATE WAVESHARE_RP2040_ZERO=1)
@@ -81,7 +87,11 @@ else(WS2040_ZERO)
 	if(PICO2)
         add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico2 or Pico2-W.")
 	else(PICO2)
-        add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico or Pico-W.")
+		if(SH20KLITE)
+			add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for MiSTeryShield20k-Lite.")
+		else(SH20KLITE)
+		        add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Firmware has been built for Raspberry Pi Pico or Pico-W.")
+		endif(SH20KLITE)
 	endif(PICO2)
 endif(WS2040_ZERO)
 

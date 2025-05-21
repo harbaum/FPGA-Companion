@@ -39,8 +39,20 @@
 #else
 #ifdef PICO2
 #warning "Building for Pi Pico2 and Pico2(W)"
+#define ENABLE_WIFI
+#else
+#ifdef SH20KLITE
+#warning "Building for MiSTeryShield20K-Lite"
 #else
 #warning "Building for Pi Pico and Pico(W)"
+#define ENABLE_WIFI
+#endif
+#endif
+
+#ifdef ENABLE_WIFI
+#warning "WiFi support enabled"
+#else
+#warning "WiFi support disabled"
 #endif
 
 // the regular pi pico uses spi0 by default
@@ -455,7 +467,7 @@ void mcu_hw_reset(void) {
 /* ======                              WiFi                           ====== */
 /* ========================================================================= */
 
-#ifdef WAVESHARE_RP2040_ZERO
+#ifndef ENABLE_WIFI
 void mcu_hw_wifi_scan(void) { }
 void mcu_hw_wifi_connect(__attribute__((unused)) char *ssid, __attribute__((unused)) char *key) { }
 void mcu_hw_tcp_connect(__attribute__((unused)) char *host, __attribute__((unused)) int port) { }
@@ -772,7 +784,7 @@ void mcu_hw_main_loop(void) {
   for( ;; );
 }
 
-#ifndef WAVESHARE_RP2040_ZERO
+#ifdef ENABLE_WIFI
 // the adc is used to determine the Pico type (W or not)
 #include "hardware/adc.h"
 
@@ -871,13 +883,16 @@ void mcu_hw_init(void) {
   xTimerStart(led_timer_handle, 0);
 #endif
   
-#ifndef WAVESHARE_RP2040_ZERO
+#ifdef ENABLE_WIFI
   adc_init();
   adc_gpio_init(29);
   adc_select_input(3);
   is_pico_w = adc_read() < 0x100;
 
-  if(!is_pico_w) {
+  if(!is_pico_w)
+#endif
+    {
+
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, 1);
     gpio_put(PICO_DEFAULT_LED_PIN, !PICO_DEFAULT_LED_PIN_INVERTED);
@@ -885,7 +900,9 @@ void mcu_hw_init(void) {
     TimerHandle_t led_timer_handle =
       xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, led_timer);
     xTimerStart(led_timer_handle, 0);
-  } else
+  }
+#ifdef ENABLE_WIFI
+  else
     xTaskCreate(wifi_task, (char *)"wifi_task", 2048, NULL, configMAX_PRIORITIES-10, NULL);  
 #endif
 
