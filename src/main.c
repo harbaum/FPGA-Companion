@@ -87,15 +87,20 @@ static void com_task(__attribute__((unused)) void *p ) {
 
     // finally prepare for wifi communication
     at_wifi_init();
+
+    debugf("Entering main loop");
+  
+    for(;;) {
+      mcu_hw_irq_ack();  // (re-)enable interrupt
+      ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
+      sys_handle_interrupts(sys_irq_ctrl(0xff), false);
+    }
   }
 
-  debugf("Entering main loop");
-  
-  for(;;) {
-    mcu_hw_irq_ack();  // (re-)enable interrupt
-    ulTaskNotifyTake( pdTRUE, portMAX_DELAY);    
-    sys_handle_interrupts(sys_irq_ctrl(0xff), false);
-  }
+  /* This will only be reached if the FPGA is not ready */
+  /* So loop foreever while e.g. USB is still being handled */
+  /* e.g. for debugging */
+  for(;;) vTaskDelay(pdMS_TO_TICKS(250));
 }
 
 #ifdef ESP_PLATFORM
