@@ -15,8 +15,9 @@ project](https://github.com/harbaum/MiSTeryNano). It is also
 used by the [NanoMig](https://github.com/harbaum/nanomig),
 the [NanoMac](https://github.com/harbaum/nanomac), the
 [C64Nano](https://github.com/vossstef/tang_nano_20k_c64), the
-[VIC20Nano](https://github.com/vossstef/VIC20Nano) and the
-[A2600Nano](https://github.com/vossstef/A2600Nano).
+[VIC20Nano](https://github.com/vossstef/VIC20Nano), the
+[A2600Nano](https://github.com/vossstef/A2600Nano) and the 
+[NanoApple2](https://github.com/vossstef/NanoApple2).
 
 ## Supported MCUs
 
@@ -84,3 +85,4 @@ You might also want to check out the following related projects:
   - [C64 Nano](https://github.com/vossstef/tang_nano_20k_c64) HDL implementationm of the Commodore C64 home computer
   - [VIC20 Nano](https://github.com/vossstef/VIC20Nano) HDL implementation of the Commodore VIC20 home computer
   - [A2600 Nano](https://github.com/vossstef/A2600Nano) HDL implementation of the Atari 2600 game console
+  - [NanoApple2](https://github.com/vossstef/NanoApple2) HDL implementation of the Apple IIe home computer
