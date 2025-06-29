@@ -18,7 +18,7 @@ if(PICO2)
 set(PICO_BOARD pico2_w)
 set(TARGET rp2350)
 else(PICO2)
-set(PICO_BOARD pico_w)
+set(PICO_BOARD pico_w CACHE STRING "Board type")
 set(TARGET rp2040)
 endif(PICO2)
 

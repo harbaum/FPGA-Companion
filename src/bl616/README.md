@@ -20,10 +20,8 @@ git clone https://github.com/bouffalolab/toolchain_gcc_t-head_linux.git
 
 and the Bouffalo SDK:  
 
-A working **WIFI** modem function requires to make use of SDK 2.0.1 and an additional CherryUSB V1.4.3 patch.  
+A working **WIFI** modem function requires to make use of SDK 2.0.1 and an additional CherryUSB patch.  
 No modified fork can be provided and updates need to be done on your own.  
-
-In case you don't need the WIFI modem then just cloning the https://github.com/harbaum/bouffalo_sdk.git will already do as it includes already the CherryUSB 1.4.3 stack in the ```main``` branch.
 
 ```bash
 git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
@@ -31,8 +29,7 @@ git fetch origin 0444691f1299ba846324effb347ac083e803eaee
 git checkout 0444691f1299ba846324effb347ac083e803eaee 
 # message shows something like: Release version 2.0.1 + 2 
 # copy CherryUSB update patch into the bouffalo_sdk repo from https://github.com/harbaum/bouffalo_sdk/releases
-git apply cherryusb143.patch
-rm cherryusb143.patch
+git apply cherryusb150.patch
 ```
 
 Compile the firmware:
@@ -113,11 +110,16 @@ git clone https://github.com/bouffalolab/toolchain_gcc_t-head_windows.git
 
 And the Bouffalo SDK:  
 
-Install Bouffalo SDK fork with latest CherryUSB stack V1.43.  
+Install Bouffalo SDK fork and apply CherryUSB patch.  
 
 ```shell
 cd %HOMEPATH%
 git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
+git fetch origin 0444691f1299ba846324effb347ac083e803eaee  
+git checkout 0444691f1299ba846324effb347ac083e803eaee 
+# message shows something like: Release version 2.0.1 + 2 
+# copy CherryUSB update patch into the bouffalo_sdk repo from https://github.com/harbaum/bouffalo_sdk/releases
+git apply cherryusb150.patch
 ```
 
 Set Windows SDK Environment Variable:  
@@ -170,7 +172,8 @@ make clean
 make
 ```
 
-Alternative compile option: [ninja](https://ninja-build.org). make clean and then make ninja
+Alternative build option: [ninja](https://ninja-build.org).  
+make clean and then: make ninja
 
 ### Flashing the firmware
 
