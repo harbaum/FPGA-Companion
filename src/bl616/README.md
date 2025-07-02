@@ -28,7 +28,7 @@ git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
 git fetch origin 0444691f1299ba846324effb347ac083e803eaee  
 git checkout 0444691f1299ba846324effb347ac083e803eaee 
 # message shows something like: Release version 2.0.1 + 2 
-# copy CherryUSB update patch into the bouffalo_sdk repo from https://github.com/harbaum/bouffalo_sdk/releases
+# copy CherryUSB update patch into the bouffalo_sdk folder
 git apply cherryusb150.patch
 ```
 
@@ -118,7 +118,7 @@ git clone --recurse-submodules https://github.com/harbaum/bouffalo_sdk.git
 git fetch origin 0444691f1299ba846324effb347ac083e803eaee  
 git checkout 0444691f1299ba846324effb347ac083e803eaee 
 # message shows something like: Release version 2.0.1 + 2 
-# copy CherryUSB update patch into the bouffalo_sdk repo from https://github.com/harbaum/bouffalo_sdk/releases
+# copy CherryUSB update patch into the bouffalo_sdk folder
 git apply cherryusb150.patch
 ```
 
