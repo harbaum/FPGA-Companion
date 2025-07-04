@@ -290,7 +290,6 @@ static config_menu_t *config_xml_get_menu(config_menu_t *menu, int depth) {
 
 static config_menu_entry_t *config_xml_get_last_menu_entry(config_menu_t *menu, int depth) {
   menu = config_xml_get_menu(menu, depth);
-
   config_menu_entry_t *me = menu->entries;
   while(me->type != CONFIG_MENU_ENTRY_UNKNOWN) me++;
   return me-1;
@@ -458,7 +457,7 @@ static void config_xml_new_listentry(config_list_t *list) {
 }
 
 static int config_xml_list_element(char *name) {
-  config_menu_entry_t *me = config_xml_get_last_menu_entry(cfg->menu, config_depth-3);
+  config_menu_entry_t *me = config_xml_get_last_menu_entry(cfg->menu, config_depth-4);
   if(me && me->type == CONFIG_MENU_ENTRY_LIST) {    
     if(strcasecmp(name, "listentry") == 0) {
       config_xml_new_listentry(me->list);
@@ -467,11 +466,12 @@ static int config_xml_list_element(char *name) {
     } else
       debugf("WARNING: Unexpected list element %s in state %d", name, config_element);
   }
+
   return -1;
 }
 
 static void config_xml_list_attribute(char *name, char *value) {
-  config_menu_entry_t *me = config_xml_get_last_menu_entry(cfg->menu, config_depth-2);
+  config_menu_entry_t *me = config_xml_get_last_menu_entry(cfg->menu, config_depth-3);
   if(me && me->type == CONFIG_MENU_ENTRY_LIST) {    
     if(me->list && strcasecmp(name, "label") == 0 && !me->list->label)
       me->list->label = strdup(value);      
@@ -489,7 +489,7 @@ static void config_xml_list_attribute(char *name, char *value) {
 
 static void config_xml_listentry_attribute(char *name, char *value) {
   // get corresponding list
-  config_menu_entry_t *me = config_xml_get_last_menu_entry(cfg->menu, config_depth-3);
+  config_menu_entry_t *me = config_xml_get_last_menu_entry(cfg->menu, config_depth-4);
   if(me && me->list && me->type == CONFIG_MENU_ENTRY_LIST) {    
     // get last listentry
     int cnt;
