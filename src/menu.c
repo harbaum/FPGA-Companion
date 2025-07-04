@@ -981,7 +981,13 @@ static void menu_draw_entry(config_menu_entry_t *entry, int row, bool selected) 
     // get matching variable
     int value = menu_variable_get(entry->list->id);
     char *str = menu_get_listentry(entry, value);
-    if(str) u8g2_DrawStr(&u8g2, width/2, ypos, str);
+
+    if(str) {
+      // right align entry
+      int sw = u8g2_GetStrWidth(&u8g2, str) + 1;
+      if(sw > width/2) sw = width/2;
+      u8g2_DrawStr(&u8g2, width-sw, ypos, str);
+    }
 		  
     hl_x = width/2;
     hl_w = width/2;
