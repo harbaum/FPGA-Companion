@@ -892,7 +892,7 @@ void mcu_hw_init(void) {
   if(!is_pico_w)
 #endif
     {
-
+#ifndef WAVESHARE_RP2040_ZERO
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, 1);
     gpio_put(PICO_DEFAULT_LED_PIN, !PICO_DEFAULT_LED_PIN_INVERTED);
@@ -900,6 +900,7 @@ void mcu_hw_init(void) {
     TimerHandle_t led_timer_handle =
       xTimerCreate("LED timer", pdMS_TO_TICKS(200), pdTRUE, NULL, led_timer);
     xTimerStart(led_timer_handle, 0);
+#endif
   }
 #ifdef ENABLE_WIFI
   else
