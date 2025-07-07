@@ -284,8 +284,9 @@ The SDC target supports the following commands:
 | 3 | ```SPI_SDC_MCU_READ``` | Request to read data for MCU usage |
 | 4 | ```SPI_SDC_INSERTED``` | Inform core about the selection of disk images |
 | 5 | ```SPI_SDC_MCU_WRITE``` | Request to write data on behalf of the MCU |
+| 6 | ```SPI_SDC_DIRECT``` | Inform core that image may be accessed directly |	
 
-The ```SPI_SDC_STATUS``` is used to poll the SD card status. The first
+The ```SPI_SDC_STATUS``` command is used to poll the SD card status. The first
 byte returned is a generic status byte indicating whether the card
 could be initialized and the card type (SDv1, SDv2, SDHC). Bit 1 of
 the status byte indicates whether the SD card is currenly busy reading
@@ -295,7 +296,7 @@ Atari ST core bit 0 indicates a request for floppy A: and bit 1 for
 floppy B:. The following four bytes contain the sector number the core
 wants to read.
 
-The ```SPI_SDC_CORE_RW``` requests the core to read or write a sector
+The ```SPI_SDC_CORE_RW``` command requests the core to read or write a sector
 from or to SD card and use it for it's own purposes. The command is
 followed by four bytes containing the sector number to be read or
 written. This command is usually a sent in reply to bit 0 or 1 being
@@ -328,6 +329,13 @@ SD card. The first four data bytes indicate which sector on the SD card
 is to be written. The following 512 bytes are the data to be written.
 Afterwards command will return bytes != 0 as long as the card is busy
 writing.
+
+The ```SPI_SDC_DIRECT``` command tells the core that the image
+specified by the first data byte is continous on SD card (not
+fragmented) and may be accessed by the core directly without sector
+translation by the MCU. The following four data bytes contain the LBA
+of the first sector of the selected image on SD card and may
+optionally be used by the core to directly access the SD card.
 
 ### AUDIO target
 
