@@ -31,23 +31,25 @@ void core_set_default_images(void) {
   else
 #endif
 #ifdef ENABLE_LEGACY_C64
-  if(core_id == CORE_ID_C64)
-    images = core_c64_default_images;
-  else 
+    if(core_id == CORE_ID_C64)
+      images = core_c64_default_images;
+    else 
 #endif
 #ifdef ENABLE_LEGACY_VIC20
-  if(core_id == CORE_ID_VIC20)
+    if(core_id == CORE_ID_VIC20)
       images = core_vic20_default_images;
+    else
 #endif
 #ifdef ENABLE_LEGACY_AMIGA
-  else if(core_id == CORE_ID_AMIGA)
-    images = core_amiga_default_images;
+    if(core_id == CORE_ID_AMIGA)
+      images = core_amiga_default_images;
+    else
 #endif
 #ifdef ENABLE_LEGACY_ATARI_2600
-else if(core_id == CORE_ID_ATARI_2600)
-    images = core_atari2600_default_images;
+    if(core_id == CORE_ID_ATARI_2600)
+      images = core_atari2600_default_images;
+    else
 #endif
-   else
     debugf("%s: unsupported core %d", __func__, core_id);
 
   if(images)

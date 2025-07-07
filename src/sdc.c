@@ -341,7 +341,7 @@ int sdc_handle_event(void) {
     unsigned long dsector = clst2sect(clmt_clust(&fil[drive], rsector*512)) + rsector%fs.csize;
 #endif
     
-    sdc_debugf("drive %d lba %lu = %lu", drive, rsector, dsector);
+    sdc_debugf("DRV %d: lba %lu = %lu", drive, rsector, dsector);
 
     // send sector number to core, so it can read or write the right
     // sector from/to its local sd card
@@ -365,13 +365,29 @@ int sdc_handle_event(void) {
   return 0;
 }
 
+static void sdc_image_enable_direct(char drive, unsigned long start) {
+  sdc_debugf("DRV %d: enable direct mapping @%lu", drive, start);
+  
+  sdc_spi_begin();
+  mcu_hw_spi_tx_u08(SPI_SDC_DIRECT);
+  mcu_hw_spi_tx_u08(drive);
+  
+  // send start sector
+  mcu_hw_spi_tx_u08((start >> 24) & 0xff);
+  mcu_hw_spi_tx_u08((start >> 16) & 0xff);
+  mcu_hw_spi_tx_u08((start >> 8) & 0xff);
+  mcu_hw_spi_tx_u08(start & 0xff);
+  
+  mcu_hw_spi_end();
+}
+
 static int sdc_image_inserted(char drive, unsigned long size, char *ext) {
   // report the size of the inserted image to the core. This is needed
   // to guess sector/track/side information for floppy disk images, so the
   // core can translate from floppy disk to LBA
-
-  if(size) sdc_debugf("drive %d inserted. Size = %lu, ext='%s'", drive, size, ext?ext:"<NONE>");
-  else     sdc_debugf("drive %d ejected", drive);
+  
+  if(size) sdc_debugf("DRV %d: inserted. Size = %lu, ext='%s'", drive, size, ext?ext:"<NONE>");
+  else     sdc_debugf("DRV %d: ejected", drive);
   
   sdc_spi_begin();
   mcu_hw_spi_tx_u08(SPI_SDC_INSERTED);
@@ -397,6 +413,8 @@ static int sdc_image_inserted(char drive, unsigned long size, char *ext) {
 }
 
 int sdc_image_open(int drive, char *name) {
+  unsigned long start_sector = 0;
+  
   // tell core that the "disk" has been removed
   sdc_image_inserted(drive, 0, NULL);
 
@@ -419,22 +437,22 @@ int sdc_image_open(int drive, char *name) {
   
   // close any previous image, especially free the link table
   if(fil[drive].cltbl) {
-    sdc_debugf("freeing link table");
+    sdc_debugf("DRV %d: freeing link table", drive);
     free(lktbl[drive]);
     lktbl[drive] = NULL;
     fil[drive].cltbl = NULL;
   }
   
-  sdc_debugf("Mounting %s", fname);
+  sdc_debugf("DRV %d: Mounting %s", drive, fname);
 
   if(f_open(&fil[drive], fname, FA_OPEN_EXISTING | FA_READ) != 0) {
-    sdc_debugf("file open failed");
+    sdc_debugf("DRV %d: file open failed", drive);
     sdc_unlock();
     return -1;
   } else {
-    sdc_debugf("file opened, cl=%lu(%lu)",
+    sdc_debugf("DRV %d: file opened, cl=%lu(%lu)", drive,
 	   fil[drive].obj.sclust, clst2sect(fil[drive].obj.sclust));
-    sdc_debugf("File len = %ld, spc = %d, clusters = %lu",
+    sdc_debugf("DRV %d: File len = %ld, spc = %d, clusters = %lu", drive,
 	   (unsigned long)fil[drive].obj.objsize, fs.csize,
 	   (unsigned long)fil[drive].obj.objsize / 512 / fs.csize);      
     
@@ -446,16 +464,16 @@ int sdc_image_open(int drive, char *name) {
     if(f_lseek(&fil[drive], CREATE_LINKMAP)) {
       // this isn't really a problem. But sector access will
       // be slower
-      sdc_debugf("Link table creation failed, "
-	     "required size: %lu", lktbl[drive][0]);
+      sdc_debugf("DRV %d: Short link table creation failed, "
+		 "required size: %lu", drive, lktbl[drive][0]);
 
       // re-alloc sufficient memory
       lktbl[drive] = realloc(lktbl[drive], sizeof(DWORD) * lktbl[drive][0]);
 
       // and retry link table creation
       if(f_lseek(&fil[drive], CREATE_LINKMAP)) {
-	sdc_debugf("Link table creation finally failed, "
-	       "required size: %lu", lktbl[drive][0]);
+	sdc_debugf("DRV %d: Link table creation finally failed, "
+		   "required size: %lu", drive, lktbl[drive][0]);
 	free(lktbl[drive]);
 	lktbl[drive] = NULL;
 	fil[drive].cltbl = NULL;
@@ -463,7 +481,16 @@ int sdc_image_open(int drive, char *name) {
 	sdc_unlock();
 	return -1;
       } else 
-	sdc_debugf("Link table ok");
+	sdc_debugf("DRV %d: Link table ok with %ld entries", drive, lktbl[drive][0]);
+    } else {
+      sdc_debugf("DRV %d: Short link table ok with %ld entries", drive, lktbl[drive][0]);
+
+      // A link table length of 4 means, that  there's only one entry in it. This
+      // in turn means that the file is continious. The start sector can thus be
+      // sent to the core which can then access any sector without further help
+      // by the MCU.
+      if(lktbl[drive][0] == 4 && lktbl[drive][3] == 0)
+	start_sector = clst2sect(lktbl[drive][2]);
     }
   }
 
@@ -480,6 +507,9 @@ int sdc_image_open(int drive, char *name) {
   
   // image has successfully been opened, so report image size to core
   sdc_image_inserted(drive, fil[drive].obj.objsize, ext);
+
+  // allow direct mapping if possible
+  if(start_sector) sdc_image_enable_direct(drive, start_sector);
   
   return 0;
 }
@@ -491,7 +521,7 @@ sdc_dir_t *sdc_readdir(int drive, char *name, const char *ext) {
     sdc_dir_entry_t *d1 = (sdc_dir_entry_t *)p1;
     sdc_dir_entry_t *d2 = (sdc_dir_entry_t *)p2;
 
-    // comparing directory with regular file?
+    // comparing directory with re111gular file?
     if(d1->is_dir != d2->is_dir)
       return d2->is_dir - d1->is_dir;
 
