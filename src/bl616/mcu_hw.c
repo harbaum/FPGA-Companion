@@ -59,6 +59,12 @@ extern uint32_t __HeapLimit;
 
 static struct bflb_device_s *gpio;
 
+#ifndef M0S_DOCK
+  #warning "Building for internal BL616"
+#else
+  #warning "Building for M0S DOCK BL616"
+#endif
+
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
 /* ============================================================================================= */
@@ -89,9 +95,11 @@ extern struct bflb_device_s *gpio;
 extern void shell_init_with_task(struct bflb_device_s *shell);
 
 void set_led(int pin, int on) {
+#ifdef M0S_DOCK
   // only M0S dock has those leds
   if(on) bflb_gpio_reset(gpio, pin);
   else   bflb_gpio_set(gpio, pin);
+#endif
 }
 
 static struct usb_config {
@@ -245,8 +253,10 @@ static void usbh_update(struct usb_config *usb) {
   }
 
   extern void set_led(int pin, int on);
+#ifdef M0S_DOCK
   set_led(GPIO_PIN_27, mice);
   set_led(GPIO_PIN_28, keyboards);
+#endif
 }
 
 static void xbox_parse(struct xbox_info_S *xbox) {
@@ -697,12 +707,18 @@ static void console_init() {
   struct bflb_device_s *gpio;
   
   gpio = bflb_device_get_by_name("gpio");
-  
+
+#ifdef M0S_DOCK
   // M0S Dock has debug uart on default pins 21 and 22
   bflb_gpio_uart_init(gpio, GPIO_PIN_21, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
-  
-  struct bflb_uart_config_s cfg;
+#else
+// TX TDO RX TMS
+  bflb_gpio_uart_init(gpio, GPIO_PIN_14, GPIO_UART_FUNC_UART0_TX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_16, GPIO_UART_FUNC_UART0_RX);
+#endif
+
+struct bflb_uart_config_s cfg;
   cfg.baudrate = CONSOLE_BAUDRATE;
   cfg.data_bits = UART_DATA_BITS_8;
   cfg.stop_bits = UART_STOP_BITS_1;
@@ -766,6 +782,7 @@ void mcu_hw_init(void) {
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for BL616\r\n\r\n");
 
+#ifdef M0S_DOCK
   // init on-board LEDs
   bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
   bflb_gpio_init(gpio, GPIO_PIN_28, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
@@ -776,7 +793,9 @@ void mcu_hw_init(void) {
   
   // button
   bflb_gpio_init(gpio, GPIO_PIN_2, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_0);
- 
+#else
+//  usbd_deinitialize();
+#endif
   mcu_hw_spi_init();
 
   uart0 = bflb_device_get_by_name("uart0");
