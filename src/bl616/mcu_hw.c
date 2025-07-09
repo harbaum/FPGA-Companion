@@ -548,12 +548,18 @@ void usb_host(void) {
 extern TaskHandle_t com_task_handle;
 static SemaphoreHandle_t spi_sem;
 static struct bflb_device_s *spi_dev;
-
+/*
 #define SPI_PIN_CSN   GPIO_PIN_12
 #define SPI_PIN_SCK   GPIO_PIN_13
 #define SPI_PIN_MISO  GPIO_PIN_10
 #define SPI_PIN_MOSI  GPIO_PIN_11
 #define SPI_PIN_IRQ   GPIO_PIN_14
+*/
+#define SPI_PIN_CSN   GPIO_PIN_0
+#define SPI_PIN_SCK   GPIO_PIN_1
+#define SPI_PIN_MISO  GPIO_PIN_2   // filtered on old TN20k, new 3721 ok
+#define SPI_PIN_MOSI  GPIO_PIN_3
+#define SPI_PIN_IRQ   GPIO_PIN_12  // JTAG TDI
 
 void spi_isr(uint8_t pin) {
   if (pin == SPI_PIN_IRQ) {
