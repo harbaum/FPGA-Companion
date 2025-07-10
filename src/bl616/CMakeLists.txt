@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Components
 set(CONFIG_FREERTOS 1)
 set(CONFIG_CHERRYUSB 1)
@@ -72,5 +76,5 @@ target_sources(app PRIVATE ${COMPONENT_SRCS})
 
 sdk_set_main_file(../main.c)
 
-sdk_set_linker_script(bl616_flash.ld)
 project(fpga_companion)
+#project(fpga_companion CXX)

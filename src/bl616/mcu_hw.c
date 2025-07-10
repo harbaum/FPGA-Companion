@@ -653,6 +653,7 @@ void mcu_hw_irq_ack(void) {
 extern void log_start(void);
 extern void bl_show_flashinfo(void);
 extern void bl_show_log(void);
+extern void bl_show_component_version(void);
 extern void bflb_uart_set_console(struct bflb_device_s *dev);
 
 // the M0S uses max bitrate as I use another M0S for console debug which can
@@ -713,7 +714,7 @@ static void console_init() {
   bflb_gpio_uart_init(gpio, GPIO_PIN_21, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #else
-// TX TDO RX TMS
+// TX TDO RX TMS dummy
   bflb_gpio_uart_init(gpio, GPIO_PIN_14, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_16, GPIO_UART_FUNC_UART0_RX);
 #endif
@@ -755,6 +756,8 @@ static void mn_board_init(void) {
     kmem_init((void *)&__HeapBase, heap_len);
 
     bl_show_log();
+    bl_show_component_version();
+
     if (ret != 0) {
         printf("flash init fail!!!\r\n");
     }
@@ -776,9 +779,33 @@ static void mn_board_init(void) {
 }
 
 void mcu_hw_init(void) {
-  mn_board_init();
+  //mn_board_init();
+  board_init();
 
   gpio = bflb_device_get_by_name("gpio");
+  // deinit all GPIOs
+  bflb_gpio_deinit(gpio, GPIO_PIN_0);
+  bflb_gpio_deinit(gpio, GPIO_PIN_1);
+  bflb_gpio_deinit(gpio, GPIO_PIN_2);
+  bflb_gpio_deinit(gpio, GPIO_PIN_3);
+
+  bflb_gpio_deinit(gpio, GPIO_PIN_10);
+  bflb_gpio_deinit(gpio, GPIO_PIN_11);
+  bflb_gpio_deinit(gpio, GPIO_PIN_12);
+  bflb_gpio_deinit(gpio, GPIO_PIN_13);
+  bflb_gpio_deinit(gpio, GPIO_PIN_14);
+  bflb_gpio_deinit(gpio, GPIO_PIN_15);
+  bflb_gpio_deinit(gpio, GPIO_PIN_16);
+  bflb_gpio_deinit(gpio, GPIO_PIN_17);
+
+  bflb_gpio_deinit(gpio, GPIO_PIN_20);
+  bflb_gpio_deinit(gpio, GPIO_PIN_21);
+  bflb_gpio_deinit(gpio, GPIO_PIN_22);
+
+  bflb_gpio_deinit(gpio, GPIO_PIN_27);
+  bflb_gpio_deinit(gpio, GPIO_PIN_28);
+  bflb_gpio_deinit(gpio, GPIO_PIN_29);
+  bflb_gpio_deinit(gpio, GPIO_PIN_30);
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for BL616\r\n\r\n");
 
@@ -793,15 +820,15 @@ void mcu_hw_init(void) {
   
   // button
   bflb_gpio_init(gpio, GPIO_PIN_2, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_0);
-#else
-//  usbd_deinitialize();
 #endif
   mcu_hw_spi_init();
 
   uart0 = bflb_device_get_by_name("uart0");
   shell_init_with_task(uart0);
 
+#ifdef M0S_DOCK
   wifi_init();
+#endif
   usb_host();
 
 }
