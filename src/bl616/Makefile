@@ -7,8 +7,9 @@ SDK_DEMO_PATH ?= .
 BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../../..
 
 CHIP ?= bl616
-# BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DM0S_DOCK=1"
-BOARD ?= bl616dk
+#BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DM0S_DOCK=1"
+BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DTN_20K=1"
+#BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DTC_60K=1"
 CROSS_COMPILE ?= riscv64-unknown-elf-
 
 include $(BL_SDK_BASE)/project.build
