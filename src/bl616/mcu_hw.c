@@ -572,13 +572,13 @@ static struct bflb_device_s *spi_dev;
   #define SPI_PIN_SCK   GPIO_PIN_1
   #define SPI_PIN_MISO  GPIO_PIN_2  /* filtered on old TANG_NANO20K, new 3721 ok*/
   #define SPI_PIN_MOSI  GPIO_PIN_3
-  #define SPI_PIN_IRQ   GPIO_PIN_14 /* JTAG TDO*/
+  #define SPI_PIN_IRQ   GPIO_PIN_14 /* in JTAG TDO*/
 #elif TANG_CONSOLE60K
-  #define SPI_PIN_CSN   GPIO_PIN_0 /* TMS */
-  #define SPI_PIN_SCK   GPIO_PIN_1 /* TCK */
-  #define SPI_PIN_MISO  GPIO_PIN_2 /* TDO */
-  #define SPI_PIN_MOSI  GPIO_PIN_3 /* TDI */
-  #define SPI_PIN_IRQ   GPIO_PIN_28 /* UART RX, crossed */
+  #define SPI_PIN_CSN   GPIO_PIN_0 /* out TMS */
+  #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK 4K7 PD SOM */
+  #define SPI_PIN_MISO  GPIO_PIN_2 /* in  TDO 3K3 PU Console Board */
+  #define SPI_PIN_MOSI  GPIO_PIN_3 /* out TDI */
+  #define SPI_PIN_IRQ   GPIO_PIN_28/* in  UART RX, crossed */
 #endif
 
 void spi_isr(uint8_t pin) {
