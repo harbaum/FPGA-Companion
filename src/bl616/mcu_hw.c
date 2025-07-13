@@ -59,6 +59,14 @@ extern uint32_t __HeapLimit;
 
 static struct bflb_device_s *gpio;
 
+#ifdef TANG_CONSOLE60K
+#warning "Building for TANG_CONSOLE60K internal BL616"
+#elif TANG_NANO20K
+#warning "Building for TANG_NANO20K internal BL616"
+#elif M0S_DOCK
+#warning "Building for M0S DOCK BL616"
+#endif
+
 /* ============================================================================================= */
 /* ===============                          USB                                   ============== */
 /* ============================================================================================= */
@@ -89,9 +97,11 @@ extern struct bflb_device_s *gpio;
 extern void shell_init_with_task(struct bflb_device_s *shell);
 
 void set_led(int pin, int on) {
+#ifdef M0S_DOCK
   // only M0S dock has those leds
   if(on) bflb_gpio_reset(gpio, pin);
   else   bflb_gpio_set(gpio, pin);
+#endif
 }
 
 static struct usb_config {
@@ -245,8 +255,10 @@ static void usbh_update(struct usb_config *usb) {
   }
 
   extern void set_led(int pin, int on);
+#ifdef M0S_DOCK
   set_led(GPIO_PIN_27, mice);
   set_led(GPIO_PIN_28, keyboards);
+#endif
 }
 
 static void xbox_parse(struct xbox_info_S *xbox) {
@@ -549,11 +561,25 @@ extern TaskHandle_t com_task_handle;
 static SemaphoreHandle_t spi_sem;
 static struct bflb_device_s *spi_dev;
 
-#define SPI_PIN_CSN   GPIO_PIN_12
-#define SPI_PIN_SCK   GPIO_PIN_13
-#define SPI_PIN_MISO  GPIO_PIN_10
-#define SPI_PIN_MOSI  GPIO_PIN_11
-#define SPI_PIN_IRQ   GPIO_PIN_14
+#ifdef M0S_DOCK
+  #define SPI_PIN_CSN   GPIO_PIN_12
+  #define SPI_PIN_SCK   GPIO_PIN_13
+  #define SPI_PIN_MISO  GPIO_PIN_10
+  #define SPI_PIN_MOSI  GPIO_PIN_11
+  #define SPI_PIN_IRQ   GPIO_PIN_14
+#elif TANG_NANO20K
+  #define SPI_PIN_CSN   GPIO_PIN_0
+  #define SPI_PIN_SCK   GPIO_PIN_1
+  #define SPI_PIN_MISO  GPIO_PIN_2  /* filtered on old TANG_NANO20K, new 3721 ok*/
+  #define SPI_PIN_MOSI  GPIO_PIN_3
+  #define SPI_PIN_IRQ   GPIO_PIN_14 /* in JTAG TDO*/
+#elif TANG_CONSOLE60K
+  #define SPI_PIN_CSN   GPIO_PIN_0 /* out TMS */
+  #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK 4K7 PD SOM */
+  #define SPI_PIN_MISO  GPIO_PIN_2 /* in  TDO 3K3 PU Console Board */
+  #define SPI_PIN_MOSI  GPIO_PIN_3 /* out TDI */
+  #define SPI_PIN_IRQ   GPIO_PIN_28/* in  UART RX, crossed */
+#endif
 
 void spi_isr(uint8_t pin) {
   if (pin == SPI_PIN_IRQ) {
@@ -574,14 +600,26 @@ static void mcu_hw_spi_init(void) {
   // short cables up to 32MHz
 
   /* spi miso */
-  bflb_gpio_init(gpio, SPI_PIN_MISO, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+  bflb_gpio_init(gpio, SPI_PIN_MISO, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   /* spi mosi */
-  bflb_gpio_init(gpio, SPI_PIN_MOSI, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+  bflb_gpio_init(gpio, SPI_PIN_MOSI, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   /* spi clk */
-  bflb_gpio_init(gpio, SPI_PIN_SCK, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+  bflb_gpio_init(gpio, SPI_PIN_SCK, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   /* spi cs */
-  bflb_gpio_init(gpio, SPI_PIN_CSN, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+  bflb_gpio_init(gpio, SPI_PIN_CSN, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   bflb_gpio_set(gpio, SPI_PIN_CSN);
+#ifdef TANG_CONSOLE60K
+/* USB-C OTG Power enable */
+  bflb_gpio_init(gpio, GPIO_PIN_20, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
+  bflb_gpio_set(gpio, GPIO_PIN_20);
+  /* TF Card access from FPGA */
+  bflb_gpio_init(gpio, GPIO_PIN_16, GPIO_OUTPUT | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_3);
+  bflb_gpio_reset(gpio, GPIO_PIN_16);
+  /* USB-C SBU1 */
+  bflb_gpio_init(gpio, GPIO_PIN_21, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN);
+  /* USB-C SBU2 */
+  bflb_gpio_init(gpio, GPIO_PIN_22, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN);
+#endif
 
   struct bflb_spi_config_s spi_cfg = {
     .freq = 20000000,   // 20MHz
@@ -637,6 +675,7 @@ void mcu_hw_irq_ack(void) {
 extern void log_start(void);
 extern void bl_show_flashinfo(void);
 extern void bl_show_log(void);
+extern void bl_show_component_version(void);
 extern void bflb_uart_set_console(struct bflb_device_s *dev);
 
 // the M0S uses max bitrate as I use another M0S for console debug which can
@@ -691,11 +730,21 @@ static void console_init() {
   struct bflb_device_s *gpio;
   
   gpio = bflb_device_get_by_name("gpio");
-  
-  // M0S Dock has debug uart on default pins 21 and 22
+
+#ifdef M0S_DOCK
+  /* M0S Dock has debug uart on default pins 21 and 22 */
   bflb_gpio_uart_init(gpio, GPIO_PIN_21, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
-  
+#elif TANG_NANO20K
+  /* TANG_NANO20K TX TDI RX TMS dummy allocation */
+  bflb_gpio_uart_init(gpio, GPIO_PIN_12, GPIO_UART_FUNC_UART0_TX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_16, GPIO_UART_FUNC_UART0_RX);
+#elif TANG_CONSOLE60K
+  /* TANG_CONSOLE60K dummy */
+  bflb_gpio_uart_init(gpio, GPIO_PIN_10, GPIO_UART_FUNC_UART0_TX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_RX);
+#endif
+
   struct bflb_uart_config_s cfg;
   cfg.baudrate = CONSOLE_BAUDRATE;
   cfg.data_bits = UART_DATA_BITS_8;
@@ -733,6 +782,8 @@ static void mn_board_init(void) {
     kmem_init((void *)&__HeapBase, heap_len);
 
     bl_show_log();
+    bl_show_component_version();
+
     if (ret != 0) {
         printf("flash init fail!!!\r\n");
     }
@@ -754,12 +805,40 @@ static void mn_board_init(void) {
 }
 
 void mcu_hw_init(void) {
+#ifdef M0S_DOCK
   mn_board_init();
+#else
+  board_init();
+#endif
 
   gpio = bflb_device_get_by_name("gpio");
+  // deinit all GPIOs
+  bflb_gpio_deinit(gpio, GPIO_PIN_0);
+  bflb_gpio_deinit(gpio, GPIO_PIN_1);
+  bflb_gpio_deinit(gpio, GPIO_PIN_2);
+  bflb_gpio_deinit(gpio, GPIO_PIN_3);
+
+  bflb_gpio_deinit(gpio, GPIO_PIN_10);
+  bflb_gpio_deinit(gpio, GPIO_PIN_11);
+  bflb_gpio_deinit(gpio, GPIO_PIN_12);
+  bflb_gpio_deinit(gpio, GPIO_PIN_13);
+  bflb_gpio_deinit(gpio, GPIO_PIN_14);
+  bflb_gpio_deinit(gpio, GPIO_PIN_15);
+  bflb_gpio_deinit(gpio, GPIO_PIN_16);
+  bflb_gpio_deinit(gpio, GPIO_PIN_17);
+
+  bflb_gpio_deinit(gpio, GPIO_PIN_20);
+  bflb_gpio_deinit(gpio, GPIO_PIN_21);
+  bflb_gpio_deinit(gpio, GPIO_PIN_22);
+
+  bflb_gpio_deinit(gpio, GPIO_PIN_27);
+  bflb_gpio_deinit(gpio, GPIO_PIN_28);
+  bflb_gpio_deinit(gpio, GPIO_PIN_29);
+  bflb_gpio_deinit(gpio, GPIO_PIN_30);
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for BL616\r\n\r\n");
 
+#ifdef M0S_DOCK
   // init on-board LEDs
   bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
   bflb_gpio_init(gpio, GPIO_PIN_28, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
@@ -767,16 +846,17 @@ void mcu_hw_init(void) {
   // both leds off
   bflb_gpio_set(gpio, GPIO_PIN_27);
   bflb_gpio_set(gpio, GPIO_PIN_28);
-  
-  // button
-  bflb_gpio_init(gpio, GPIO_PIN_2, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_0);
- 
+#endif
   mcu_hw_spi_init();
 
   uart0 = bflb_device_get_by_name("uart0");
   shell_init_with_task(uart0);
 
+#ifdef M0S_DOCK
   wifi_init();
+#elif TANG_CONSOLE60K
+  wifi_init();
+#endif
   usb_host();
 
 }
