@@ -30,7 +30,7 @@ limited when it comes to USB support.
 
 Currently the FPGA Companion can be used with the following MCUs:
 
- - [M0S/BL616](https://wiki.sipeed.com/hardware/en/maixzero/m0s/m0s.html), see the [build instuctions](src/bl616), and
+ - [M0S/BL616](https://wiki.sipeed.com/hardware/en/maixzero/m0s/m0s.html) or TANG onboard Bl616, see the [build instuctions](src/bl616), and
  - [Raspberry Pi Pico/RP2040](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html), see the [build instructions](src/rp2040)
  - [ESP32 S2/S3](https://www.espressif.com/en/products/socs/esp32-s2), see the [build instructions](src/esp32)
 
