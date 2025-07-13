@@ -59,10 +59,10 @@ extern uint32_t __HeapLimit;
 
 static struct bflb_device_s *gpio;
 
-#ifdef TC_60K
-#warning "Building for TC_60K internal BL616"
-#elif TN_20K
-#warning "Building for TN_20K internal BL616"
+#ifdef TANG_CONSOLE60K
+#warning "Building for TANG_CONSOLE60K internal BL616"
+#elif TANG_NANO20K
+#warning "Building for TANG_NANO20K internal BL616"
 #elif M0S_DOCK
 #warning "Building for M0S DOCK BL616"
 #endif
@@ -567,13 +567,13 @@ static struct bflb_device_s *spi_dev;
   #define SPI_PIN_MISO  GPIO_PIN_10
   #define SPI_PIN_MOSI  GPIO_PIN_11
   #define SPI_PIN_IRQ   GPIO_PIN_14
-#elif TN_20K
+#elif TANG_NANO20K
   #define SPI_PIN_CSN   GPIO_PIN_0
   #define SPI_PIN_SCK   GPIO_PIN_1
-  #define SPI_PIN_MISO  GPIO_PIN_2  /* filtered on old TN_20K, new 3721 ok*/
+  #define SPI_PIN_MISO  GPIO_PIN_2  /* filtered on old TANG_NANO20K, new 3721 ok*/
   #define SPI_PIN_MOSI  GPIO_PIN_3
   #define SPI_PIN_IRQ   GPIO_PIN_14 /* JTAG TDO*/
-#elif TC_60K
+#elif TANG_CONSOLE60K
   #define SPI_PIN_CSN   GPIO_PIN_0 /* TMS */
   #define SPI_PIN_SCK   GPIO_PIN_1 /* TCK */
   #define SPI_PIN_MISO  GPIO_PIN_2 /* TDO */
@@ -608,7 +608,7 @@ static void mcu_hw_spi_init(void) {
   /* spi cs */
   bflb_gpio_init(gpio, SPI_PIN_CSN, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   bflb_gpio_set(gpio, SPI_PIN_CSN);
-#ifdef TC_60K
+#ifdef TANG_CONSOLE60K
 /* USB-C OTG Power enable */
   bflb_gpio_init(gpio, GPIO_PIN_20, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   bflb_gpio_set(gpio, GPIO_PIN_20);
@@ -617,7 +617,7 @@ static void mcu_hw_spi_init(void) {
   bflb_gpio_reset(gpio, GPIO_PIN_16);
   /* USB-C SBU1 */
   bflb_gpio_init(gpio, GPIO_PIN_21, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN);
-  /* USB-C SBU1 */
+  /* USB-C SBU2 */
   bflb_gpio_init(gpio, GPIO_PIN_22, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN);
 #endif
 
@@ -735,12 +735,12 @@ static void console_init() {
   /* M0S Dock has debug uart on default pins 21 and 22 */
   bflb_gpio_uart_init(gpio, GPIO_PIN_21, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
-#elif TN_20K
-  /* TN_20K TX TDI RX TMS dummy allocation */
+#elif TANG_NANO20K
+  /* TANG_NANO20K TX TDI RX TMS dummy allocation */
   bflb_gpio_uart_init(gpio, GPIO_PIN_12, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_16, GPIO_UART_FUNC_UART0_RX);
-#elif TC_60K
-  /* TC_60k dummy */
+#elif TANG_CONSOLE60K
+  /* TANG_CONSOLE60K dummy */
   bflb_gpio_uart_init(gpio, GPIO_PIN_10, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_RX);
 #endif
@@ -854,7 +854,7 @@ void mcu_hw_init(void) {
 
 #ifdef M0S_DOCK
   wifi_init();
-#elif TC_60K
+#elif TANG_CONSOLE60K
   wifi_init();
 #endif
   usb_host();
