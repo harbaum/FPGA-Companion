@@ -568,11 +568,11 @@ static struct bflb_device_s *spi_dev;
   #define SPI_PIN_MOSI  GPIO_PIN_11
   #define SPI_PIN_IRQ   GPIO_PIN_14
 #elif TANG_NANO20K
-  #define SPI_PIN_CSN   GPIO_PIN_0
-  #define SPI_PIN_SCK   GPIO_PIN_1
-  #define SPI_PIN_MISO  GPIO_PIN_2  /* filtered on old TANG_NANO20K, new 3721 ok*/
-  #define SPI_PIN_MOSI  GPIO_PIN_3
-  #define SPI_PIN_IRQ   GPIO_PIN_14 /* in JTAG TDO*/
+  #define SPI_PIN_CSN   GPIO_PIN_0  /* out */
+  #define SPI_PIN_SCK   GPIO_PIN_1  /* out */
+  #define SPI_PIN_MISO  GPIO_PIN_2  /* in, new 3921 ok*/
+  #define SPI_PIN_MOSI  GPIO_PIN_3  /* out */
+  #define SPI_PIN_IRQ   GPIO_PIN_13 /* in UART RX, crossed */
 #elif TANG_CONSOLE60K
   #define SPI_PIN_CSN   GPIO_PIN_0 /* out TMS */
   #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK 4K7 PD SOM */
@@ -736,12 +736,12 @@ static void console_init() {
   bflb_gpio_uart_init(gpio, GPIO_PIN_21, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_NANO20K
-  /* TANG_NANO20K TX TDI RX TMS dummy allocation */
-  bflb_gpio_uart_init(gpio, GPIO_PIN_12, GPIO_UART_FUNC_UART0_TX);
-  bflb_gpio_uart_init(gpio, GPIO_PIN_16, GPIO_UART_FUNC_UART0_RX);
+  /* TANG_NANO20K allocation, RX is dummy */
+  bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_TX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_20, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_CONSOLE60K
-  /* TANG_CONSOLE60K dummy */
-  bflb_gpio_uart_init(gpio, GPIO_PIN_10, GPIO_UART_FUNC_UART0_TX);
+  /* TANG_CONSOLE60K, RX is dummy */
+  bflb_gpio_uart_init(gpio, GPIO_PIN_28, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_RX);
 #endif
 
