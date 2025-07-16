@@ -7,10 +7,10 @@ SDK_DEMO_PATH ?= .
 BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../../..
 
 CHIP ?= bl616
-BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DM0S_DOCK=1"
-# BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DTANG_NANO20K=1"
-# BOARD ?= bl616dk -DCMAKE_C_FLAGS="-DTANG_CONSOLE60K=1"
+BOARD ?= bl616dk
+TANG_BOARD ?= m0sdock
 CROSS_COMPILE ?= riscv64-unknown-elf-
+cmake_definition+=-DTANG_BOARD=$(TANG_BOARD)
 
 include $(BL_SDK_BASE)/project.build
 

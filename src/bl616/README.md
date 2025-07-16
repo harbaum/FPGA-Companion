@@ -177,7 +177,13 @@ make clean and then: make ninja
 
 ### Flashing the firmware
 
-figure out µC bootloader COM port and use shell command to program:  
+First, you need to unplug the M0S_DOCK from USB, press the BOOT button and plug the M0S Dock back into the PCs USB with the
+BOOT button still pressed. Once connected release the BOOT button. The device
+should now be in bootloader mode and show up with its bootloader on the PC.
+
+For Tang Console press and hold the "BOOT" button on the board (bottom left corner, close to one of the USB-C port), then plug in the USB cable. This enters the BL616 into the programming mode.
+
+Figure out µC bootloader COM port and use shell command to program:  
 Press Windows + R keyboard shortcut to launch the Windows Run box, type “devmgmt.msc” , and click the OK button.  
 
 Device Manager will open.  
