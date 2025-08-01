@@ -584,7 +584,7 @@ static struct bflb_device_s *spi_dev;
   #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK 4K7 PD SOM */
   #define SPI_PIN_MISO  GPIO_PIN_2 /* in  TDO 3K3 PU Console Board */
   #define SPI_PIN_MOSI  GPIO_PIN_3 /* out TDI */
-  #define SPI_PIN_IRQ   GPIO_PIN_28/* in  UART TX ! */
+  #define SPI_PIN_IRQ   GPIO_PIN_27/* in  UART RX, crossed */
 #elif TANG_MEGA138KPRO
   #define SPI_PIN_CSN   GPIO_PIN_0 /* out TMS */
   #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK */
@@ -753,7 +753,7 @@ static void console_init() {
   bflb_gpio_uart_init(gpio, GPIO_PIN_20, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_CONSOLE60K
   /* TX & RX  USB-C connector SB1 and SB2 */
-  bflb_gpio_uart_init(gpio, GPIO_PIN_21, GPIO_UART_FUNC_UART0_TX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_28, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_MEGA138KPRO
   /* RX is dummy */
