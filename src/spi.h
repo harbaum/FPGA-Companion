@@ -42,6 +42,7 @@
 #define SPI_SDC_INSERTED  4   // inform core that some disk image has been insered
 #define SPI_SDC_MCU_WRITE 5   // write sector from MCU
 #define SPI_SDC_DIRECT    6   // inform core that disk image may direclty be accessed
+#define SPI_SDC_INS_LARGE 7   // inform core that some large disk image > 4GB has been insered
 
 #define SPI_TARGET_AUDIO  4   // audio (e.g. to play fake floppy sounds)
 #define SPI_AUDIO_ENABLE  1
