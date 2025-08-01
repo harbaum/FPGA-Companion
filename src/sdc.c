@@ -381,13 +381,15 @@ static void sdc_image_enable_direct(char drive, unsigned long start) {
   mcu_hw_spi_end();
 }
 
-static int sdc_image_inserted(char drive, unsigned long size) {
+static int sdc_image_inserted(char drive, FSIZE_t size) {
   // report the size of the inserted image to the core. This is needed
   // to guess sector/track/side information for floppy disk images, so the
   // core can translate from floppy disk to LBA
-  
-  if(size) sdc_debugf("DRV %d: inserted. Size = %lu", drive, size);
-  else     sdc_debugf("DRV %d: ejected", drive);
+
+  if(size) {
+    if(sizeof(FSIZE_t) == 8) sdc_debugf("DRV %d: inserted. Size = %llu", drive, size);
+    else                     sdc_debugf("DRV %d: inserted. Size = %lu", drive, (uint32_t)size);
+  } else                     sdc_debugf("DRV %d: ejected", drive);
   
   sdc_spi_begin();
   mcu_hw_spi_tx_u08(SPI_SDC_INSERTED);
@@ -398,6 +400,12 @@ static int sdc_image_inserted(char drive, unsigned long size) {
   mcu_hw_spi_tx_u08((size >> 16) & 0xff);
   mcu_hw_spi_tx_u08((size >> 8) & 0xff);
   mcu_hw_spi_tx_u08(size & 0xff);
+
+  // send additional 16 size bits if present  
+  if(sizeof(FSIZE_t) > 4) {
+    mcu_hw_spi_tx_u08((size >> 40) & 0xff);
+    mcu_hw_spi_tx_u08((size >> 32) & 0xff);
+  }
 
   mcu_hw_spi_end();
 
