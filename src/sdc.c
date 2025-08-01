@@ -392,20 +392,29 @@ static int sdc_image_inserted(char drive, FSIZE_t size) {
   } else                     sdc_debugf("DRV %d: ejected", drive);
   
   sdc_spi_begin();
-  mcu_hw_spi_tx_u08(SPI_SDC_INSERTED);
+
+  // files over 4GB size are reported using an extra command. This also prevents
+  // cores not coping with big files from messing them up
+  if( (sizeof(FSIZE_t) == 8) && (size >= 0x100000000llu))
+    mcu_hw_spi_tx_u08(SPI_SDC_INS_LARGE);
+  else
+    mcu_hw_spi_tx_u08(SPI_SDC_INSERTED);
+  
   mcu_hw_spi_tx_u08(drive);
 
+  // send upper 32 bits of large file
+  if((sizeof(FSIZE_t) == 8) && (size >= 0x100000000llu)) {
+    mcu_hw_spi_tx_u08((size >> 56) & 0xff);
+    mcu_hw_spi_tx_u08((size >> 48) & 0xff);
+    mcu_hw_spi_tx_u08((size >> 40) & 0xff);
+    mcu_hw_spi_tx_u08((size >> 32) & 0xff);
+  }
+    
   // send file length
   mcu_hw_spi_tx_u08((size >> 24) & 0xff);
   mcu_hw_spi_tx_u08((size >> 16) & 0xff);
   mcu_hw_spi_tx_u08((size >> 8) & 0xff);
   mcu_hw_spi_tx_u08(size & 0xff);
-
-  // send additional 16 size bits if present  
-  if(sizeof(FSIZE_t) > 4) {
-    mcu_hw_spi_tx_u08((size >> 40) & 0xff);
-    mcu_hw_spi_tx_u08((size >> 32) & 0xff);
-  }
 
   mcu_hw_spi_end();
 
