@@ -584,7 +584,7 @@ static struct bflb_device_s *spi_dev;
   #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK 4K7 PD SOM */
   #define SPI_PIN_MISO  GPIO_PIN_2 /* in  TDO 3K3 PU Console Board */
   #define SPI_PIN_MOSI  GPIO_PIN_3 /* out TDI */
-  #define SPI_PIN_IRQ   GPIO_PIN_28/* in  UART RX, crossed */
+  #define SPI_PIN_IRQ   GPIO_PIN_27/* in  UART RX, crossed */
 #elif TANG_MEGA138KPRO
   #define SPI_PIN_CSN   GPIO_PIN_0 /* out TMS */
   #define SPI_PIN_SCK   GPIO_PIN_1 /* out TCK */
@@ -632,18 +632,6 @@ static void mcu_hw_spi_init(void) {
   /* spi cs */
   bflb_gpio_init(gpio, SPI_PIN_CSN, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
   bflb_gpio_set(gpio, SPI_PIN_CSN);
-#ifdef TANG_CONSOLE60K
-/* USB-C OTG Power enable */
-  bflb_gpio_init(gpio, GPIO_PIN_20, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_3);
-  bflb_gpio_set(gpio, GPIO_PIN_20);
-  /* TF Card access from FPGA */
-  bflb_gpio_init(gpio, GPIO_PIN_16, GPIO_OUTPUT | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_3);
-  bflb_gpio_reset(gpio, GPIO_PIN_16);
-  /* USB-C SBU1 */
-  bflb_gpio_init(gpio, GPIO_PIN_21, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN);
-  /* USB-C SBU2 */
-  bflb_gpio_init(gpio, GPIO_PIN_22, GPIO_INPUT | GPIO_PULLDOWN | GPIO_SMT_EN);
-#endif
 
   struct bflb_spi_config_s spi_cfg = {
     .freq = 20000000,   // 20MHz
@@ -764,21 +752,21 @@ static void console_init() {
   bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_TX);
   bflb_gpio_uart_init(gpio, GPIO_PIN_20, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_CONSOLE60K
-  /* RX is dummy */
+  /* TX & RX  USB-C connector SB1 and SB2 */
   bflb_gpio_uart_init(gpio, GPIO_PIN_28, GPIO_UART_FUNC_UART0_TX);
-  bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_RX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_MEGA138KPRO
   /* RX is dummy */
   bflb_gpio_uart_init(gpio, GPIO_PIN_10, GPIO_UART_FUNC_UART0_TX);
-  bflb_gpio_uart_init(gpio, GPIO_PIN_20, GPIO_UART_FUNC_UART0_RX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_MEGA60K
   /* RX is dummy */
   bflb_gpio_uart_init(gpio, GPIO_PIN_28, GPIO_UART_FUNC_UART0_TX);
-  bflb_gpio_uart_init(gpio, GPIO_PIN_20, GPIO_UART_FUNC_UART0_RX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #elif TANG_PRIMER25K
   /* RX is dummy */
   bflb_gpio_uart_init(gpio, GPIO_PIN_11, GPIO_UART_FUNC_UART0_TX);
-  bflb_gpio_uart_init(gpio, GPIO_PIN_20, GPIO_UART_FUNC_UART0_RX);
+  bflb_gpio_uart_init(gpio, GPIO_PIN_22, GPIO_UART_FUNC_UART0_RX);
 #endif
 
   struct bflb_uart_config_s cfg;
@@ -812,6 +800,37 @@ static void mn_board_init(void) {
     peripheral_clock_init();
     bflb_irq_initialize();
 
+    gpio = bflb_device_get_by_name("gpio");
+    // deinit all GPIOs
+    bflb_gpio_deinit(gpio, GPIO_PIN_0);
+    bflb_gpio_deinit(gpio, GPIO_PIN_1);
+    bflb_gpio_deinit(gpio, GPIO_PIN_2);
+    bflb_gpio_deinit(gpio, GPIO_PIN_3);
+
+    bflb_gpio_deinit(gpio, GPIO_PIN_10);
+    bflb_gpio_deinit(gpio, GPIO_PIN_11);
+    bflb_gpio_deinit(gpio, GPIO_PIN_12);
+    bflb_gpio_deinit(gpio, GPIO_PIN_13);
+    bflb_gpio_deinit(gpio, GPIO_PIN_14);
+    bflb_gpio_deinit(gpio, GPIO_PIN_15);
+    bflb_gpio_deinit(gpio, GPIO_PIN_16);
+    bflb_gpio_deinit(gpio, GPIO_PIN_17);
+
+    bflb_gpio_deinit(gpio, GPIO_PIN_20);
+    bflb_gpio_deinit(gpio, GPIO_PIN_21);
+    bflb_gpio_deinit(gpio, GPIO_PIN_22);
+
+    bflb_gpio_deinit(gpio, GPIO_PIN_27);
+    bflb_gpio_deinit(gpio, GPIO_PIN_28);
+    bflb_gpio_deinit(gpio, GPIO_PIN_29);
+    bflb_gpio_deinit(gpio, GPIO_PIN_30);
+
+#ifdef TANG_CONSOLE60K
+  /* USB-C OTG Power enable */
+  bflb_gpio_init(gpio, GPIO_PIN_20, GPIO_OUTPUT | GPIO_FLOAT | GPIO_SMT_EN | GPIO_DRV_3);
+  bflb_gpio_set(gpio, GPIO_PIN_20);
+#endif
+
     console_init();
 
     heap_len = ((size_t)&__HeapLimit - (size_t)&__HeapBase);
@@ -841,36 +860,7 @@ static void mn_board_init(void) {
 }
 
 void mcu_hw_init(void) {
-#ifdef M0S_DOCK
   mn_board_init();
-#else
-  board_init();
-#endif
-
-  gpio = bflb_device_get_by_name("gpio");
-  // deinit all GPIOs
-  bflb_gpio_deinit(gpio, GPIO_PIN_0);
-  bflb_gpio_deinit(gpio, GPIO_PIN_1);
-  bflb_gpio_deinit(gpio, GPIO_PIN_2);
-  bflb_gpio_deinit(gpio, GPIO_PIN_3);
-
-  bflb_gpio_deinit(gpio, GPIO_PIN_10);
-  bflb_gpio_deinit(gpio, GPIO_PIN_11);
-  bflb_gpio_deinit(gpio, GPIO_PIN_12);
-  bflb_gpio_deinit(gpio, GPIO_PIN_13);
-  bflb_gpio_deinit(gpio, GPIO_PIN_14);
-  bflb_gpio_deinit(gpio, GPIO_PIN_15);
-  bflb_gpio_deinit(gpio, GPIO_PIN_16);
-  bflb_gpio_deinit(gpio, GPIO_PIN_17);
-
-  bflb_gpio_deinit(gpio, GPIO_PIN_20);
-  bflb_gpio_deinit(gpio, GPIO_PIN_21);
-  bflb_gpio_deinit(gpio, GPIO_PIN_22);
-
-  bflb_gpio_deinit(gpio, GPIO_PIN_27);
-  bflb_gpio_deinit(gpio, GPIO_PIN_28);
-  bflb_gpio_deinit(gpio, GPIO_PIN_29);
-  bflb_gpio_deinit(gpio, GPIO_PIN_30);
 
   printf("\r\n\r\n" LOGO "           FPGA Companion for BL616\r\n\r\n");
 

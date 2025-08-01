@@ -6,7 +6,7 @@ if not exist buildall mkdir buildall
 del /Q buildall\*
 
 REM List of boards to build
-set "boards=m0sdock nano20k console60k mega138kpro mega60k"
+set "boards=m0sdock nano20k console60k"
 @REM set "boards=m0sdock nano20k console60k mega60k mega138kpro primer25k"
 
 for %%b in (%boards%) do (
@@ -25,17 +25,20 @@ for %%b in (%boards%) do (
         REM Copy and rename the binary files
         copy /Y build\build_out\fpga_companion_bl616.bin buildall\fpga_companion_%%b.bin
         if "%%b"=="console60k" (
-            copy /Y bl616_fpga_partner_Console.bin buildall\bl616_fpga_partner_%%b.bin
+            copy /Y bl616_fpga_partner\bl616_fpga_partner_Console.bin buildall\bl616_fpga_partner_%%b.bin
         ) else if "%%b"=="console138k" (
-            copy /Y bl616_fpga_partner_Console.bin buildall\bl616_fpga_partner_%%b.bin
+            copy /Y bl616_fpga_partner\bl616_fpga_partner_Console.bin buildall\bl616_fpga_partner_%%b.bin
         ) else if "%%b"=="mega60k" (
-            copy /Y bl616_fpga_partner_NeoDock.bin buildall\bl616_fpga_partner_%%b.bin
+            copy /Y bl616_fpga_partner\bl616_fpga_partner_NeoDock.bin buildall\bl616_fpga_partner_%%b.bin
         ) else if "%%b"=="mega138kpro" (
-            copy /Y bl616_fpga_partner_138kproDock.bin buildall\bl616_fpga_partner_%%b.bin
+            copy /Y bl616_fpga_partner\bl616_fpga_partner_138kproDock.bin buildall\bl616_fpga_partner_%%b.bin
         ) else if "%%b"=="primer25k" (
-            copy /Y bl616_fpga_partner_25kDock.bin buildall\bl616_fpga_partner_%%b.bin
+            copy /Y bl616_fpga_partner\bl616_fpga_partner_25kDock.bin buildall\bl616_fpga_partner_%%b.bin
         ) else if "%%b"=="nano20k" (
-            copy /Y bl616_fpga_partner_20kNano.bin buildall\bl616_fpga_partner_%%b.bin
+            copy /Y bl616_fpga_partner\bl616_fpga_partner_20kNano.bin buildall\bl616_fpga_partner_%%b.bin
+            REM Copy unfused files
+            copy /Y bl616_fpga_partner\friend_20k_bl616.bin buildall\friend_20k_bl616.bin
+            copy /Y bl616_fpga_partner\friend_20k_cfg.ini buildall\friend_20k_cfg.ini
         )
         if "%%b"=="m0sdock" ( 
         copy /Y flash_m0sdock_cfg.ini buildall\flash_m0sdock_cfg.ini
