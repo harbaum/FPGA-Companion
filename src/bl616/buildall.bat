@@ -39,6 +39,7 @@ for %%b in (%boards%) do (
             REM Copy unfused files
             copy /Y bl616_fpga_partner\friend_20k_bl616.bin buildall\friend_20k_bl616.bin
             copy /Y bl616_fpga_partner\friend_20k_cfg.ini buildall\friend_20k_cfg.ini
+            copy /Y bl616_fpga_partner\flash_nano20k_unfused_cfg.ini buildall\flash_nano20k_unfused_cfg.ini
         )
         if "%%b"=="m0sdock" ( 
         copy /Y flash_m0sdock_cfg.ini buildall\flash_m0sdock_cfg.ini
